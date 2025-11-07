@@ -1,0 +1,34 @@
+from google.protobuf import wrappers_pb2 as _wrappers_pb2
+from systems.ajax.protobuf.hub.device import common_device_pb2 as _common_device_pb2
+from google.protobuf.internal import containers as _containers
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class LeaksProtect(_message.Message):
+    __slots__ = ("common_part", "siren_triggers", "always_active", "leak_detected", "subtype")
+    class SirenTrigger(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+        __slots__ = ()
+        NO_SIREN_TRIGGER_INFO: _ClassVar[LeaksProtect.SirenTrigger]
+        LEAK: _ClassVar[LeaksProtect.SirenTrigger]
+    NO_SIREN_TRIGGER_INFO: LeaksProtect.SirenTrigger
+    LEAK: LeaksProtect.SirenTrigger
+    class Subtype(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+        __slots__ = ()
+        NO_SUBTYPE: _ClassVar[LeaksProtect.Subtype]
+    NO_SUBTYPE: LeaksProtect.Subtype
+    COMMON_PART_FIELD_NUMBER: _ClassVar[int]
+    SIREN_TRIGGERS_FIELD_NUMBER: _ClassVar[int]
+    ALWAYS_ACTIVE_FIELD_NUMBER: _ClassVar[int]
+    LEAK_DETECTED_FIELD_NUMBER: _ClassVar[int]
+    SUBTYPE_FIELD_NUMBER: _ClassVar[int]
+    common_part: _common_device_pb2.CommonDevicePart
+    siren_triggers: _containers.RepeatedScalarFieldContainer[LeaksProtect.SirenTrigger]
+    always_active: bool
+    leak_detected: _wrappers_pb2.BoolValue
+    subtype: LeaksProtect.Subtype
+    def __init__(self, common_part: _Optional[_Union[_common_device_pb2.CommonDevicePart, _Mapping]] = ..., siren_triggers: _Optional[_Iterable[_Union[LeaksProtect.SirenTrigger, str]]] = ..., always_active: bool = ..., leak_detected: _Optional[_Union[_wrappers_pb2.BoolValue, _Mapping]] = ..., subtype: _Optional[_Union[LeaksProtect.Subtype, str]] = ...) -> None: ...

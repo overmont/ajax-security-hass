@@ -1,0 +1,14 @@
+from systems.ajax.api.mobile.v2.space.member import approve_requested_full_permissions_request_pb2 as _approve_requested_full_permissions_request_pb2
+from systems.ajax.api.mobile.v2.space.member import cancel_space_member_permissions_request_pb2 as _cancel_space_member_permissions_request_pb2
+from systems.ajax.api.mobile.v2.space.member import invite_members_request_pb2 as _invite_members_request_pb2
+from systems.ajax.api.mobile.v2.space.member import reject_requested_full_permissions_request_pb2 as _reject_requested_full_permissions_request_pb2
+from systems.ajax.api.mobile.v2.space.member import remove_member_request_pb2 as _remove_member_request_pb2
+from systems.ajax.api.mobile.v2.space.member import request_full_permissions_request_pb2 as _request_full_permissions_request_pb2
+from systems.ajax.api.mobile.v2.space.member import update_group_permissions_request_pb2 as _update_group_permissions_request_pb2
+from systems.ajax.api.mobile.v2.space.member import update_space_member_permissions_request_pb2 as _update_space_member_permissions_request_pb2
+from systems.ajax.api.mobile.v2.space.member import update_space_member_push_preferences_request_pb2 as _update_space_member_push_preferences_request_pb2
+from systems.ajax.api.mobile.v2.space.member import update_space_member_role_request_pb2 as _update_space_member_role_request_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor

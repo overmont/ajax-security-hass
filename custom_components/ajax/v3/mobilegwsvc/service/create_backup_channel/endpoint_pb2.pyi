@@ -1,0 +1,6 @@
+from v3.mobilegwsvc.service.create_backup_channel import request_pb2 as _request_pb2
+from v3.mobilegwsvc.service.create_backup_channel import response_pb2 as _response_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor

@@ -1,0 +1,14 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class HubStandaloneDevicePermissionExtended(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    HUB_STANDALONE_DEVICE_PERMISSION_EXTENDED_UNSPECIFIED: _ClassVar[HubStandaloneDevicePermissionExtended]
+    HUB_STANDALONE_DEVICE_PERMISSION_EXTENDED_EN54_ACCESS_LEVEL_2: _ClassVar[HubStandaloneDevicePermissionExtended]
+    HUB_STANDALONE_DEVICE_PERMISSION_EXTENDED_EN54_EVACUATION: _ClassVar[HubStandaloneDevicePermissionExtended]
+HUB_STANDALONE_DEVICE_PERMISSION_EXTENDED_UNSPECIFIED: HubStandaloneDevicePermissionExtended
+HUB_STANDALONE_DEVICE_PERMISSION_EXTENDED_EN54_ACCESS_LEVEL_2: HubStandaloneDevicePermissionExtended
+HUB_STANDALONE_DEVICE_PERMISSION_EXTENDED_EN54_EVACUATION: HubStandaloneDevicePermissionExtended

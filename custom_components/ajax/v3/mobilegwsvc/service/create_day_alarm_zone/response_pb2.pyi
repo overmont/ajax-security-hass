@@ -1,0 +1,37 @@
+from v3.mobilegwsvc.commonmodels.response import response_pb2 as _response_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from collections.abc import Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class CreateDayAlarmZoneResponse(_message.Message):
+    __slots__ = ("success", "failure")
+    class Success(_message.Message):
+        __slots__ = ("id",)
+        ID_FIELD_NUMBER: _ClassVar[int]
+        id: str
+        def __init__(self, id: _Optional[str] = ...) -> None: ...
+    class Failure(_message.Message):
+        __slots__ = ("bad_request", "object_limit_exceeded", "permission_denied", "hub_offline", "hub_error", "hub_busy", "hub_wrong_state")
+        BAD_REQUEST_FIELD_NUMBER: _ClassVar[int]
+        OBJECT_LIMIT_EXCEEDED_FIELD_NUMBER: _ClassVar[int]
+        PERMISSION_DENIED_FIELD_NUMBER: _ClassVar[int]
+        HUB_OFFLINE_FIELD_NUMBER: _ClassVar[int]
+        HUB_ERROR_FIELD_NUMBER: _ClassVar[int]
+        HUB_BUSY_FIELD_NUMBER: _ClassVar[int]
+        HUB_WRONG_STATE_FIELD_NUMBER: _ClassVar[int]
+        bad_request: _response_pb2.Error
+        object_limit_exceeded: _response_pb2.Error
+        permission_denied: _response_pb2.Error
+        hub_offline: _response_pb2.Error
+        hub_error: _response_pb2.Error
+        hub_busy: _response_pb2.HubBusyError
+        hub_wrong_state: _response_pb2.HubWrongStateError
+        def __init__(self, bad_request: _Optional[_Union[_response_pb2.Error, _Mapping]] = ..., object_limit_exceeded: _Optional[_Union[_response_pb2.Error, _Mapping]] = ..., permission_denied: _Optional[_Union[_response_pb2.Error, _Mapping]] = ..., hub_offline: _Optional[_Union[_response_pb2.Error, _Mapping]] = ..., hub_error: _Optional[_Union[_response_pb2.Error, _Mapping]] = ..., hub_busy: _Optional[_Union[_response_pb2.HubBusyError, _Mapping]] = ..., hub_wrong_state: _Optional[_Union[_response_pb2.HubWrongStateError, _Mapping]] = ...) -> None: ...
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    FAILURE_FIELD_NUMBER: _ClassVar[int]
+    success: CreateDayAlarmZoneResponse.Success
+    failure: CreateDayAlarmZoneResponse.Failure
+    def __init__(self, success: _Optional[_Union[CreateDayAlarmZoneResponse.Success, _Mapping]] = ..., failure: _Optional[_Union[CreateDayAlarmZoneResponse.Failure, _Mapping]] = ...) -> None: ...

@@ -1,0 +1,7 @@
+from systems.ajax.api.mobile.v2.firmware import get_firmware_metadata_request_pb2 as _get_firmware_metadata_request_pb2
+from systems.ajax.api.mobile.v2.firmware import start_device_firmware_update_request_pb2 as _start_device_firmware_update_request_pb2
+from systems.ajax.api.mobile.v2.firmware import start_system_firmware_update_request_pb2 as _start_system_firmware_update_request_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor

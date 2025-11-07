@@ -1,0 +1,26 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class DisplayedSpaceSecurityState(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    DISPLAYED_SPACE_SECURITY_STATE_NONE: _ClassVar[DisplayedSpaceSecurityState]
+    DISPLAYED_SPACE_SECURITY_STATE_ARMED: _ClassVar[DisplayedSpaceSecurityState]
+    DISPLAYED_SPACE_SECURITY_STATE_DISARMED: _ClassVar[DisplayedSpaceSecurityState]
+    DISPLAYED_SPACE_SECURITY_STATE_NIGHT_MODE: _ClassVar[DisplayedSpaceSecurityState]
+    DISPLAYED_SPACE_SECURITY_STATE_PARTIALLY_ARMED: _ClassVar[DisplayedSpaceSecurityState]
+    DISPLAYED_SPACE_SECURITY_STATE_AWAITING_APP_EXIT_TIMER: _ClassVar[DisplayedSpaceSecurityState]
+    DISPLAYED_SPACE_SECURITY_STATE_AWAITING_SECOND_STAGE_CONFIRMATION: _ClassVar[DisplayedSpaceSecurityState]
+    DISPLAYED_SPACE_SECURITY_STATE_TWO_STAGE_ARMING_INCOMPLETE: _ClassVar[DisplayedSpaceSecurityState]
+    DISPLAYED_SPACE_SECURITY_STATE_AWAITING_VDS_ARMING_COMPLETION: _ClassVar[DisplayedSpaceSecurityState]
+DISPLAYED_SPACE_SECURITY_STATE_NONE: DisplayedSpaceSecurityState
+DISPLAYED_SPACE_SECURITY_STATE_ARMED: DisplayedSpaceSecurityState
+DISPLAYED_SPACE_SECURITY_STATE_DISARMED: DisplayedSpaceSecurityState
+DISPLAYED_SPACE_SECURITY_STATE_NIGHT_MODE: DisplayedSpaceSecurityState
+DISPLAYED_SPACE_SECURITY_STATE_PARTIALLY_ARMED: DisplayedSpaceSecurityState
+DISPLAYED_SPACE_SECURITY_STATE_AWAITING_APP_EXIT_TIMER: DisplayedSpaceSecurityState
+DISPLAYED_SPACE_SECURITY_STATE_AWAITING_SECOND_STAGE_CONFIRMATION: DisplayedSpaceSecurityState
+DISPLAYED_SPACE_SECURITY_STATE_TWO_STAGE_ARMING_INCOMPLETE: DisplayedSpaceSecurityState
+DISPLAYED_SPACE_SECURITY_STATE_AWAITING_VDS_ARMING_COMPLETION: DisplayedSpaceSecurityState

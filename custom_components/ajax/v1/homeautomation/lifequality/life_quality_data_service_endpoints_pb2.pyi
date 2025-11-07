@@ -1,0 +1,7 @@
+from v1.homeautomation.lifequality import life_quality_data_pb2 as _life_quality_data_pb2
+from v1.homeautomation.lifequality import life_quality_remove_data_pb2 as _life_quality_remove_data_pb2
+from v1.homeautomation.lifequality import find_first_timestamp_pb2 as _find_first_timestamp_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor

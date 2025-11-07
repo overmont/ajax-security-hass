@@ -1,0 +1,26 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class DeviceCommonCapability(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    DEVICE_COMMON_CAPABILITY_UNSPECIFIED: _ClassVar[DeviceCommonCapability]
+    DEVICE_COMMON_CAPABILITY_GRADE_3: _ClassVar[DeviceCommonCapability]
+    DEVICE_COMMON_CAPABILITY_POWER_MANAGEMENT: _ClassVar[DeviceCommonCapability]
+    DEVICE_COMMON_CAPABILITY_ATTENUATION_TEST: _ClassVar[DeviceCommonCapability]
+    DEVICE_COMMON_CAPABILITY_BRACKET_STATE_SUPPORTED: _ClassVar[DeviceCommonCapability]
+    DEVICE_COMMON_CAPABILITY_SELF_TEST: _ClassVar[DeviceCommonCapability]
+    DEVICE_COMMON_CAPABILITY_MASK_CALIBRATION: _ClassVar[DeviceCommonCapability]
+    DEVICE_COMMON_CAPABILITY_SCENARIO: _ClassVar[DeviceCommonCapability]
+    DEVICE_COMMON_CAPABILITY_MOTION_DETECTION_AREA: _ClassVar[DeviceCommonCapability]
+DEVICE_COMMON_CAPABILITY_UNSPECIFIED: DeviceCommonCapability
+DEVICE_COMMON_CAPABILITY_GRADE_3: DeviceCommonCapability
+DEVICE_COMMON_CAPABILITY_POWER_MANAGEMENT: DeviceCommonCapability
+DEVICE_COMMON_CAPABILITY_ATTENUATION_TEST: DeviceCommonCapability
+DEVICE_COMMON_CAPABILITY_BRACKET_STATE_SUPPORTED: DeviceCommonCapability
+DEVICE_COMMON_CAPABILITY_SELF_TEST: DeviceCommonCapability
+DEVICE_COMMON_CAPABILITY_MASK_CALIBRATION: DeviceCommonCapability
+DEVICE_COMMON_CAPABILITY_SCENARIO: DeviceCommonCapability
+DEVICE_COMMON_CAPABILITY_MOTION_DETECTION_AREA: DeviceCommonCapability

@@ -1,0 +1,6 @@
+from systems.ajax.api.mobile.v2.video.videoedge.firmware import check_for_firmware_update_request_pb2 as _check_for_firmware_update_request_pb2
+from systems.ajax.api.mobile.v2.video.videoedge.firmware import update_firmware_to_recommended_version_request_pb2 as _update_firmware_to_recommended_version_request_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor

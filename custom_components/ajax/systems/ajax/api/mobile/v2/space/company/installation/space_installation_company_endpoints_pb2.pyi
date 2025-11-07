@@ -1,0 +1,9 @@
+from systems.ajax.api.mobile.v2.space.company.installation import invite_installation_company_request_pb2 as _invite_installation_company_request_pb2
+from systems.ajax.api.mobile.v2.space.company.installation import join_space_by_company_request_pb2 as _join_space_by_company_request_pb2
+from systems.ajax.api.mobile.v2.space.company.installation import update_installation_company_permissions_request_pb2 as _update_installation_company_permissions_request_pb2
+from systems.ajax.api.mobile.v2.space.company.installation import cancel_installation_company_permissions_request_pb2 as _cancel_installation_company_permissions_request_pb2
+from systems.ajax.api.mobile.v2.space.company.installation import remove_installation_company_request_pb2 as _remove_installation_company_request_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor

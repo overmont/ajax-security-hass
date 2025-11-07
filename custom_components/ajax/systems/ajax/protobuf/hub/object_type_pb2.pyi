@@ -1,0 +1,128 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class ObjectType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    NO_OBJECT_TYPE_INFO: _ClassVar[ObjectType]
+    HUB: _ClassVar[ObjectType]
+    USER: _ClassVar[ObjectType]
+    GROUP: _ClassVar[ObjectType]
+    ROOM: _ClassVar[ObjectType]
+    CAMERA: _ClassVar[ObjectType]
+    WIRE_INPUT: _ClassVar[ObjectType]
+    WIRE_SIREN: _ClassVar[ObjectType]
+    YAVIR_ACCESS_CONTROL: _ClassVar[ObjectType]
+    ACCESS_KEY: _ClassVar[ObjectType]
+    SCENARIO: _ClassVar[ObjectType]
+    COMPANY_BINDING: _ClassVar[ObjectType]
+    SCHEDULE: _ClassVar[ObjectType]
+    CONFIG_MIGRATION: _ClassVar[ObjectType]
+    DOOR_PROTECT: _ClassVar[ObjectType]
+    MOTION_PROTECT: _ClassVar[ObjectType]
+    FIRE_PROTECT: _ClassVar[ObjectType]
+    GLASS_PROTECT: _ClassVar[ObjectType]
+    LEAKS_PROTECT: _ClassVar[ObjectType]
+    MOTION_PROTECT_CURTAIN: _ClassVar[ObjectType]
+    RANGE_EXTENDER: _ClassVar[ObjectType]
+    COMBI_PROTECT: _ClassVar[ObjectType]
+    FIRE_PROTECT_PLUS: _ClassVar[ObjectType]
+    KEYBOARD: _ClassVar[ObjectType]
+    SPACE_CONTROL: _ClassVar[ObjectType]
+    BUTTON: _ClassVar[ObjectType]
+    MOTION_CAM: _ClassVar[ObjectType]
+    MOTION_PROTECT_PLUS: _ClassVar[ObjectType]
+    DOOR_PROTECT_PLUS: _ClassVar[ObjectType]
+    UNIVERSAL_DEVICE: _ClassVar[ObjectType]
+    TRANSMITTER: _ClassVar[ObjectType]
+    RELAY: _ClassVar[ObjectType]
+    MOTION_PROTECT_OUTDOOR: _ClassVar[ObjectType]
+    STREET_SIREN: _ClassVar[ObjectType]
+    HOME_SIREN: _ClassVar[ObjectType]
+    STOVE_GUARD_SENSOR: _ClassVar[ObjectType]
+    STOVE_GUARD_SWITCH: _ClassVar[ObjectType]
+    MOTION_CAM_OUTDOOR: _ClassVar[ObjectType]
+    KEYPAD_PLUS: _ClassVar[ObjectType]
+    DUAL_CURTAIN_OUTDOOR: _ClassVar[ObjectType]
+    STREET_SIREN_DOUBLE_DECK: _ClassVar[ObjectType]
+    MULTI_TRANSMITTER: _ClassVar[ObjectType]
+    WIRE_INPUT_MT: _ClassVar[ObjectType]
+    SOCKET: _ClassVar[ObjectType]
+    WALL_SWITCH: _ClassVar[ObjectType]
+    ACCESS_CARD: _ClassVar[ObjectType]
+    DOUBLE_BUTTON: _ClassVar[ObjectType]
+    KEYPAD_COMBI: _ClassVar[ObjectType]
+    COMBI_PROTECT_FIBRA: _ClassVar[ObjectType]
+    KEYBOARD_FIBRA: _ClassVar[ObjectType]
+    MOTION_PROTECT_PLUS_FIBRA: _ClassVar[ObjectType]
+    DOOR_PROTECT_PLUS_FIBRA: _ClassVar[ObjectType]
+    MOTION_PROTECT_FIBRA: _ClassVar[ObjectType]
+    STREET_SIREN_DOUBLE_DECK_FIBRA: _ClassVar[ObjectType]
+    DOOR_PROTECT_FIBRA: _ClassVar[ObjectType]
+    GLASS_PROTECT_FIBRA: _ClassVar[ObjectType]
+    HOME_SIREN_FIBRA: _ClassVar[ObjectType]
+    STREET_SIREN_FIBRA: _ClassVar[ObjectType]
+    VHF_BRIDGE: _ClassVar[ObjectType]
+    RANGE_EXTENDER_2: _ClassVar[ObjectType]
+NO_OBJECT_TYPE_INFO: ObjectType
+HUB: ObjectType
+USER: ObjectType
+GROUP: ObjectType
+ROOM: ObjectType
+CAMERA: ObjectType
+WIRE_INPUT: ObjectType
+WIRE_SIREN: ObjectType
+YAVIR_ACCESS_CONTROL: ObjectType
+ACCESS_KEY: ObjectType
+SCENARIO: ObjectType
+COMPANY_BINDING: ObjectType
+SCHEDULE: ObjectType
+CONFIG_MIGRATION: ObjectType
+DOOR_PROTECT: ObjectType
+MOTION_PROTECT: ObjectType
+FIRE_PROTECT: ObjectType
+GLASS_PROTECT: ObjectType
+LEAKS_PROTECT: ObjectType
+MOTION_PROTECT_CURTAIN: ObjectType
+RANGE_EXTENDER: ObjectType
+COMBI_PROTECT: ObjectType
+FIRE_PROTECT_PLUS: ObjectType
+KEYBOARD: ObjectType
+SPACE_CONTROL: ObjectType
+BUTTON: ObjectType
+MOTION_CAM: ObjectType
+MOTION_PROTECT_PLUS: ObjectType
+DOOR_PROTECT_PLUS: ObjectType
+UNIVERSAL_DEVICE: ObjectType
+TRANSMITTER: ObjectType
+RELAY: ObjectType
+MOTION_PROTECT_OUTDOOR: ObjectType
+STREET_SIREN: ObjectType
+HOME_SIREN: ObjectType
+STOVE_GUARD_SENSOR: ObjectType
+STOVE_GUARD_SWITCH: ObjectType
+MOTION_CAM_OUTDOOR: ObjectType
+KEYPAD_PLUS: ObjectType
+DUAL_CURTAIN_OUTDOOR: ObjectType
+STREET_SIREN_DOUBLE_DECK: ObjectType
+MULTI_TRANSMITTER: ObjectType
+WIRE_INPUT_MT: ObjectType
+SOCKET: ObjectType
+WALL_SWITCH: ObjectType
+ACCESS_CARD: ObjectType
+DOUBLE_BUTTON: ObjectType
+KEYPAD_COMBI: ObjectType
+COMBI_PROTECT_FIBRA: ObjectType
+KEYBOARD_FIBRA: ObjectType
+MOTION_PROTECT_PLUS_FIBRA: ObjectType
+DOOR_PROTECT_PLUS_FIBRA: ObjectType
+MOTION_PROTECT_FIBRA: ObjectType
+STREET_SIREN_DOUBLE_DECK_FIBRA: ObjectType
+DOOR_PROTECT_FIBRA: ObjectType
+GLASS_PROTECT_FIBRA: ObjectType
+HOME_SIREN_FIBRA: ObjectType
+STREET_SIREN_FIBRA: ObjectType
+VHF_BRIDGE: ObjectType
+RANGE_EXTENDER_2: ObjectType

@@ -1,0 +1,202 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Ajax",
+        "description": "Connect your Ajax security system to Home Assistant",
+        "data": {
+          "email": "Email address",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Ajax server. Check your internet connection.",
+      "invalid_auth": "Invalid credentials. Check your email and password.",
+      "unknown": "Unexpected error. Check the logs for more details."
+    },
+    "abort": {
+      "already_configured": "This Ajax account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ajax Options",
+        "description": "Configure your Ajax integration options",
+        "data": {
+          "update_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "motion": {
+        "name": "Motion detector"
+      },
+      "door": {
+        "name": "Door sensor"
+      },
+      "window": {
+        "name": "Window sensor"
+      },
+      "smoke": {
+        "name": "Smoke detector"
+      },
+      "gas": {
+        "name": "Gas detector"
+      },
+      "water": {
+        "name": "Flood detector"
+      },
+      "glass_break": {
+        "name": "Glass break detector"
+      },
+      "connection": {
+        "name": "Hub connection",
+        "state": {
+          "on": "Connected",
+          "off": "Disconnected"
+        }
+      },
+      "system_problems": {
+        "name": "System problems",
+        "state": {
+          "on": "Problems detected",
+          "off": "No problems"
+        },
+        "state_attributes": {
+          "total_malfunctions": {
+            "name": "Total malfunctions"
+          },
+          "devices_with_problems": {
+            "name": "Devices with problems"
+          },
+          "problem_devices": {
+            "name": "Device list"
+          }
+        }
+      }
+    },
+    "sensor": {
+      "total_devices": {
+        "name": "Total devices"
+      },
+      "online_devices": {
+        "name": "Online devices"
+      },
+      "devices_with_malfunctions": {
+        "name": "Devices with malfunctions"
+      },
+      "unread_notifications": {
+        "name": "Unread notifications"
+      },
+      "bypassed_devices": {
+        "name": "Bypassed devices"
+      },
+      "battery": {
+        "name": "Battery"
+      },
+      "signal_strength": {
+        "name": "Signal strength"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "humidity": {
+        "name": "Humidity"
+      },
+      "malfunctions": {
+        "name": "Malfunctions"
+      },
+      "firmware_version": {
+        "name": "Firmware version"
+      },
+      "hardware_version": {
+        "name": "Hardware version"
+      },
+      "sim_status": {
+        "name": "SIM cards status",
+        "state_attributes": {
+          "sim_slots_total": {
+            "name": "Total SIM slots"
+          },
+          "sim_slots_used": {
+            "name": "Used SIM slots"
+          },
+          "sim_cards": {
+            "name": "SIM cards details"
+          }
+        }
+      },
+      "battery_state": {
+        "name": "Battery state"
+      },
+      "device_color": {
+        "name": "Device color"
+      },
+      "device_label": {
+        "name": "Device label"
+      },
+      "device_marketing_id": {
+        "name": "Device marketing ID"
+      },
+      "gsm_signal_level": {
+        "name": "Cellular signal (GSM)"
+      },
+      "wifi_signal_level": {
+        "name": "Wi-Fi signal"
+      },
+      "active_connection": {
+        "name": "Active connection"
+      },
+      "network_status": {
+        "name": "Mobile network"
+      },
+      "noise_level_avg": {
+        "name": "Average noise level",
+        "state_attributes": {
+          "channel1": {
+            "name": "Channel 1"
+          },
+          "channel2": {
+            "name": "Channel 2"
+          },
+          "high": {
+            "name": "High noise"
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "system_problems": {
+        "name": "System problems"
+      },
+      "tamper": {
+        "name": "Cover"
+      },
+      "external_power": {
+        "name": "External power"
+      }
+    }
+  },
+  "services": {
+    "arm": {
+      "name": "Arm",
+      "description": "Arm the Ajax system"
+    },
+    "disarm": {
+      "name": "Disarm",
+      "description": "Disarm the Ajax system"
+    },
+    "arm_night": {
+      "name": "Night mode",
+      "description": "Activate night mode"
+    },
+    "arm_partial": {
+      "name": "Partial arming",
+      "description": "Activate partial arming"
+    }
+  }
+}

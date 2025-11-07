@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Generated files
+*.pyc
+*.pyo
+*.pyd
+
+# Decompiled proto files (keep only generated Python files)
+decompiled/
+
+# Local config
+*.local
+.env
+secrets.yaml
+
+# Temporary files
+*.tmp
+*.log

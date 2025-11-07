@@ -1,0 +1,243 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connexion à Ajax",
+        "description": "Connectez votre système de sécurité Ajax à Home Assistant",
+        "data": {
+          "email": "Adresse e-mail",
+          "password": "Mot de passe"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Échec de la connexion au serveur Ajax. Vérifiez votre connexion Internet.",
+      "invalid_auth": "Identifiants incorrects. Vérifiez votre adresse e-mail et votre mot de passe.",
+      "unknown": "Erreur inattendue. Consultez les journaux pour plus de détails."
+    },
+    "abort": {
+      "already_configured": "Ce compte Ajax est déjà configuré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Ajax",
+        "description": "Configurez les options de votre intégration Ajax",
+        "data": {
+          "update_interval": "Intervalle de mise à jour (secondes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "alarm_control_panel": {
+      "ajax": {
+        "state": {
+          "armed": "Armé",
+          "disarmed": "Désarmé",
+          "arming": "Armement en cours",
+          "disarming": "Désarmement en cours",
+          "triggered": "Déclenchée",
+          "pending": "En attente"
+        },
+        "state_attributes": {
+          "security_state": {
+            "name": "État de sécurité",
+            "state": {
+              "armed": "Armé",
+              "disarmed": "Désarmé",
+              "night_mode": "Mode nuit",
+              "partially_armed": "Armement partiel",
+              "awaiting_app_exit_timer": "En attente de la sortie",
+              "awaiting_second_stage_confirmation": "En attente de confirmation",
+              "two_stage_arming_incomplete": "Armement en 2 étapes incomplet",
+              "awaiting_vds_arming_completion": "En attente de l'armement VDS"
+            }
+          },
+          "hub_connection_status": {
+            "name": "État de connexion du hub",
+            "state": {
+              "online": "En ligne",
+              "offline": "Hors ligne",
+              "unknown": "Inconnu"
+            }
+          },
+          "new_notifications_count": {
+            "name": "Nouvelles notifications"
+          },
+          "malfunctions_count": {
+            "name": "Dysfonctionnements"
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "motion": {
+        "name": "Détecteur de mouvement"
+      },
+      "door": {
+        "name": "Détecteur d'ouverture de porte"
+      },
+      "window": {
+        "name": "Détecteur d'ouverture de fenêtre"
+      },
+      "smoke": {
+        "name": "Détecteur de fumée"
+      },
+      "gas": {
+        "name": "Détecteur de gaz"
+      },
+      "water": {
+        "name": "Détecteur d'inondation"
+      },
+      "glass_break": {
+        "name": "Détecteur de bris de vitre"
+      },
+      "connection": {
+        "name": "Connexion hub",
+        "state": {
+          "on": "Connecté",
+          "off": "Déconnecté"
+        }
+      },
+      "system_problems": {
+        "name": "Problèmes système",
+        "state": {
+          "on": "Problèmes détectés",
+          "off": "Aucun problème"
+        },
+        "state_attributes": {
+          "total_malfunctions": {
+            "name": "Total dysfonctionnements"
+          },
+          "devices_with_problems": {
+            "name": "Dispositifs avec problèmes"
+          },
+          "problem_devices": {
+            "name": "Liste des dispositifs"
+          }
+        }
+      }
+    },
+    "sensor": {
+      "total_devices": {
+        "name": "Nombre total de dispositifs"
+      },
+      "online_devices": {
+        "name": "Dispositifs en ligne"
+      },
+      "devices_with_malfunctions": {
+        "name": "Dispositifs avec dysfonctionnements"
+      },
+      "unread_notifications": {
+        "name": "Notifications non lues"
+      },
+      "bypassed_devices": {
+        "name": "Dispositifs bypassés"
+      },
+      "temperature": {
+        "name": "Température"
+      },
+      "humidity": {
+        "name": "Humidité"
+      },
+      "battery": {
+        "name": "Batterie"
+      },
+      "signal_strength": {
+        "name": "Force du signal"
+      },
+      "malfunctions": {
+        "name": "Dysfonctionnements"
+      },
+      "firmware_version": {
+        "name": "Version du firmware"
+      },
+      "hardware_version": {
+        "name": "Version matérielle"
+      },
+      "sim_status": {
+        "name": "État des cartes SIM",
+        "state_attributes": {
+          "sim_slots_total": {
+            "name": "Emplacements SIM totaux"
+          },
+          "sim_slots_used": {
+            "name": "Emplacements SIM utilisés"
+          },
+          "sim_cards": {
+            "name": "Détails des cartes SIM"
+          }
+        }
+      },
+      "battery_state": {
+        "name": "État de la batterie"
+      },
+      "device_color": {
+        "name": "Couleur du dispositif"
+      },
+      "device_label": {
+        "name": "Étiquette du dispositif"
+      },
+      "device_marketing_id": {
+        "name": "ID marketing du dispositif"
+      },
+      "gsm_signal_level": {
+        "name": "Signal cellulaire (GSM)"
+      },
+      "wifi_signal_level": {
+        "name": "Signal Wi-Fi"
+      },
+      "active_connection": {
+        "name": "Connexion active"
+      },
+      "network_status": {
+        "name": "Réseau mobile"
+      },
+      "noise_level_avg": {
+        "name": "Niveau de bruit moyen",
+        "state_attributes": {
+          "channel1": {
+            "name": "Canal 1"
+          },
+          "channel2": {
+            "name": "Canal 2"
+          },
+          "high": {
+            "name": "Bruit élevé"
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "system_problems": {
+        "name": "Problèmes système"
+      },
+      "tamper": {
+        "name": "Couvercle"
+      },
+      "external_power": {
+        "name": "Alimentation externe"
+      }
+    }
+  },
+  "services": {
+    "arm": {
+      "name": "Armer",
+      "description": "Arme le système Ajax"
+    },
+    "disarm": {
+      "name": "Désarmer",
+      "description": "Désarme le système Ajax"
+    },
+    "arm_night": {
+      "name": "Mode nuit",
+      "description": "Active le mode nuit"
+    },
+    "arm_partial": {
+      "name": "Armement partiel",
+      "description": "Active l'armement partiel"
+    }
+  }
+}

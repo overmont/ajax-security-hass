@@ -1,0 +1,14 @@
+from google.protobuf import empty_pb2 as _empty_pb2
+from v1.facility import facility_search_request_pb2 as _facility_search_request_pb2
+from v1.facility import facility_search_response_pb2 as _facility_search_response_pb2
+from v1.facility import facility_stream_request_pb2 as _facility_stream_request_pb2
+from v1.facility import facility_stream_response_pb2 as _facility_stream_response_pb2
+from v1.facility import facility_update_request_pb2 as _facility_update_request_pb2
+from v1.facility import facility_update_response_pb2 as _facility_update_response_pb2
+from v1.facility import facility_access_rights_request_pb2 as _facility_access_rights_request_pb2
+from v1.facility import facility_stream_notes_request_pb2 as _facility_stream_notes_request_pb2
+from v1.facility import facility_stream_notes_response_pb2 as _facility_stream_notes_response_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor

@@ -1,0 +1,6 @@
+from systems.ajax.mobile.v2.service.hub.company.privacy import change_survelilance_cameras_company_access_pb2 as _change_survelilance_cameras_company_access_pb2
+from systems.ajax.mobile.v2.service.hub.company.privacy import change_photo_on_demand_company_access_pb2 as _change_photo_on_demand_company_access_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor

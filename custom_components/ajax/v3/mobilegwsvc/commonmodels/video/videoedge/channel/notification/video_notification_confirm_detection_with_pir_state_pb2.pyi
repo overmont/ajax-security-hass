@@ -1,0 +1,14 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class VideoNotificationConfirmDetectionWithPirState(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    VIDEO_NOTIFICATION_CONFIRM_DETECTION_WITH_PIR_STATE_UNSPECIFIED: _ClassVar[VideoNotificationConfirmDetectionWithPirState]
+    VIDEO_NOTIFICATION_CONFIRM_DETECTION_WITH_PIR_STATE_DISABLED: _ClassVar[VideoNotificationConfirmDetectionWithPirState]
+    VIDEO_NOTIFICATION_CONFIRM_DETECTION_WITH_PIR_STATE_ENABLED: _ClassVar[VideoNotificationConfirmDetectionWithPirState]
+VIDEO_NOTIFICATION_CONFIRM_DETECTION_WITH_PIR_STATE_UNSPECIFIED: VideoNotificationConfirmDetectionWithPirState
+VIDEO_NOTIFICATION_CONFIRM_DETECTION_WITH_PIR_STATE_DISABLED: VideoNotificationConfirmDetectionWithPirState
+VIDEO_NOTIFICATION_CONFIRM_DETECTION_WITH_PIR_STATE_ENABLED: VideoNotificationConfirmDetectionWithPirState

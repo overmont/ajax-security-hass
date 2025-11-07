@@ -1,0 +1,14 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class ExtraServicesAvailabilityStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    EXTRA_SERVICES_AVAILABILITY_STATUS_UNSPECIFIED: _ClassVar[ExtraServicesAvailabilityStatus]
+    EXTRA_SERVICES_AVAILABILITY_STATUS_AVAILABLE: _ClassVar[ExtraServicesAvailabilityStatus]
+    EXTRA_SERVICES_AVAILABILITY_STATUS_UNAVAILABLE: _ClassVar[ExtraServicesAvailabilityStatus]
+EXTRA_SERVICES_AVAILABILITY_STATUS_UNSPECIFIED: ExtraServicesAvailabilityStatus
+EXTRA_SERVICES_AVAILABILITY_STATUS_AVAILABLE: ExtraServicesAvailabilityStatus
+EXTRA_SERVICES_AVAILABILITY_STATUS_UNAVAILABLE: ExtraServicesAvailabilityStatus

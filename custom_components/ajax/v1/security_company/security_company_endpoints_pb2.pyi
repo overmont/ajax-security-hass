@@ -1,0 +1,10 @@
+from v1.security_company import get_companies_request_pb2 as _get_companies_request_pb2
+from v1.security_company import get_companies_response_pb2 as _get_companies_response_pb2
+from v1.security_company import get_company_request_pb2 as _get_company_request_pb2
+from v1.security_company import search_company_request_pb2 as _search_company_request_pb2
+from v1.security_company import search_company_response_pb2 as _search_company_response_pb2
+from v1.security_company import security_company_pb2 as _security_company_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor

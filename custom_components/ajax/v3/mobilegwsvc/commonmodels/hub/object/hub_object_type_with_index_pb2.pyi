@@ -1,0 +1,24 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class HubObjectTypeWithIndex(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    HUB_OBJECT_TYPE_WITH_INDEX_UNSPECIFIED: _ClassVar[HubObjectTypeWithIndex]
+    HUB_OBJECT_TYPE_WITH_INDEX_USER: _ClassVar[HubObjectTypeWithIndex]
+    HUB_OBJECT_TYPE_WITH_INDEX_PRO: _ClassVar[HubObjectTypeWithIndex]
+    HUB_OBJECT_TYPE_WITH_INDEX_INSTALLATION_COMPANY: _ClassVar[HubObjectTypeWithIndex]
+    HUB_OBJECT_TYPE_WITH_INDEX_MONITORING_COMPANY: _ClassVar[HubObjectTypeWithIndex]
+    HUB_OBJECT_TYPE_WITH_INDEX_ACCESS_CARD: _ClassVar[HubObjectTypeWithIndex]
+    HUB_OBJECT_TYPE_WITH_INDEX_ACCESS_KEY: _ClassVar[HubObjectTypeWithIndex]
+    HUB_OBJECT_TYPE_WITH_INDEX_ACCESS_CODE: _ClassVar[HubObjectTypeWithIndex]
+HUB_OBJECT_TYPE_WITH_INDEX_UNSPECIFIED: HubObjectTypeWithIndex
+HUB_OBJECT_TYPE_WITH_INDEX_USER: HubObjectTypeWithIndex
+HUB_OBJECT_TYPE_WITH_INDEX_PRO: HubObjectTypeWithIndex
+HUB_OBJECT_TYPE_WITH_INDEX_INSTALLATION_COMPANY: HubObjectTypeWithIndex
+HUB_OBJECT_TYPE_WITH_INDEX_MONITORING_COMPANY: HubObjectTypeWithIndex
+HUB_OBJECT_TYPE_WITH_INDEX_ACCESS_CARD: HubObjectTypeWithIndex
+HUB_OBJECT_TYPE_WITH_INDEX_ACCESS_KEY: HubObjectTypeWithIndex
+HUB_OBJECT_TYPE_WITH_INDEX_ACCESS_CODE: HubObjectTypeWithIndex

@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Ajax",
+        "description": "Connect your Ajax security system to Home Assistant",
+        "data": {
+          "email": "Email address",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Ajax server. Check your internet connection.",
+      "invalid_auth": "Invalid credentials. Check your email and password.",
+      "unknown": "Unexpected error. Check the logs for more details."
+    },
+    "abort": {
+      "already_configured": "This Ajax account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ajax Options",
+        "description": "Configure your Ajax integration options",
+        "data": {
+          "update_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  }
+}

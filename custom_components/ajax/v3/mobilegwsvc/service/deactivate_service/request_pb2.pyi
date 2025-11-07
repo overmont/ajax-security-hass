@@ -1,0 +1,18 @@
+from systems.ajax.api.mobile.v2.common.accounting import feature_target_pb2 as _feature_target_pb2
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class DeactivateServiceRequest(_message.Message):
+    __slots__ = ("feature_target_id", "feature_target", "feature_id", "package_id")
+    FEATURE_TARGET_ID_FIELD_NUMBER: _ClassVar[int]
+    FEATURE_TARGET_FIELD_NUMBER: _ClassVar[int]
+    FEATURE_ID_FIELD_NUMBER: _ClassVar[int]
+    PACKAGE_ID_FIELD_NUMBER: _ClassVar[int]
+    feature_target_id: str
+    feature_target: _feature_target_pb2.FeatureTarget
+    feature_id: str
+    package_id: str
+    def __init__(self, feature_target_id: _Optional[str] = ..., feature_target: _Optional[_Union[_feature_target_pb2.FeatureTarget, str]] = ..., feature_id: _Optional[str] = ..., package_id: _Optional[str] = ...) -> None: ...

@@ -1,0 +1,38 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class SystemInfoFlag(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    SYSTEM_INFO_FLAG_UNSPECIFIED: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_HAVE_RESOLVER: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_SUPPORTS_MOTION_EVENTS: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_SUPPORTS_PIR_MOTION_EVENTS: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_SUPPORTS_OBJECT_DETECTION_EVENTS: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_SUPPORTS_RING_BUTTON_EVENTS: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_SUPPORTS_CLOUD_ARCHIVE_RECORDING: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_HAVE_ONVIF_SNAPSHOT: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_HAVE_RTSP_SNAPSHOT: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_HAVE_FANS: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_HAVE_CRYPTO_SNAPSHOT: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_HAVE_LOCAL_USERS: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_HAVE_NO_LID: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_HAVE_ACCELEROMETER: _ClassVar[SystemInfoFlag]
+    SYSTEM_INFO_FLAG_HAVE_FANS_V2: _ClassVar[SystemInfoFlag]
+SYSTEM_INFO_FLAG_UNSPECIFIED: SystemInfoFlag
+SYSTEM_INFO_FLAG_HAVE_RESOLVER: SystemInfoFlag
+SYSTEM_INFO_FLAG_SUPPORTS_MOTION_EVENTS: SystemInfoFlag
+SYSTEM_INFO_FLAG_SUPPORTS_PIR_MOTION_EVENTS: SystemInfoFlag
+SYSTEM_INFO_FLAG_SUPPORTS_OBJECT_DETECTION_EVENTS: SystemInfoFlag
+SYSTEM_INFO_FLAG_SUPPORTS_RING_BUTTON_EVENTS: SystemInfoFlag
+SYSTEM_INFO_FLAG_SUPPORTS_CLOUD_ARCHIVE_RECORDING: SystemInfoFlag
+SYSTEM_INFO_FLAG_HAVE_ONVIF_SNAPSHOT: SystemInfoFlag
+SYSTEM_INFO_FLAG_HAVE_RTSP_SNAPSHOT: SystemInfoFlag
+SYSTEM_INFO_FLAG_HAVE_FANS: SystemInfoFlag
+SYSTEM_INFO_FLAG_HAVE_CRYPTO_SNAPSHOT: SystemInfoFlag
+SYSTEM_INFO_FLAG_HAVE_LOCAL_USERS: SystemInfoFlag
+SYSTEM_INFO_FLAG_HAVE_NO_LID: SystemInfoFlag
+SYSTEM_INFO_FLAG_HAVE_ACCELEROMETER: SystemInfoFlag
+SYSTEM_INFO_FLAG_HAVE_FANS_V2: SystemInfoFlag

@@ -1,0 +1,484 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class HubNotificationSourceType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    HUB_SOURCE_TYPE_UNSPECIFIED: _ClassVar[HubNotificationSourceType]
+    HUB: _ClassVar[HubNotificationSourceType]
+    HUB_PLUS: _ClassVar[HubNotificationSourceType]
+    YAVIR: _ClassVar[HubNotificationSourceType]
+    YAVIR_PLUS: _ClassVar[HubNotificationSourceType]
+    HUB_2: _ClassVar[HubNotificationSourceType]
+    HUB_2_PLUS: _ClassVar[HubNotificationSourceType]
+    HUB_3: _ClassVar[HubNotificationSourceType]
+    HUB_FIBRA: _ClassVar[HubNotificationSourceType]
+    HUB_LITE: _ClassVar[HubNotificationSourceType]
+    HUB_2_4G: _ClassVar[HubNotificationSourceType]
+    HUB_HYBRID_4G: _ClassVar[HubNotificationSourceType]
+    USER: _ClassVar[HubNotificationSourceType]
+    INSTALLATION_COMPANY: _ClassVar[HubNotificationSourceType]
+    GROUP: _ClassVar[HubNotificationSourceType]
+    ROOM: _ClassVar[HubNotificationSourceType]
+    CAMERA: _ClassVar[HubNotificationSourceType]
+    WIRE_INPUT: _ClassVar[HubNotificationSourceType]
+    WIRE_SIREN: _ClassVar[HubNotificationSourceType]
+    YAVIR_ACCESS_CONTROL: _ClassVar[HubNotificationSourceType]
+    ACCESS_KEY: _ClassVar[HubNotificationSourceType]
+    SCENARIO: _ClassVar[HubNotificationSourceType]
+    COMPANY_BINDING: _ClassVar[HubNotificationSourceType]
+    SCHEDULE: _ClassVar[HubNotificationSourceType]
+    CONFIG_MIGRATION: _ClassVar[HubNotificationSourceType]
+    ACCESS_CARD: _ClassVar[HubNotificationSourceType]
+    DOOR_PROTECT: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT: _ClassVar[HubNotificationSourceType]
+    GLASS_PROTECT: _ClassVar[HubNotificationSourceType]
+    LEAKS_PROTECT: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_CURTAIN: _ClassVar[HubNotificationSourceType]
+    RANGE_EXTENDER: _ClassVar[HubNotificationSourceType]
+    COMBI_PROTECT: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_PLUS: _ClassVar[HubNotificationSourceType]
+    KEYBOARD: _ClassVar[HubNotificationSourceType]
+    SPACE_CONTROL: _ClassVar[HubNotificationSourceType]
+    BUTTON: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_PHOD: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_FIBRA_BASE: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_FIBRA: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_PHOD_FIBRA: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_PLUS: _ClassVar[HubNotificationSourceType]
+    DOOR_PROTECT_PLUS: _ClassVar[HubNotificationSourceType]
+    UNIVERSAL_DEVICE: _ClassVar[HubNotificationSourceType]
+    TRANSMITTER: _ClassVar[HubNotificationSourceType]
+    REMOTE_SOCKET: _ClassVar[HubNotificationSourceType]
+    WALL_SWITCH: _ClassVar[HubNotificationSourceType]
+    RELAY: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_OUTDOOR: _ClassVar[HubNotificationSourceType]
+    STREET_SIREN: _ClassVar[HubNotificationSourceType]
+    HOME_SIREN: _ClassVar[HubNotificationSourceType]
+    STOVE_GUARD_SENSOR: _ClassVar[HubNotificationSourceType]
+    STOVE_GUARD_SWITCH: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_OUTDOOR: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_OUTDOOR_PHOD: _ClassVar[HubNotificationSourceType]
+    KEYPAD_PLUS: _ClassVar[HubNotificationSourceType]
+    DUAL_CURTAIN_OUTDOOR: _ClassVar[HubNotificationSourceType]
+    STREET_SIREN_DOUBLE_DECK: _ClassVar[HubNotificationSourceType]
+    MULTI_TRANSMITTER: _ClassVar[HubNotificationSourceType]
+    MULTI_TRANSMITTER_FIBRA: _ClassVar[HubNotificationSourceType]
+    WIRE_INPUT_MT: _ClassVar[HubNotificationSourceType]
+    ACCESS_CODE: _ClassVar[HubNotificationSourceType]
+    DOUBLE_BUTTON: _ClassVar[HubNotificationSourceType]
+    KEYPAD_COMBI: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_BASE: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_ONE_GANG: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_TWO_GANG: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_TWO_WAY: _ClassVar[HubNotificationSourceType]
+    VHF_BRIDGE: _ClassVar[HubNotificationSourceType]
+    RANGE_EXTENDER_2: _ClassVar[HubNotificationSourceType]
+    LIFE_QUALITY: _ClassVar[HubNotificationSourceType]
+    LIFE_QUALITY_PLUS: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_BASE: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_SB: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_PLUS: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_PLUS_SB: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HRB: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HSB: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_CRB: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_CSB: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HCRB: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HCSB: _ClassVar[HubNotificationSourceType]
+    COMBI_PROTECT_FIBRA: _ClassVar[HubNotificationSourceType]
+    KEYBOARD_FIBRA: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_PLUS_FIBRA: _ClassVar[HubNotificationSourceType]
+    DOOR_PROTECT_PLUS_FIBRA: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_FIBRA: _ClassVar[HubNotificationSourceType]
+    DOOR_PROTECT_FIBRA: _ClassVar[HubNotificationSourceType]
+    GLASS_PROTECT_FIBRA: _ClassVar[HubNotificationSourceType]
+    HOME_SIREN_FIBRA: _ClassVar[HubNotificationSourceType]
+    STREET_SIREN_FIBRA: _ClassVar[HubNotificationSourceType]
+    STREET_SIREN_DOUBLE_DECK_FIBRA: _ClassVar[HubNotificationSourceType]
+    SOCKET_BASE: _ClassVar[HubNotificationSourceType]
+    SOCKET_TYPE_G: _ClassVar[HubNotificationSourceType]
+    SOCKET_TYPE_G_PLUS: _ClassVar[HubNotificationSourceType]
+    VIDEO_EDGE: _ClassVar[HubNotificationSourceType]
+    THRESHOLD: _ClassVar[HubNotificationSourceType]
+    WATER_STOP_BASE: _ClassVar[HubNotificationSourceType]
+    WATER_STOP: _ClassVar[HubNotificationSourceType]
+    LINE_FIBRA_BASE: _ClassVar[HubNotificationSourceType]
+    LINE_SPLIT_FIBRA: _ClassVar[HubNotificationSourceType]
+    LINE_PROTECT_FIBRA: _ClassVar[HubNotificationSourceType]
+    KEYPAD_TOUCHSCREEN: _ClassVar[HubNotificationSourceType]
+    SOCKET_OUTLET_TYPE_F: _ClassVar[HubNotificationSourceType]
+    SOCKET_OUTLET_TYPE_E: _ClassVar[HubNotificationSourceType]
+    RELAY_FIBRA_BASE: _ClassVar[HubNotificationSourceType]
+    FOUR_CHANNELS_RELAY_FIBRA: _ClassVar[HubNotificationSourceType]
+    BUS: _ClassVar[HubNotificationSourceType]
+    KEYPAD_BASE: _ClassVar[HubNotificationSourceType]
+    DOOR_PROTECT_S: _ClassVar[HubNotificationSourceType]
+    DOOR_PROTECT_S_PLUS: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_S: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_S_PLUS: _ClassVar[HubNotificationSourceType]
+    GLASS_PROTECT_S: _ClassVar[HubNotificationSourceType]
+    COMBI_PROTECT_S: _ClassVar[HubNotificationSourceType]
+    BUTTON_S: _ClassVar[HubNotificationSourceType]
+    KEYPAD_S_PLUS: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_S_PHOD: _ClassVar[HubNotificationSourceType]
+    HOME_SIREN_S: _ClassVar[HubNotificationSourceType]
+    STREET_SIREN_S_DOUBLE_DECK: _ClassVar[HubNotificationSourceType]
+    DOOR_PROTECT_PLUS_G3_FIBRA: _ClassVar[HubNotificationSourceType]
+    LINE_SUPPLY_FIBRA_BASE: _ClassVar[HubNotificationSourceType]
+    ONE_CHANNEL_LINE_SUPPLY_FIBRA: _ClassVar[HubNotificationSourceType]
+    KEYPAD_BEEP: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_C_RB_UL: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_H_RB_UL: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HSC_RB_UL: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HSC_SB_UL: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HS_RB_UL: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HS_SB_UL: _ClassVar[HubNotificationSourceType]
+    SECURITY_MANAGEMENT: _ClassVar[HubNotificationSourceType]
+    KEYARM: _ClassVar[HubNotificationSourceType]
+    TRANSMITTER_FIBRA_BASE: _ClassVar[HubNotificationSourceType]
+    TRANSMITTER_FIBRA_TWO_CHANNELS: _ClassVar[HubNotificationSourceType]
+    WIRE_INPUT_RS: _ClassVar[HubNotificationSourceType]
+    ACCESS_RRU_CODE: _ClassVar[HubNotificationSourceType]
+    SWITCH_BASE: _ClassVar[HubNotificationSourceType]
+    SWITCH_BASE_ALARM: _ClassVar[HubNotificationSourceType]
+    SWITCH_BASE_MCP_FIRE: _ClassVar[HubNotificationSourceType]
+    SWITCH_BASE_MCP_FIRE_LOCAL: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HS_AC: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HSC_AC: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_C_AC: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_H_AC: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HC_AC: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HS_AC_UL: _ClassVar[HubNotificationSourceType]
+    FIRE_PROTECT_2_HSC_AC_UL: _ClassVar[HubNotificationSourceType]
+    SOCKET_TYPE_B: _ClassVar[HubNotificationSourceType]
+    TWO_CHANNELS_LINE_SUPPLY_FIBRA: _ClassVar[HubNotificationSourceType]
+    KEYPAD_TOUCHSCREEN_FIBRA: _ClassVar[HubNotificationSourceType]
+    HUB_4G: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_TWO_CHANNEL_TWO_WAY: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_CROSSOVER: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_OUTDOOR_TWO_FOUR_PHOD: _ClassVar[HubNotificationSourceType]
+    VOICE_BASE: _ClassVar[HubNotificationSourceType]
+    VOICE_MODULE: _ClassVar[HubNotificationSourceType]
+    SPEAKERPHONE: _ClassVar[HubNotificationSourceType]
+    HUB_VOID_4G: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_CURTAIN_BASE: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_CURTAIN_OUTDOOR_BASE: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_CURTAIN_OUTDOOR_PLUS: _ClassVar[HubNotificationSourceType]
+    SWITCH_BASE_MCP_SCENARIO_YELLOW: _ClassVar[HubNotificationSourceType]
+    SWITCH_BASE_MCP_SCENARIO_GREEN: _ClassVar[HubNotificationSourceType]
+    SWITCH_BASE_MCP_SCENARIO_WHITE: _ClassVar[HubNotificationSourceType]
+    CROSS_ZONE: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_DIMMER: _ClassVar[HubNotificationSourceType]
+    DOOR_PROTECT_G3: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_G3_FIBRA: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_VIDEO_BASE: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_VIDEO_DOORBELL: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_ONE_GANG_NA: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_THREE_WAY_NA: _ClassVar[HubNotificationSourceType]
+    LIGHT_SWITCH_FOUR_WAY_NA: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_HD: _ClassVar[HubNotificationSourceType]
+    KEYPAD_OUTDOOR_BASE: _ClassVar[HubNotificationSourceType]
+    KEYPAD_OUTDOOR: _ClassVar[HubNotificationSourceType]
+    KEYPAD_OUTDOOR_FIBRA: _ClassVar[HubNotificationSourceType]
+    SIP_BASE: _ClassVar[HubNotificationSourceType]
+    SIP_SERVER: _ClassVar[HubNotificationSourceType]
+    SIP_OPERATOR: _ClassVar[HubNotificationSourceType]
+    STREET_SIREN_S: _ClassVar[HubNotificationSourceType]
+    SEISMO_PROTECT_FIBRA_BASE: _ClassVar[HubNotificationSourceType]
+    SEISMO_PROTECT_G3_FIBRA: _ClassVar[HubNotificationSourceType]
+    STREET_SIREN_PLUS_FIBRA: _ClassVar[HubNotificationSourceType]
+    TRANSMITTER_FIBRA_FOUR_CHANNELS: _ClassVar[HubNotificationSourceType]
+    TRANSMITTER_FIBRA_FOUR_CHANNELS_INPUT_OUTPUT: _ClassVar[HubNotificationSourceType]
+    TRANSMITTER_FIBRA_FOUR_CHANNELS_ONE_RELAY: _ClassVar[HubNotificationSourceType]
+    TRANSMITTER_FIBRA_FOUR_CHANNELS_TWO_RELAYS: _ClassVar[HubNotificationSourceType]
+    TRANSMITTER_FIBRA_FOUR_CHANNELS_TWO_RELAYS_TWO_LOGICAL: _ClassVar[HubNotificationSourceType]
+    HUB_FIRE: _ClassVar[HubNotificationSourceType]
+    EN54_FIRE_BASE: _ClassVar[HubNotificationSourceType]
+    EN54_A: _ClassVar[HubNotificationSourceType]
+    EN54_VA: _ClassVar[HubNotificationSourceType]
+    FIRE_ZONE: _ClassVar[HubNotificationSourceType]
+    EN54_V: _ClassVar[HubNotificationSourceType]
+    EN54_H_VA: _ClassVar[HubNotificationSourceType]
+    EN54_H: _ClassVar[HubNotificationSourceType]
+    EN54_H_V: _ClassVar[HubNotificationSourceType]
+    EN54_H_A: _ClassVar[HubNotificationSourceType]
+    EN54_HS_VA: _ClassVar[HubNotificationSourceType]
+    EN54_S: _ClassVar[HubNotificationSourceType]
+    EN54_S_V: _ClassVar[HubNotificationSourceType]
+    EN54_S_A: _ClassVar[HubNotificationSourceType]
+    SPACE_CONTROL_S: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_S_PHOD_AM: _ClassVar[HubNotificationSourceType]
+    HUB_2_LTE_RTK: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_SUPERIOR_PHOD: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_VIDEO_INDOOR: _ClassVar[HubNotificationSourceType]
+    EN54_IO_MODULE_BASE: _ClassVar[HubNotificationSourceType]
+    EN54_IO_MODULE_TWO_IN_TWO_OUT: _ClassVar[HubNotificationSourceType]
+    FIRE_WIRE_INPUT_BASE: _ClassVar[HubNotificationSourceType]
+    EN54_WIRE_INPUT: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_G3_FIBRA_NEW: _ClassVar[HubNotificationSourceType]
+    HUB_MEGA: _ClassVar[HubNotificationSourceType]
+    EN54_FIRE_ZONE: _ClassVar[HubNotificationSourceType]
+    SCHEDULED_ACCESS: _ClassVar[HubNotificationSourceType]
+    DOUBLE_BUTTON_G3: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_CURTAIN_OUTDOOR_MINI: _ClassVar[HubNotificationSourceType]
+    HUB_SUPERIOR: _ClassVar[HubNotificationSourceType]
+    STREET_SIREN_PLUS_G3: _ClassVar[HubNotificationSourceType]
+    HOME_SIREN_G3: _ClassVar[HubNotificationSourceType]
+    MOTION_CAM_G3: _ClassVar[HubNotificationSourceType]
+    KEYPAD_PLUS_G3: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_G3: _ClassVar[HubNotificationSourceType]
+    MOTION_PROTECT_PLUS_G3: _ClassVar[HubNotificationSourceType]
+    DAY_ALARM_ZONE: _ClassVar[HubNotificationSourceType]
+    HUB_HYBRID_2: _ClassVar[HubNotificationSourceType]
+    SMART_LOCK: _ClassVar[HubNotificationSourceType]
+    SMART_LOCK_YALE: _ClassVar[HubNotificationSourceType]
+    KEYPAD_TOUCHSCREEN_G3: _ClassVar[HubNotificationSourceType]
+    RANGE_EXTENDER_2_FIRE: _ClassVar[HubNotificationSourceType]
+    CURTAIN_CAM_OUTDOOR_HM_PHOD: _ClassVar[HubNotificationSourceType]
+    MULTI_TRANSMITTER_G3: _ClassVar[HubNotificationSourceType]
+    RANGE_EXTENDER_2_RB: _ClassVar[HubNotificationSourceType]
+    RANGE_EXTENDER_2_S: _ClassVar[HubNotificationSourceType]
+HUB_SOURCE_TYPE_UNSPECIFIED: HubNotificationSourceType
+HUB: HubNotificationSourceType
+HUB_PLUS: HubNotificationSourceType
+YAVIR: HubNotificationSourceType
+YAVIR_PLUS: HubNotificationSourceType
+HUB_2: HubNotificationSourceType
+HUB_2_PLUS: HubNotificationSourceType
+HUB_3: HubNotificationSourceType
+HUB_FIBRA: HubNotificationSourceType
+HUB_LITE: HubNotificationSourceType
+HUB_2_4G: HubNotificationSourceType
+HUB_HYBRID_4G: HubNotificationSourceType
+USER: HubNotificationSourceType
+INSTALLATION_COMPANY: HubNotificationSourceType
+GROUP: HubNotificationSourceType
+ROOM: HubNotificationSourceType
+CAMERA: HubNotificationSourceType
+WIRE_INPUT: HubNotificationSourceType
+WIRE_SIREN: HubNotificationSourceType
+YAVIR_ACCESS_CONTROL: HubNotificationSourceType
+ACCESS_KEY: HubNotificationSourceType
+SCENARIO: HubNotificationSourceType
+COMPANY_BINDING: HubNotificationSourceType
+SCHEDULE: HubNotificationSourceType
+CONFIG_MIGRATION: HubNotificationSourceType
+ACCESS_CARD: HubNotificationSourceType
+DOOR_PROTECT: HubNotificationSourceType
+MOTION_PROTECT: HubNotificationSourceType
+FIRE_PROTECT: HubNotificationSourceType
+GLASS_PROTECT: HubNotificationSourceType
+LEAKS_PROTECT: HubNotificationSourceType
+MOTION_PROTECT_CURTAIN: HubNotificationSourceType
+RANGE_EXTENDER: HubNotificationSourceType
+COMBI_PROTECT: HubNotificationSourceType
+FIRE_PROTECT_PLUS: HubNotificationSourceType
+KEYBOARD: HubNotificationSourceType
+SPACE_CONTROL: HubNotificationSourceType
+BUTTON: HubNotificationSourceType
+MOTION_CAM: HubNotificationSourceType
+MOTION_CAM_PHOD: HubNotificationSourceType
+MOTION_CAM_FIBRA_BASE: HubNotificationSourceType
+MOTION_CAM_FIBRA: HubNotificationSourceType
+MOTION_CAM_PHOD_FIBRA: HubNotificationSourceType
+MOTION_PROTECT_PLUS: HubNotificationSourceType
+DOOR_PROTECT_PLUS: HubNotificationSourceType
+UNIVERSAL_DEVICE: HubNotificationSourceType
+TRANSMITTER: HubNotificationSourceType
+REMOTE_SOCKET: HubNotificationSourceType
+WALL_SWITCH: HubNotificationSourceType
+RELAY: HubNotificationSourceType
+MOTION_PROTECT_OUTDOOR: HubNotificationSourceType
+STREET_SIREN: HubNotificationSourceType
+HOME_SIREN: HubNotificationSourceType
+STOVE_GUARD_SENSOR: HubNotificationSourceType
+STOVE_GUARD_SWITCH: HubNotificationSourceType
+MOTION_CAM_OUTDOOR: HubNotificationSourceType
+MOTION_CAM_OUTDOOR_PHOD: HubNotificationSourceType
+KEYPAD_PLUS: HubNotificationSourceType
+DUAL_CURTAIN_OUTDOOR: HubNotificationSourceType
+STREET_SIREN_DOUBLE_DECK: HubNotificationSourceType
+MULTI_TRANSMITTER: HubNotificationSourceType
+MULTI_TRANSMITTER_FIBRA: HubNotificationSourceType
+WIRE_INPUT_MT: HubNotificationSourceType
+ACCESS_CODE: HubNotificationSourceType
+DOUBLE_BUTTON: HubNotificationSourceType
+KEYPAD_COMBI: HubNotificationSourceType
+LIGHT_SWITCH_BASE: HubNotificationSourceType
+LIGHT_SWITCH_ONE_GANG: HubNotificationSourceType
+LIGHT_SWITCH_TWO_GANG: HubNotificationSourceType
+LIGHT_SWITCH_TWO_WAY: HubNotificationSourceType
+VHF_BRIDGE: HubNotificationSourceType
+RANGE_EXTENDER_2: HubNotificationSourceType
+LIFE_QUALITY: HubNotificationSourceType
+LIFE_QUALITY_PLUS: HubNotificationSourceType
+FIRE_PROTECT_2_BASE: HubNotificationSourceType
+FIRE_PROTECT_2: HubNotificationSourceType
+FIRE_PROTECT_2_SB: HubNotificationSourceType
+FIRE_PROTECT_2_PLUS: HubNotificationSourceType
+FIRE_PROTECT_2_PLUS_SB: HubNotificationSourceType
+FIRE_PROTECT_2_HRB: HubNotificationSourceType
+FIRE_PROTECT_2_HSB: HubNotificationSourceType
+FIRE_PROTECT_2_CRB: HubNotificationSourceType
+FIRE_PROTECT_2_CSB: HubNotificationSourceType
+FIRE_PROTECT_2_HCRB: HubNotificationSourceType
+FIRE_PROTECT_2_HCSB: HubNotificationSourceType
+COMBI_PROTECT_FIBRA: HubNotificationSourceType
+KEYBOARD_FIBRA: HubNotificationSourceType
+MOTION_PROTECT_PLUS_FIBRA: HubNotificationSourceType
+DOOR_PROTECT_PLUS_FIBRA: HubNotificationSourceType
+MOTION_PROTECT_FIBRA: HubNotificationSourceType
+DOOR_PROTECT_FIBRA: HubNotificationSourceType
+GLASS_PROTECT_FIBRA: HubNotificationSourceType
+HOME_SIREN_FIBRA: HubNotificationSourceType
+STREET_SIREN_FIBRA: HubNotificationSourceType
+STREET_SIREN_DOUBLE_DECK_FIBRA: HubNotificationSourceType
+SOCKET_BASE: HubNotificationSourceType
+SOCKET_TYPE_G: HubNotificationSourceType
+SOCKET_TYPE_G_PLUS: HubNotificationSourceType
+VIDEO_EDGE: HubNotificationSourceType
+THRESHOLD: HubNotificationSourceType
+WATER_STOP_BASE: HubNotificationSourceType
+WATER_STOP: HubNotificationSourceType
+LINE_FIBRA_BASE: HubNotificationSourceType
+LINE_SPLIT_FIBRA: HubNotificationSourceType
+LINE_PROTECT_FIBRA: HubNotificationSourceType
+KEYPAD_TOUCHSCREEN: HubNotificationSourceType
+SOCKET_OUTLET_TYPE_F: HubNotificationSourceType
+SOCKET_OUTLET_TYPE_E: HubNotificationSourceType
+RELAY_FIBRA_BASE: HubNotificationSourceType
+FOUR_CHANNELS_RELAY_FIBRA: HubNotificationSourceType
+BUS: HubNotificationSourceType
+KEYPAD_BASE: HubNotificationSourceType
+DOOR_PROTECT_S: HubNotificationSourceType
+DOOR_PROTECT_S_PLUS: HubNotificationSourceType
+MOTION_PROTECT_S: HubNotificationSourceType
+MOTION_PROTECT_S_PLUS: HubNotificationSourceType
+GLASS_PROTECT_S: HubNotificationSourceType
+COMBI_PROTECT_S: HubNotificationSourceType
+BUTTON_S: HubNotificationSourceType
+KEYPAD_S_PLUS: HubNotificationSourceType
+MOTION_CAM_S_PHOD: HubNotificationSourceType
+HOME_SIREN_S: HubNotificationSourceType
+STREET_SIREN_S_DOUBLE_DECK: HubNotificationSourceType
+DOOR_PROTECT_PLUS_G3_FIBRA: HubNotificationSourceType
+LINE_SUPPLY_FIBRA_BASE: HubNotificationSourceType
+ONE_CHANNEL_LINE_SUPPLY_FIBRA: HubNotificationSourceType
+KEYPAD_BEEP: HubNotificationSourceType
+FIRE_PROTECT_2_C_RB_UL: HubNotificationSourceType
+FIRE_PROTECT_2_H_RB_UL: HubNotificationSourceType
+FIRE_PROTECT_2_HSC_RB_UL: HubNotificationSourceType
+FIRE_PROTECT_2_HSC_SB_UL: HubNotificationSourceType
+FIRE_PROTECT_2_HS_RB_UL: HubNotificationSourceType
+FIRE_PROTECT_2_HS_SB_UL: HubNotificationSourceType
+SECURITY_MANAGEMENT: HubNotificationSourceType
+KEYARM: HubNotificationSourceType
+TRANSMITTER_FIBRA_BASE: HubNotificationSourceType
+TRANSMITTER_FIBRA_TWO_CHANNELS: HubNotificationSourceType
+WIRE_INPUT_RS: HubNotificationSourceType
+ACCESS_RRU_CODE: HubNotificationSourceType
+SWITCH_BASE: HubNotificationSourceType
+SWITCH_BASE_ALARM: HubNotificationSourceType
+SWITCH_BASE_MCP_FIRE: HubNotificationSourceType
+SWITCH_BASE_MCP_FIRE_LOCAL: HubNotificationSourceType
+FIRE_PROTECT_2_HS_AC: HubNotificationSourceType
+FIRE_PROTECT_2_HSC_AC: HubNotificationSourceType
+FIRE_PROTECT_2_C_AC: HubNotificationSourceType
+FIRE_PROTECT_2_H_AC: HubNotificationSourceType
+FIRE_PROTECT_2_HC_AC: HubNotificationSourceType
+FIRE_PROTECT_2_HS_AC_UL: HubNotificationSourceType
+FIRE_PROTECT_2_HSC_AC_UL: HubNotificationSourceType
+SOCKET_TYPE_B: HubNotificationSourceType
+TWO_CHANNELS_LINE_SUPPLY_FIBRA: HubNotificationSourceType
+KEYPAD_TOUCHSCREEN_FIBRA: HubNotificationSourceType
+HUB_4G: HubNotificationSourceType
+LIGHT_SWITCH_TWO_CHANNEL_TWO_WAY: HubNotificationSourceType
+LIGHT_SWITCH_CROSSOVER: HubNotificationSourceType
+MOTION_CAM_OUTDOOR_TWO_FOUR_PHOD: HubNotificationSourceType
+VOICE_BASE: HubNotificationSourceType
+VOICE_MODULE: HubNotificationSourceType
+SPEAKERPHONE: HubNotificationSourceType
+HUB_VOID_4G: HubNotificationSourceType
+MOTION_PROTECT_CURTAIN_BASE: HubNotificationSourceType
+MOTION_PROTECT_CURTAIN_OUTDOOR_BASE: HubNotificationSourceType
+MOTION_PROTECT_CURTAIN_OUTDOOR_PLUS: HubNotificationSourceType
+SWITCH_BASE_MCP_SCENARIO_YELLOW: HubNotificationSourceType
+SWITCH_BASE_MCP_SCENARIO_GREEN: HubNotificationSourceType
+SWITCH_BASE_MCP_SCENARIO_WHITE: HubNotificationSourceType
+CROSS_ZONE: HubNotificationSourceType
+LIGHT_SWITCH_DIMMER: HubNotificationSourceType
+DOOR_PROTECT_G3: HubNotificationSourceType
+MOTION_PROTECT_G3_FIBRA: HubNotificationSourceType
+MOTION_CAM_VIDEO_BASE: HubNotificationSourceType
+MOTION_CAM_VIDEO_DOORBELL: HubNotificationSourceType
+LIGHT_SWITCH_ONE_GANG_NA: HubNotificationSourceType
+LIGHT_SWITCH_THREE_WAY_NA: HubNotificationSourceType
+LIGHT_SWITCH_FOUR_WAY_NA: HubNotificationSourceType
+MOTION_CAM_HD: HubNotificationSourceType
+KEYPAD_OUTDOOR_BASE: HubNotificationSourceType
+KEYPAD_OUTDOOR: HubNotificationSourceType
+KEYPAD_OUTDOOR_FIBRA: HubNotificationSourceType
+SIP_BASE: HubNotificationSourceType
+SIP_SERVER: HubNotificationSourceType
+SIP_OPERATOR: HubNotificationSourceType
+STREET_SIREN_S: HubNotificationSourceType
+SEISMO_PROTECT_FIBRA_BASE: HubNotificationSourceType
+SEISMO_PROTECT_G3_FIBRA: HubNotificationSourceType
+STREET_SIREN_PLUS_FIBRA: HubNotificationSourceType
+TRANSMITTER_FIBRA_FOUR_CHANNELS: HubNotificationSourceType
+TRANSMITTER_FIBRA_FOUR_CHANNELS_INPUT_OUTPUT: HubNotificationSourceType
+TRANSMITTER_FIBRA_FOUR_CHANNELS_ONE_RELAY: HubNotificationSourceType
+TRANSMITTER_FIBRA_FOUR_CHANNELS_TWO_RELAYS: HubNotificationSourceType
+TRANSMITTER_FIBRA_FOUR_CHANNELS_TWO_RELAYS_TWO_LOGICAL: HubNotificationSourceType
+HUB_FIRE: HubNotificationSourceType
+EN54_FIRE_BASE: HubNotificationSourceType
+EN54_A: HubNotificationSourceType
+EN54_VA: HubNotificationSourceType
+FIRE_ZONE: HubNotificationSourceType
+EN54_V: HubNotificationSourceType
+EN54_H_VA: HubNotificationSourceType
+EN54_H: HubNotificationSourceType
+EN54_H_V: HubNotificationSourceType
+EN54_H_A: HubNotificationSourceType
+EN54_HS_VA: HubNotificationSourceType
+EN54_S: HubNotificationSourceType
+EN54_S_V: HubNotificationSourceType
+EN54_S_A: HubNotificationSourceType
+SPACE_CONTROL_S: HubNotificationSourceType
+MOTION_CAM_S_PHOD_AM: HubNotificationSourceType
+HUB_2_LTE_RTK: HubNotificationSourceType
+MOTION_CAM_SUPERIOR_PHOD: HubNotificationSourceType
+MOTION_CAM_VIDEO_INDOOR: HubNotificationSourceType
+EN54_IO_MODULE_BASE: HubNotificationSourceType
+EN54_IO_MODULE_TWO_IN_TWO_OUT: HubNotificationSourceType
+FIRE_WIRE_INPUT_BASE: HubNotificationSourceType
+EN54_WIRE_INPUT: HubNotificationSourceType
+MOTION_PROTECT_G3_FIBRA_NEW: HubNotificationSourceType
+HUB_MEGA: HubNotificationSourceType
+EN54_FIRE_ZONE: HubNotificationSourceType
+SCHEDULED_ACCESS: HubNotificationSourceType
+DOUBLE_BUTTON_G3: HubNotificationSourceType
+MOTION_PROTECT_CURTAIN_OUTDOOR_MINI: HubNotificationSourceType
+HUB_SUPERIOR: HubNotificationSourceType
+STREET_SIREN_PLUS_G3: HubNotificationSourceType
+HOME_SIREN_G3: HubNotificationSourceType
+MOTION_CAM_G3: HubNotificationSourceType
+KEYPAD_PLUS_G3: HubNotificationSourceType
+MOTION_PROTECT_G3: HubNotificationSourceType
+MOTION_PROTECT_PLUS_G3: HubNotificationSourceType
+DAY_ALARM_ZONE: HubNotificationSourceType
+HUB_HYBRID_2: HubNotificationSourceType
+SMART_LOCK: HubNotificationSourceType
+SMART_LOCK_YALE: HubNotificationSourceType
+KEYPAD_TOUCHSCREEN_G3: HubNotificationSourceType
+RANGE_EXTENDER_2_FIRE: HubNotificationSourceType
+CURTAIN_CAM_OUTDOOR_HM_PHOD: HubNotificationSourceType
+MULTI_TRANSMITTER_G3: HubNotificationSourceType
+RANGE_EXTENDER_2_RB: HubNotificationSourceType
+RANGE_EXTENDER_2_S: HubNotificationSourceType

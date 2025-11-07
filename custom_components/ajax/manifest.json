@@ -1,0 +1,16 @@
+{
+  "domain": "ajax",
+  "name": "Ajax Security System",
+  "codeowners": ["@foxace66"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/foxace66/ajax-hass",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/foxace66/ajax-hass/issues",
+  "requirements": [
+    "grpcio>=1.60.0",
+    "protobuf>=4.25.0"
+  ],
+  "version": "0.1.0"
+}

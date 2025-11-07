@@ -1,0 +1,10 @@
+from systems.ajax.api.mobile.v2.space.company.monitoring import apply_for_monitoring_request_pb2 as _apply_for_monitoring_request_pb2
+from systems.ajax.api.mobile.v2.space.company.monitoring import cancel_monitoring_declination_request_pb2 as _cancel_monitoring_declination_request_pb2
+from systems.ajax.api.mobile.v2.space.company.monitoring import decline_monitoring_request_pb2 as _decline_monitoring_request_pb2
+from systems.ajax.api.mobile.v2.space.company.monitoring import find_monitoring_companies_request_pb2 as _find_monitoring_companies_request_pb2
+from systems.ajax.api.mobile.v2.space.company.monitoring import get_monitoring_company_request_pb2 as _get_monitoring_company_request_pb2
+from systems.ajax.api.mobile.v2.space.company.monitoring import search_monitoring_companies_request_pb2 as _search_monitoring_companies_request_pb2
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
