@@ -449,6 +449,83 @@ class AjaxApi:
                     attributes["sim_slots_used"] = installed_count
                     _LOGGER.info("SIM status: %d/%d slots used (device type: %s)", installed_count, total_slots, object_type_str)
 
+                # Parse Hub-specific fields (GSM, WiFi, tamper, external power, etc.)
+                if "hub" in object_type_str.lower():
+                    # GSM signal and network status
+                    if hasattr(hub_dev, "gsm") and hub_dev.HasField("gsm"):
+                        gsm = hub_dev.gsm
+                        if hasattr(gsm, "signal_level"):
+                            signal_level_str = str(gsm.signal_level).split("_")[-1]
+                            attributes["gsm_signal_level"] = signal_level_str
+                            _LOGGER.debug("GSM signal level: %s", signal_level_str)
+                        if hasattr(gsm, "network_status"):
+                            network_status_str = str(gsm.network_status).split("_")[-1]
+                            attributes["network_status"] = network_status_str
+                            _LOGGER.debug("Network status: %s", network_status_str)
+
+                    # WiFi signal
+                    if hasattr(hub_dev, "wifi") and hub_dev.HasField("wifi"):
+                        wifi = hub_dev.wifi
+                        if hasattr(wifi, "signal_level"):
+                            wifi_signal_str = str(wifi.signal_level).split("_")[-1]
+                            attributes["wifi_signal_level"] = wifi_signal_str
+                            _LOGGER.debug("WiFi signal level: %s", wifi_signal_str)
+
+                    # Active channels (connection type)
+                    if hasattr(hub_dev, "active_channels"):
+                        channels = [str(ch).split("_")[-1] for ch in hub_dev.active_channels]
+                        if channels:
+                            attributes["active_connection"] = ", ".join(channels)
+                            _LOGGER.debug("Active connections: %s", channels)
+
+                    # Tamper status (cover open/closed)
+                    if hasattr(hub_dev, "tampered"):
+                        attributes["tampered"] = hub_dev.tampered
+                        _LOGGER.debug("Tampered: %s", hub_dev.tampered)
+
+                    # External power status
+                    if hasattr(hub_dev, "externally_powered"):
+                        attributes["externally_powered"] = hub_dev.externally_powered
+                        _LOGGER.debug("Externally powered: %s", hub_dev.externally_powered)
+
+                    # Noise level
+                    if hasattr(hub_dev, "noise_level") and hub_dev.HasField("noise_level"):
+                        noise = hub_dev.noise_level
+                        if hasattr(noise, "avg_value_channel1"):
+                            attributes["noise_level_channel1"] = noise.avg_value_channel1
+                        if hasattr(noise, "avg_value_channel2"):
+                            attributes["noise_level_channel2"] = noise.avg_value_channel2
+                        if hasattr(noise, "high"):
+                            attributes["noise_level_high"] = noise.high
+                        # Calculate average if we have channel data
+                        if "noise_level_channel1" in attributes and "noise_level_channel2" in attributes:
+                            avg = (attributes["noise_level_channel1"] + attributes["noise_level_channel2"]) / 2
+                            attributes["noise_level_avg"] = round(avg, 1)
+                            _LOGGER.debug("Noise levels: ch1=%d, ch2=%d, avg=%.1f",
+                                        attributes["noise_level_channel1"],
+                                        attributes["noise_level_channel2"],
+                                        avg)
+
+                    # Firmware version (from hub firmware field, not profile statuses)
+                    if hasattr(hub_dev, "firmware") and hub_dev.HasField("firmware"):
+                        if hasattr(hub_dev.firmware, "version") and hub_dev.firmware.version:
+                            device_data["firmware_version"] = hub_dev.firmware.version
+                            _LOGGER.debug("Firmware version: %s", hub_dev.firmware.version)
+
+                    # Hardware versions
+                    if hasattr(hub_dev, "hardware_versions") and hub_dev.HasField("hardware_versions"):
+                        hw = hub_dev.hardware_versions
+                        hw_parts = []
+                        if hasattr(hw, "modem") and hw.modem:
+                            hw_parts.append(f"Modem:{hw.modem}")
+                        if hasattr(hw, "wifi") and hw.wifi:
+                            hw_parts.append(f"WiFi:{hw.wifi}")
+                        if hasattr(hw, "ethernet") and hw.ethernet:
+                            hw_parts.append(f"Eth:{hw.ethernet}")
+                        if hw_parts:
+                            device_data["hardware_version"] = ", ".join(hw_parts)
+                            _LOGGER.debug("Hardware versions: %s", device_data["hardware_version"])
+
                 # Add attributes dict if we have any
                 if attributes:
                     device_data["attributes"] = attributes
