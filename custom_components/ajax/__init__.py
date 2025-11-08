@@ -2,45 +2,56 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform, CONF_EMAIL, CONF_PASSWORD
+from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady
 
-from .const import DOMAIN, CONF_DEVICE_ID
 from .api import AjaxApi, AjaxApiError, AjaxAuthError
+from .const import DOMAIN
 from .coordinator import AjaxDataCoordinator
+
+if TYPE_CHECKING:
+    from homeassistant.helpers.typing import ConfigType
 
 _LOGGER = logging.getLogger(__name__)
 
-# Define platforms
 PLATFORMS: list[Platform] = [
     Platform.ALARM_CONTROL_PANEL,
-    Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.SENSOR,
 ]
 
 
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the Ajax Security System component."""
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Ajax from a config entry."""
+    """Set up Ajax Security System from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    # Create API client
-    api = AjaxApi(
-        email=entry.data[CONF_EMAIL],
-        password=entry.data[CONF_PASSWORD],
-        device_id=entry.data.get(CONF_DEVICE_ID, "homeassistant"),
-    )
+    email = entry.data[CONF_EMAIL]
+    password = entry.data[CONF_PASSWORD]
+    device_id = entry.entry_id  # Use entry ID as unique device ID
 
-    # Authenticate
+    # Create API instance
+    api = AjaxApi(email=email, password=password, device_id=device_id)
+
     try:
+        # Authenticate
         await api.async_login()
+        _LOGGER.info("Successfully authenticated with Ajax API")
+
     except AjaxAuthError as err:
-        raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
+        _LOGGER.error("Authentication failed: %s", err)
+        return False
     except AjaxApiError as err:
-        raise ConfigEntryNotReady(f"Failed to connect to Ajax API: {err}") from err
+        _LOGGER.error("API error during setup: %s", err)
+        raise ConfigEntryNotReady from err
 
     # Create coordinator
     coordinator = AjaxDataCoordinator(hass, api)
@@ -51,28 +62,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Store coordinator
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # Forward setup to platforms
-    if PLATFORMS:
-        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    _LOGGER.info(
-        "Ajax integration loaded successfully for %s with %d spaces",
-        coordinator.account.name if coordinator.account else "Unknown",
-        len(coordinator.account.spaces) if coordinator.account else 0,
-    )
+    # Set up platforms
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    if PLATFORMS:
-        unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    else:
-        unload_ok = True
-
-    if unload_ok:
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         coordinator: AjaxDataCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
-        await coordinator.async_shutdown()
+
+        # Close API connection
+        await coordinator.api.close()
 
     return unload_ok

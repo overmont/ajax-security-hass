@@ -57,6 +57,13 @@ from custom_components.ajax.systems.ajax.api.mobile.v2.hubobject import (
     stream_hub_object_request_pb2,
 )
 
+# Import device streaming service for real-time device updates
+from custom_components.ajax.v3.mobilegwsvc.service.stream_hub_device import (
+    endpoint_pb2_grpc as stream_device_pb2_grpc,
+    request_pb2 as stream_device_request_pb2,
+    response_pb2 as stream_device_response_pb2,
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -734,7 +741,9 @@ class AjaxApi:
                 elif failure.HasField("permission_denied"):
                     error_msg = "Permission denied"
                 elif failure.HasField("already_in_the_requested_security_state"):
-                    error_msg = "Already armed"
+                    # This is not really an error - just log and return success
+                    _LOGGER.info("Space %s is already armed", space_id)
+                    return
                 elif failure.HasField("space_locked"):
                     error_msg = "Space is locked"
 
@@ -781,7 +790,9 @@ class AjaxApi:
                 elif failure.HasField("permission_denied"):
                     error_msg = "Permission denied"
                 elif failure.HasField("already_in_the_requested_security_state"):
-                    error_msg = "Already disarmed"
+                    # This is not really an error - just log and return success
+                    _LOGGER.info("Space %s is already disarmed", space_id)
+                    return
                 elif failure.HasField("space_locked"):
                     error_msg = "Space is locked"
 
@@ -831,7 +842,9 @@ class AjaxApi:
                 elif failure.HasField("permission_denied"):
                     error_msg = "Permission denied"
                 elif failure.HasField("already_in_the_requested_security_state"):
-                    error_msg = "Already in night mode"
+                    # This is not really an error - just log and return success
+                    _LOGGER.info("Space %s is already in night mode", space_id)
+                    return
                 elif failure.HasField("space_locked"):
                     error_msg = "Space is locked"
 
@@ -938,6 +951,66 @@ class AjaxApi:
 
         except grpc.RpcError as err:
             _LOGGER.error("gRPC error in space stream: %s", err)
+            if err.code() == grpc.StatusCode.UNAUTHENTICATED:
+                raise AjaxAuthError("Session expired") from err
+            raise AjaxApiError(f"gRPC error: {err}") from err
+
+    async def async_stream_device_updates(self, hub_id: str, device_id: str):
+        """Stream real-time updates for a specific device.
+
+        This streams all updates for a specific device (motion, state changes, etc.)
+        This is a generator that yields HubDevice updates as they occur.
+        Should be run in a background task.
+
+        Args:
+            hub_id: The hub ID (space ID)
+            device_id: The device ID to stream updates for
+
+        Yields:
+            HubDevice protobuf objects with updated device state
+        """
+        if not self.session_token:
+            raise AjaxAuthError("Not authenticated")
+
+        try:
+            _LOGGER.info("Starting device stream for device %s in hub %s", device_id, hub_id)
+
+            # Create stream request
+            request = stream_device_request_pb2.StreamHubDeviceRequest(
+                hub_id=hub_id,
+                hub_device_id=device_id
+            )
+
+            # Create stub and start streaming
+            stub = stream_device_pb2_grpc.StreamHubDeviceServiceStub(self.channel)
+            response_stream = stub.execute(
+                request, metadata=self._get_metadata(include_auth=True)
+            )
+
+            # Yield device updates as they come in
+            async for response in response_stream:
+                if response.HasField("success"):
+                    success = response.success
+
+                    # Yield the snapshot (complete device state)
+                    if success.HasField("snapshot"):
+                        hub_device = success.snapshot.hub_device
+                        yield hub_device
+
+                elif response.HasField("failure"):
+                    failure = response.failure
+                    error_msg = "Unknown error"
+
+                    if failure.HasField("bad_request"):
+                        error_msg = "Bad request"
+                    elif failure.HasField("device_not_found"):
+                        error_msg = "Device not found"
+
+                    _LOGGER.error("Device stream error for %s: %s", device_id, error_msg)
+                    raise AjaxApiError(f"Device stream error: {error_msg}")
+
+        except grpc.RpcError as err:
+            _LOGGER.error("gRPC error in device stream for %s: %s", device_id, err)
             if err.code() == grpc.StatusCode.UNAUTHENTICATED:
                 raise AjaxAuthError("Session expired") from err
             raise AjaxApiError(f"gRPC error: {err}") from err

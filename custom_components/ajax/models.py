@@ -115,6 +115,14 @@ class AjaxDevice:
     states: list[str] = field(default_factory=list)
     attributes: dict[str, Any] = field(default_factory=dict)
 
+    # Real-time events from notifications
+    last_notification: AjaxNotification | None = None
+    last_trigger_time: datetime | None = None
+
+    # Photo data for camera devices (MotionCam, etc.)
+    last_photo_url: str | None = None
+    photo_urls: list[str] = field(default_factory=list)
+
     # Metadata
     device_color: str | None = None
     device_label: str | None = None
@@ -132,6 +140,27 @@ class AjaxDevice:
     def is_low_battery(self) -> bool:
         """Check if device has low battery."""
         return self.battery_level is not None and self.battery_level < 20
+
+    @property
+    def is_triggered(self) -> bool:
+        """Check if device is currently triggered based on notifications."""
+        if not self.last_notification:
+            return False
+
+        # Check notification type and timing
+        # Motion/door sensors auto-reset after a short time
+        if self.last_trigger_time:
+            from datetime import timedelta
+            # Auto-reset after 30 seconds
+            if (datetime.now() - self.last_trigger_time) > timedelta(seconds=30):
+                return False
+
+        # Check notification message for trigger keywords
+        message = self.last_notification.message.lower() if self.last_notification.message else ""
+        title = self.last_notification.title.lower() if self.last_notification.title else ""
+
+        trigger_keywords = ["motion", "detected", "triggered", "opened", "alarm", "movement"]
+        return any(keyword in message or keyword in title for keyword in trigger_keywords)
 
 
 @dataclass

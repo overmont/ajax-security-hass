@@ -52,7 +52,7 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         """Initialize the coordinator."""
         self.api = api
         self.account: AjaxAccount | None = None
-        self._streaming_tasks: dict[str, asyncio.Task] = {}  # space_id -> streaming task
+        self._streaming_tasks: dict[str, asyncio.Task] = {}  # space_id -> space updates streaming task
 
         super().__init__(
             hass,
@@ -104,14 +104,11 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             return
 
         for space_id in self.account.spaces.keys():
-            # Skip if already streaming for this space
-            if space_id in self._streaming_tasks and not self._streaming_tasks[space_id].done():
-                continue
-
-            # Create and start streaming task
-            task = asyncio.create_task(self._async_stream_space(space_id))
-            self._streaming_tasks[space_id] = task
-            _LOGGER.info("Started real-time streaming for space %s", space_id)
+            # Start space updates stream if not already running
+            if space_id not in self._streaming_tasks or self._streaming_tasks[space_id].done():
+                task = asyncio.create_task(self._async_stream_space(space_id))
+                self._streaming_tasks[space_id] = task
+                _LOGGER.info("Started space updates streaming for space %s", space_id)
 
     async def _async_stream_space(self, space_id: str) -> None:
         """Stream updates for a specific space in the background."""
@@ -195,6 +192,7 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
 
         except Exception as err:
             _LOGGER.error("Error handling stream update: %s", err)
+
 
     async def _async_init_account(self) -> None:
         """Initialize the account data."""
