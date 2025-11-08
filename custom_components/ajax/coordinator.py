@@ -153,83 +153,48 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
     async def _async_handle_single_update(self, space_id: str, update) -> None:
         """Handle a single update from the stream."""
         try:
-            update_type = str(update.space_update_type).split("_")[-1]
-
-            _LOGGER.debug(
-                "Stream update for space %s: type=%s",
-                space_id,
-                update_type
-            )
-
-            # Security mode update (MOST IMPORTANT FOR YOUR USE CASE)
+            # Security mode update
             if update.HasField("security_mode"):
                 security_mode = update.security_mode
                 space = self.account.spaces.get(space_id)
                 if space:
                     try:
-                        # The security_mode object has: regular_mode, group_mode, displayed_security_state
-                        # regular_mode contains: space_state (the actual mode) and transition (current state)
+                        # Get regular_mode which contains space_state
                         mode_value = None
-
                         if hasattr(security_mode, "regular_mode"):
                             mode_value = security_mode.regular_mode
-                            _LOGGER.debug("Using regular_mode: %s", mode_value)
                         elif hasattr(security_mode, "displayed_security_state"):
                             mode_value = security_mode.displayed_security_state
-                            _LOGGER.debug("Using displayed_security_state: %s", mode_value)
 
-                        if mode_value is not None:
-                            # Extract the space_state which contains the actual security mode
-                            # space_state is an enum with numeric values:
-                            # 1 = ARMED, 2 = DISARMED, 3 = NIGHT_MODE, etc.
-                            if hasattr(mode_value, "space_state"):
-                                state_value = mode_value.space_state
-                                state_int = int(state_value)
-                                _LOGGER.debug("Security space_state: %s (int: %d)", state_value, state_int)
+                        if mode_value and hasattr(mode_value, "space_state"):
+                            # space_state is an enum: 1=ARMED, 2=DISARMED, 3=NIGHT_MODE
+                            state_int = int(mode_value.space_state)
 
-                                # Map numeric security mode to our internal state
-                                # Based on Ajax API: 1=ARMED, 2=DISARMED, 3=NIGHT_MODE
-                                if state_int == 2:
-                                    new_state = SecurityState.DISARMED
-                                elif state_int == 3:
-                                    new_state = SecurityState.NIGHT_MODE
-                                elif state_int == 1:
-                                    new_state = SecurityState.ARMED
-                                else:
-                                    _LOGGER.warning("Unknown security state value: %d (%s)", state_int, state_value)
-                                    new_state = None
-
-                                # Only update if state changed
-                                if new_state and space.security_state != new_state:
-                                    space.security_state = new_state
-                                    _LOGGER.info(
-                                        "Real-time security state update for space %s: %s",
-                                        space_id,
-                                        space.security_state
-                                    )
-                                    self.async_set_updated_data(self.account)
+                            # Map to internal state
+                            if state_int == 2:
+                                new_state = SecurityState.DISARMED
+                            elif state_int == 3:
+                                new_state = SecurityState.NIGHT_MODE
+                            elif state_int == 1:
+                                new_state = SecurityState.ARMED
                             else:
-                                _LOGGER.error("regular_mode has no space_state attribute. Available: %s", dir(mode_value))
-                        else:
-                            _LOGGER.error("security_mode has no usable mode attribute. Available: %s", dir(security_mode))
+                                _LOGGER.warning("Unknown security state value: %d", state_int)
+                                new_state = None
+
+                            # Update if state changed
+                            if new_state and space.security_state != new_state:
+                                space.security_state = new_state
+                                _LOGGER.info(
+                                    "Security mode changed: %s -> %s",
+                                    space.name,
+                                    space.security_state.value
+                                )
+                                self.async_set_updated_data(self.account)
                     except Exception as mode_err:
-                        _LOGGER.error("Error parsing security mode: %s", mode_err, exc_info=True)
-
-            # Device update
-            elif update.HasField("device"):
-                # Full refresh for device changes (less critical, can use polling)
-                _LOGGER.debug("Device update received, will refresh on next poll")
-
-            # Room update
-            elif update.HasField("room"):
-                _LOGGER.debug("Room update received")
-
-            # Group update
-            elif update.HasField("group"):
-                _LOGGER.debug("Group update received")
+                        _LOGGER.error("Error parsing security mode: %s", mode_err)
 
         except Exception as err:
-            _LOGGER.error("Error handling update: %s", err, exc_info=True)
+            _LOGGER.error("Error handling stream update: %s", err)
 
     async def _async_init_account(self) -> None:
         """Initialize the account data."""
