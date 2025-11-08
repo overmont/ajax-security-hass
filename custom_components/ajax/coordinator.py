@@ -168,7 +168,7 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 if space:
                     try:
                         # The security_mode object has: regular_mode, group_mode, displayed_security_state
-                        # Use regular_mode for the actual security state
+                        # regular_mode contains: space_state (the actual mode) and transition (current state)
                         mode_value = None
 
                         if hasattr(security_mode, "regular_mode"):
@@ -179,40 +179,34 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                             _LOGGER.debug("Using displayed_security_state: %s", mode_value)
 
                         if mode_value is not None:
-                            # Map security mode to our internal state
-                            mode_str = str(mode_value).split("_")[-1].upper()
-                            _LOGGER.debug("Security mode raw value: %s -> %s", mode_value, mode_str)
+                            # Extract the space_state which contains the actual security mode
+                            # Example: space_state: REGULAR_MODE_SPACE_SECURITY_STATE_NIGHT_MODE
+                            if hasattr(mode_value, "space_state"):
+                                state_str = str(mode_value.space_state)
+                                _LOGGER.debug("Security space_state: %s", state_str)
 
-                            # Skip transition states (REQUESTED, COMPLETED)
-                            # These indicate a mode change is in progress but don't tell us the actual mode
-                            if "REQUESTED" in mode_str or "COMPLETED" in mode_str:
-                                _LOGGER.debug("Ignoring transition state: %s", mode_str)
-                            elif "DISARMED" in mode_str or "DISARM" in mode_str:
-                                space.security_state = SecurityState.DISARMED
-                                _LOGGER.info(
-                                    "Real-time security state update for space %s: %s",
-                                    space_id,
-                                    space.security_state
-                                )
-                                self.async_set_updated_data(self.account)
-                            elif "ARMED" in mode_str or "ARM" in mode_str:
-                                space.security_state = SecurityState.ARMED
-                                _LOGGER.info(
-                                    "Real-time security state update for space %s: %s",
-                                    space_id,
-                                    space.security_state
-                                )
-                                self.async_set_updated_data(self.account)
-                            elif "NIGHT" in mode_str:
-                                space.security_state = SecurityState.NIGHT_MODE
-                                _LOGGER.info(
-                                    "Real-time security state update for space %s: %s",
-                                    space_id,
-                                    space.security_state
-                                )
-                                self.async_set_updated_data(self.account)
+                                # Map security mode to our internal state
+                                if "DISARMED" in state_str or "DISARM" in state_str:
+                                    new_state = SecurityState.DISARMED
+                                elif "NIGHT_MODE" in state_str or "NIGHT" in state_str:
+                                    new_state = SecurityState.NIGHT_MODE
+                                elif "ARMED" in state_str or "ARM" in state_str:
+                                    new_state = SecurityState.ARMED
+                                else:
+                                    _LOGGER.warning("Unknown security state: %s", state_str)
+                                    new_state = None
+
+                                # Only update if state changed
+                                if new_state and space.security_state != new_state:
+                                    space.security_state = new_state
+                                    _LOGGER.info(
+                                        "Real-time security state update for space %s: %s",
+                                        space_id,
+                                        space.security_state
+                                    )
+                                    self.async_set_updated_data(self.account)
                             else:
-                                _LOGGER.warning("Unknown security mode: %s", mode_str)
+                                _LOGGER.error("regular_mode has no space_state attribute. Available: %s", dir(mode_value))
                         else:
                             _LOGGER.error("security_mode has no usable mode attribute. Available: %s", dir(security_mode))
                     except Exception as mode_err:
