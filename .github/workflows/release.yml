@@ -28,44 +28,40 @@ jobs:
             -x "ajax/**/__pycache__/*" \
             -x "ajax/**/*.pyc"
 
-      - name: Generate release notes
-        id: notes
-        run: |
-          cat > release_notes.md << 'EOF'
-          ## Ajax Security System Integration v${{ steps.version.outputs.VERSION }}
-
-          ### Installation
-
-          1. Download the `ajax-hass.zip` file
-          2. Extract the `ajax` folder to your Home Assistant `custom_components` directory
-          3. Restart Home Assistant
-          4. Add the integration via Configuration > Integrations > Add Integration > Ajax Security System
-
-          ### Features
-
-          - ✅ Alarm Control Panel with real-time streaming
-          - ✅ Battery and temperature sensors
-          - ✅ Panic and test siren buttons
-
-          ### Requirements
-
-          - Home Assistant 2023.8.0 or newer
-          - Ajax Systems account
-
-          ### Notes
-
-          For more information, see the [README](https://github.com/foxace66/Ajax/blob/main/README.md).
-          EOF
-          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
-          cat release_notes.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           name: Ajax Integration v${{ steps.version.outputs.VERSION }}
-          body: ${{ steps.notes.outputs.NOTES }}
+          body: |
+            ## What's Changed
+
+            See the full changelog in [CHANGELOG.md](https://github.com/foXaCe/ajax-hass/blob/main/CHANGELOG.md)
+
+            ## Installation via HACS
+
+            1. Open HACS in Home Assistant
+            2. Go to "Integrations"
+            3. Find "Ajax Security System"
+            4. Click "Update" to version ${{ steps.version.outputs.VERSION }}
+            5. Restart Home Assistant
+
+            ## Manual Installation
+
+            1. Download the `ajax-hass.zip` file below
+            2. Extract the `ajax` folder to your Home Assistant `custom_components` directory
+            3. Restart Home Assistant
+            4. Add the integration via Settings > Devices & Services > Add Integration > Ajax Security System
+
+            ## Requirements
+
+            - Home Assistant 2023.8.0 or newer
+            - Ajax Systems account
+
+            ---
+
+            **Full Changelog**: https://github.com/foXaCe/ajax-hass/compare/${{ github.event.before }}...${{ github.sha }}
           files: ajax-hass.zip
+          generate_release_notes: true
           draft: false
           prerelease: false
         env:
