@@ -6,7 +6,7 @@ import warnings
 from custom_components.ajax.v3.mobilegwsvc.service.device_command_delay_interconnect import request_pb2 as v3_dot_mobilegwsvc_dot_service_dot_device__command__delay__interconnect_dot_request__pb2
 from custom_components.ajax.v3.mobilegwsvc.service.device_command_delay_interconnect import response_pb2 as v3_dot_mobilegwsvc_dot_service_dot_device__command__delay__interconnect_dot_response__pb2
 
-GRPC_GENERATED_VERSION = '1.75.1'
+GRPC_GENERATED_VERSION = '1.72.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 

@@ -6,7 +6,7 @@ import warnings
 from custom_components.ajax.v3.mobilegwsvc.service.stream_space_interaction_lock import request_pb2 as v3_dot_mobilegwsvc_dot_service_dot_stream__space__interaction__lock_dot_request__pb2
 from custom_components.ajax.v3.mobilegwsvc.service.stream_space_interaction_lock import response_pb2 as v3_dot_mobilegwsvc_dot_service_dot_stream__space__interaction__lock_dot_response__pb2
 
-GRPC_GENERATED_VERSION = '1.75.1'
+GRPC_GENERATED_VERSION = '1.72.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
