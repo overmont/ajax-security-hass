@@ -182,16 +182,6 @@ DEVICE_SENSORS: tuple[AjaxDeviceSensorDescription, ...] = (
         enabled_by_default=True,
     ),
     AjaxDeviceSensorDescription(
-        key="malfunctions",
-        translation_key="malfunctions",
-        icon="mdi:alert-circle",
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda device: device.malfunctions,
-        should_create=lambda device: device.type == DeviceType.HUB,
-        enabled_by_default=True,  # Enabled for hubs
-    ),
-    AjaxDeviceSensorDescription(
         key="firmware_version",
         translation_key="firmware_version",
         icon="mdi:chip",
