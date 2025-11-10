@@ -44,6 +44,8 @@ class DeviceType(Enum):
     SIREN = "siren"
     TRANSMITTER = "transmitter"
     REPEATER = "repeater"
+    WIRE_INPUT = "wire_input"  # Wired input modules for connecting third-party detectors
+    LINE_SPLITTER = "line_splitter"  # Fibra line splitter/multiplexer
 
     # Smart Devices
     SOCKET = "socket"

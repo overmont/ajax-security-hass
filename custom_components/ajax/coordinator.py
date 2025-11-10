@@ -1320,6 +1320,18 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             "range_extender": DeviceType.REPEATER,
             "extender": DeviceType.REPEATER,
 
+            # Wired Input Modules
+            "wire_input_mt": DeviceType.WIRE_INPUT,
+            "wireinputmt": DeviceType.WIRE_INPUT,
+            "wire_input_rs": DeviceType.WIRE_INPUT,
+            "wireinputrs": DeviceType.WIRE_INPUT,
+
+            # Line Splitter
+            "line_split_fibra": DeviceType.LINE_SPLITTER,
+            "linesplitfibra": DeviceType.LINE_SPLITTER,
+            "line_splitter": DeviceType.LINE_SPLITTER,
+            "linesplitter": DeviceType.LINE_SPLITTER,
+
             # Smart devices
             "socket": DeviceType.SOCKET,
             "relay": DeviceType.RELAY,
@@ -1333,8 +1345,14 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             "hub": DeviceType.HUB,
         }
 
+        # Clean up the type string (remove protobuf formatting artifacts)
+        # Example: "wire_input_mt {\n}\n" -> "wire_input_mt"
+        type_cleaned = type_str.strip().split()[0].lower() if type_str else ""
+
         # Try exact match (case insensitive)
         type_lower = type_str.lower()
+        if type_cleaned in type_map:
+            return type_map[type_cleaned]
         if type_lower in type_map:
             return type_map[type_lower]
 
