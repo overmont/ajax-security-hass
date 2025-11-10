@@ -1052,7 +1052,7 @@ class AjaxApi:
             space_locator = space_locator_pb2.SpaceLocator(space_id=space_id)
 
             # Create arm group request
-            request = arm_group_request_pb2.ArmGroupRequest(
+            request = arm_group_request_pb2.ArmSpaceGroupRequest(
                 space_locator=space_locator,
                 group_id=group_id,
                 ignore_alarms=force,
@@ -1111,7 +1111,7 @@ class AjaxApi:
             space_locator = space_locator_pb2.SpaceLocator(space_id=space_id)
 
             # Create disarm group request
-            request = disarm_group_request_pb2.DisarmGroupRequest(
+            request = disarm_group_request_pb2.DisarmSpaceGroupRequest(
                 space_locator=space_locator,
                 group_id=group_id,
             )

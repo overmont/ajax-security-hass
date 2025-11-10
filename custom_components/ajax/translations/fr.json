@@ -314,6 +314,35 @@
             "name": "Mode de fonctionnement"
           }
         }
+      },
+      "security_group": {
+        "name": "Groupe de sécurité",
+        "state_attributes": {
+          "group_id": {
+            "name": "ID du groupe"
+          },
+          "group_name": {
+            "name": "Nom du groupe"
+          },
+          "space_id": {
+            "name": "ID de l'espace"
+          },
+          "space_name": {
+            "name": "Nom de l'espace"
+          },
+          "night_mode_enabled": {
+            "name": "Mode nuit activé"
+          },
+          "bulk_arm_involved": {
+            "name": "Impliqué dans l'armement global"
+          },
+          "bulk_disarm_involved": {
+            "name": "Impliqué dans le désarmement global"
+          },
+          "device_count": {
+            "name": "Nombre d'appareils"
+          }
+        }
       }
     }
   },

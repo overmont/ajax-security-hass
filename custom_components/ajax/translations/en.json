@@ -273,6 +273,35 @@
             "name": "Operating mode"
           }
         }
+      },
+      "security_group": {
+        "name": "Security Group",
+        "state_attributes": {
+          "group_id": {
+            "name": "Group ID"
+          },
+          "group_name": {
+            "name": "Group name"
+          },
+          "space_id": {
+            "name": "Space ID"
+          },
+          "space_name": {
+            "name": "Space name"
+          },
+          "night_mode_enabled": {
+            "name": "Night mode enabled"
+          },
+          "bulk_arm_involved": {
+            "name": "Involved in bulk arm"
+          },
+          "bulk_disarm_involved": {
+            "name": "Involved in bulk disarm"
+          },
+          "device_count": {
+            "name": "Device count"
+          }
+        }
       }
     }
   },

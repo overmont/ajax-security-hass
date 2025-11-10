@@ -3,6 +3,7 @@
 This module creates switch entities for:
 - Ajax Smart Sockets
 - Ajax Relays
+- Ajax Security Groups/Zones (ON = Armed, OFF = Disarmed)
 """
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AjaxDataCoordinator
-from .models import AjaxDevice, DeviceType
+from .models import AjaxDevice, DeviceType, GroupState
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +56,25 @@ async def async_setup_entry(
                         device.type.value,
                     )
 
+        # Create switch entities for security groups/zones
+        if space.groups:
+            for group_id, group in space.groups.items():
+                entities.append(
+                    AjaxGroupSwitch(
+                        coordinator=coordinator,
+                        space_id=space_id,
+                        group_id=group_id,
+                    )
+                )
+                _LOGGER.debug(
+                    "Created switch for group: %s (ID: %s)",
+                    group.name,
+                    group_id,
+                )
+
     async_add_entities(entities)
+    if entities:
+        _LOGGER.info("Added %d Ajax switch(es)", len(entities))
 
 
 class AjaxSwitch(CoordinatorEntity[AjaxDataCoordinator], SwitchEntity):
@@ -222,3 +241,119 @@ class AjaxSwitch(CoordinatorEntity[AjaxDataCoordinator], SwitchEntity):
         }
 
         return {k: v for k, v in attributes.items() if v is not None}
+
+
+class AjaxGroupSwitch(CoordinatorEntity[AjaxDataCoordinator], SwitchEntity):
+    """Representation of an Ajax Security Group/Zone as a Switch.
+
+    ON = Armed
+    OFF = Disarmed
+    """
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:shield-lock"
+
+    def __init__(
+        self,
+        coordinator: AjaxDataCoordinator,
+        space_id: str,
+        group_id: str,
+    ) -> None:
+        """Initialize the Ajax group switch."""
+        super().__init__(coordinator)
+        self._space_id = space_id
+        self._group_id = group_id
+
+        # Get group info
+        space = self.coordinator.get_space(space_id)
+        if space and group_id in space.groups:
+            group = space.groups[group_id]
+            group_name = group.name
+        else:
+            group_name = f"Group {group_id}"
+
+        # Set unique ID
+        self._attr_unique_id = f"{space_id}_group_{group_id}_switch"
+        self._attr_name = f"{group_name}"
+        self._attr_translation_key = "security_group"
+
+    @property
+    def is_on(self) -> bool:
+        """Return true if group is armed."""
+        space = self.coordinator.get_space(self._space_id)
+        if not space or self._group_id not in space.groups:
+            return False
+
+        group = space.groups[self._group_id]
+        return group.state == GroupState.ARMED
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        space = self.coordinator.get_space(self._space_id)
+        return space is not None and self._group_id in space.groups
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Arm the security group."""
+        _LOGGER.info("Arming Ajax group %s in space %s", self._group_id, self._space_id)
+
+        try:
+            await self.coordinator.async_arm_group(self._space_id, self._group_id)
+            # Request immediate refresh
+            await self.coordinator.async_request_refresh()
+        except Exception as err:
+            _LOGGER.error("Error arming group %s: %s", self._group_id, err)
+            raise
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disarm the security group."""
+        _LOGGER.info("Disarming Ajax group %s in space %s", self._group_id, self._space_id)
+
+        try:
+            await self.coordinator.async_disarm_group(self._space_id, self._group_id)
+            # Request immediate refresh
+            await self.coordinator.async_request_refresh()
+        except Exception as err:
+            _LOGGER.error("Error disarming group %s: %s", self._group_id, err)
+            raise
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self.async_write_ha_state()
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device information (attach to hub)."""
+        space = self.coordinator.get_space(self._space_id)
+        if not space:
+            return {}
+
+        return {
+            "identifiers": {(DOMAIN, self._space_id)},
+            "name": f"Ajax Hub - {space.name}",
+            "manufacturer": "Ajax Systems",
+            "model": "Security Hub",
+        }
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return additional state attributes."""
+        space = self.coordinator.get_space(self._space_id)
+        if not space or self._group_id not in space.groups:
+            return {}
+
+        group = space.groups[self._group_id]
+
+        attributes = {
+            "group_id": group.id,
+            "group_name": group.name,
+            "space_id": space.id,
+            "space_name": space.name,
+            "night_mode_enabled": group.night_mode_enabled,
+            "bulk_arm_involved": group.bulk_arm_involved,
+            "bulk_disarm_involved": group.bulk_disarm_involved,
+            "device_count": len(group.device_ids),
+        }
+
+        return attributes
