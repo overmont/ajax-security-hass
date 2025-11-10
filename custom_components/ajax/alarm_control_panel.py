@@ -68,6 +68,20 @@ class AjaxAlarmControlPanel(CoordinatorEntity[AjaxDataCoordinator], AlarmControl
         self._attr_unique_id = f"{entry.entry_id}_alarm_{space_id}"
 
     @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device information."""
+        space = self.coordinator.get_space(self._space_id)
+        if not space:
+            return {}
+
+        return {
+            "identifiers": {(DOMAIN, self._space_id)},
+            "name": f"Ajax Hub - {space.name}",
+            "manufacturer": "Ajax Systems",
+            "model": "Security Hub",
+        }
+
+    @property
     def alarm_state(self) -> AlarmControlPanelState | None:
         """Return the state of the alarm."""
         space = self.coordinator.get_space(self._space_id)
