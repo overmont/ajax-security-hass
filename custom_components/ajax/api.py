@@ -150,7 +150,7 @@ class AjaxApi:
             # Hash password with SHA256
             password_hash = hashlib.sha256(self.password.encode()).hexdigest()
 
-            _LOGGER.debug("Attempting to login with email: %s", self.email)
+            _LOGGER.debug("Attempting to login to Ajax")
 
             # Create login request
             request = login_request_pb2.LoginByPasswordRequest(
