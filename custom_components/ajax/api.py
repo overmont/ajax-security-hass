@@ -420,20 +420,6 @@ class AjaxApi:
     def _parse_hub_object(self, hub_obj) -> dict[str, Any]:
         """Parse a HubObject protobuf message to a dict."""
         try:
-            _LOGGER.info("=" * 80)
-            _LOGGER.info("PARSING HubObject")
-            _LOGGER.info("=" * 80)
-
-            # Log all available fields
-            _LOGGER.info("Available HubObject fields: %s", [f.name for f in hub_obj.DESCRIPTOR.fields])
-
-            # Log which fields are actually set
-            set_fields = []
-            for field in hub_obj.DESCRIPTOR.fields:
-                if hub_obj.HasField(field.name) if field.message_type else getattr(hub_obj, field.name, None):
-                    set_fields.append(field.name)
-            _LOGGER.info("Fields that are set: %s", set_fields)
-
             hub_data = {
                 "hex_id": hub_obj.hex_id if hasattr(hub_obj, "hex_id") else None,
             }
@@ -447,7 +433,6 @@ class AjaxApi:
                         "sim_card_status": str(sim.sim_card_status).split("_")[-1] if hasattr(sim, "sim_card_status") else None,
                         "imei": sim.imei if hasattr(sim, "imei") else None,
                     }
-                    _LOGGER.debug("SIM card info: %s", hub_data["sim_card"])
             except (ValueError, AttributeError) as e:
                 _LOGGER.debug("Could not parse SIM card info: %s", e)
 
@@ -460,7 +445,6 @@ class AjaxApi:
                         "enabled": True,
                         "version": fw.firmware_version if hasattr(fw, "firmware_version") else None,
                     }
-                    _LOGGER.debug("System firmware auto-update: %s", hub_data["system_firmware_update"])
             except (ValueError, AttributeError) as e:
                 _LOGGER.debug("Could not parse system firmware update info: %s", e)
 
@@ -468,7 +452,6 @@ class AjaxApi:
             try:
                 if hasattr(hub_obj, "device_firmware_updates") and hub_obj.device_firmware_updates:
                     updates = hub_obj.device_firmware_updates
-                    _LOGGER.info("Device firmware updates available: %s", updates)
                     if hasattr(updates, "device_firmware_update"):
                         update_list = []
                         for update in updates.device_firmware_update:
@@ -485,7 +468,6 @@ class AjaxApi:
                         if update_list:
                             hub_data["pending_firmware_updates"] = update_list
                             hub_data["has_firmware_updates"] = True
-                            _LOGGER.info("Found %d device(s) with pending firmware updates", len(update_list))
             except (ValueError, AttributeError) as e:
                 _LOGGER.debug("Could not parse device firmware updates: %s", e)
 
@@ -493,9 +475,6 @@ class AjaxApi:
             try:
                 if hasattr(hub_obj, "hub_connection_properties") and hub_obj.hub_connection_properties:
                     props = hub_obj.hub_connection_properties
-                    _LOGGER.info("Hub connection properties: %s", props)
-                    _LOGGER.info("Hub connection properties fields: %s", [f.name for f in props.DESCRIPTOR.fields])
-
                     conn_data = {}
                     # Parse delay durations for offline detection
                     if hasattr(props, "delay_before_hub_goes_offline"):
@@ -510,7 +489,6 @@ class AjaxApi:
 
                     if conn_data:
                         hub_data["connection_properties"] = conn_data
-                        _LOGGER.debug("Hub connection properties: %s", conn_data)
             except (ValueError, AttributeError) as e:
                 _LOGGER.debug("Could not parse hub connection properties: %s", e)
 
@@ -518,7 +496,6 @@ class AjaxApi:
             try:
                 if hasattr(hub_obj, "installation_companies") and hub_obj.installation_companies:
                     companies = hub_obj.installation_companies
-                    _LOGGER.info("Installation companies: %s", companies)
                     if hasattr(companies, "installation_company"):
                         company_list = []
                         for company in companies.installation_company:
@@ -532,7 +509,6 @@ class AjaxApi:
 
                         if company_list:
                             hub_data["installation_companies"] = company_list
-                            _LOGGER.info("Found %d installation company/companies", len(company_list))
             except (ValueError, AttributeError) as e:
                 _LOGGER.debug("Could not parse installation companies: %s", e)
 
@@ -540,7 +516,6 @@ class AjaxApi:
             try:
                 if hasattr(hub_obj, "monitoring_companies") and hub_obj.monitoring_companies:
                     companies = hub_obj.monitoring_companies
-                    _LOGGER.info("Monitoring companies: %s", companies)
                     if hasattr(companies, "monitoring_company"):
                         company_list = []
                         for company in companies.monitoring_company:
@@ -554,13 +529,8 @@ class AjaxApi:
 
                         if company_list:
                             hub_data["monitoring_companies"] = company_list
-                            _LOGGER.info("Found %d monitoring company/companies", len(company_list))
             except (ValueError, AttributeError) as e:
                 _LOGGER.debug("Could not parse monitoring companies: %s", e)
-
-            # Log all parsed data
-            _LOGGER.info("Parsed HubObject data: %s", hub_data)
-            _LOGGER.info("=" * 80)
 
             return hub_data
 
@@ -571,12 +541,9 @@ class AjaxApi:
     def _parse_light_device(self, light_device) -> dict[str, Any] | None:
         """Parse a LightDevice protobuf message to a dict."""
         try:
-            _LOGGER.debug("Parsing LightDevice: %s", light_device)
-
             # LightDevice can be a hub_device, video_edge, video_edge_channel, or smart_lock
             if hasattr(light_device, "hub_device") and light_device.hub_device:
                 hub_dev = light_device.hub_device
-                _LOGGER.debug("Found hub_device")
 
                 # Check if common_device exists
                 try:
@@ -590,44 +557,6 @@ class AjaxApi:
                 profile = common.profile
 
                 object_type_str = self._get_device_type(common.object_type)
-
-                _LOGGER.info(
-                    "Device found - Name: '%s', Type: '%s', ID: %s",
-                    profile.name,
-                    object_type_str,
-                    profile.id
-                )
-
-                # Add extensive logging for hub devices
-                if "hub" in object_type_str.lower():
-                    _LOGGER.info("=" * 80)
-                    _LOGGER.info("DETAILED HUB INFORMATION: %s", profile.name)
-                    _LOGGER.info("=" * 80)
-
-                    # Log all fields available in hub_dev
-                    _LOGGER.info("Available hub_device fields: %s", [f.name for f in hub_dev.DESCRIPTOR.fields])
-
-                    # Log common_device fields
-                    _LOGGER.info("Available common_device fields: %s", [f.name for f in common.DESCRIPTOR.fields])
-
-                    # Log profile fields
-                    _LOGGER.info("Available profile fields: %s", [f.name for f in profile.DESCRIPTOR.fields])
-
-                    # Log profile states
-                    if hasattr(profile, "states") and profile.states:
-                        _LOGGER.info("Profile states (%d): %s", len(profile.states), [str(s) for s in profile.states])
-
-                    # Log all statuses
-                    if hasattr(profile, "statuses") and profile.statuses:
-                        _LOGGER.info("Profile has %d status entries", len(profile.statuses))
-                        for idx, status in enumerate(profile.statuses):
-                            status_type = status.WhichOneof("status")
-                            _LOGGER.info("  Status[%d] type: %s", idx, status_type)
-                            if status_type:
-                                status_obj = getattr(status, status_type)
-                                _LOGGER.info("    Fields: %s", [f.name for f in status_obj.DESCRIPTOR.fields] if hasattr(status_obj, 'DESCRIPTOR') else str(status_obj))
-
-                    _LOGGER.info("=" * 80)
 
                 device_data = {
                     "id": profile.id,
@@ -671,13 +600,8 @@ class AjaxApi:
 
                         # SIM status
                         elif status.HasField("sim_status"):
-                            # Log the full SIM status structure
-                            _LOGGER.debug("Raw SIM status object: %s", status.sim_status)
-
                             # Parse individual SIM card status
-                            # The enum value might be something like "SIM_CARD_STATUS_MISSING" or just the number
                             sim_status_raw = str(status.sim_status.sim_card_status)
-                            _LOGGER.debug("Raw SIM status string: %s", sim_status_raw)
 
                             # Extract just the status name (e.g., "MISSING" from "SIM_CARD_STATUS_MISSING")
                             if "SIM_CARD_STATUS_" in sim_status_raw:
@@ -695,13 +619,11 @@ class AjaxApi:
                                 sim_info["slot"] = status.sim_status.slot
 
                             sim_cards.append(sim_info)
-                            _LOGGER.info("Found SIM card slot: status='%s', installed=%s", sim_status_str, sim_info["installed"])
 
                         # Temperature (simple ValueStatus)
                         elif status.HasField("temperature"):
                             # Temperature is in degrees Celsius
                             attributes["temperature"] = status.temperature.value
-                            _LOGGER.debug("Temperature: %d°C", attributes["temperature"])
 
                         # Life Quality (temperature, humidity, CO2)
                         elif status.HasField("life_quality"):
@@ -713,47 +635,36 @@ class AjaxApi:
                                 attributes["humidity"] = lq.actual_humidity / 10.0
                             if hasattr(lq, "actual_co2") and lq.actual_co2:
                                 attributes["co2"] = lq.actual_co2
-                            _LOGGER.debug("Life quality - temp: %s, humidity: %s, CO2: %s",
-                                         attributes.get("temperature"),
-                                         attributes.get("humidity"),
-                                         attributes.get("co2"))
 
                         # Door/window state
                         elif status.HasField("door_opened"):
                             attributes["door_opened"] = True
-                            _LOGGER.debug("Door opened detected")
 
                         # Motion detection
                         elif status.HasField("motion_detected"):
                             if hasattr(status.motion_detected, "detected_at"):
                                 attributes["motion_detected"] = True
                                 attributes["motion_detected_at"] = str(status.motion_detected.detected_at)
-                                _LOGGER.debug("Motion detected at: %s", attributes["motion_detected_at"])
 
                         # Always active (device active even in night mode)
                         elif status.HasField("always_active"):
                             attributes["always_active"] = True
-                            _LOGGER.debug("Device is always active")
 
                         # Armed in night mode
                         elif status.HasField("armed_in_night_mode"):
                             attributes["armed_in_night_mode"] = True
-                            _LOGGER.debug("Device armed in night mode")
 
                         # Smoke detection
                         elif status.HasField("smoke_detected"):
                             attributes["smoke_detected"] = True
-                            _LOGGER.debug("Smoke detected")
 
                         # Leak detection
                         elif status.HasField("leak_detected"):
                             attributes["leak_detected"] = True
-                            _LOGGER.debug("Leak detected")
 
                         # Tamper (case drilling)
                         elif status.HasField("case_drilling_detected"):
                             attributes["tampered"] = True
-                            _LOGGER.debug("Tamper detected (case drilling)")
 
                         # Signal strength
                         elif status.HasField("signal_strength"):
@@ -763,7 +674,6 @@ class AjaxApi:
                                 signal_map = {"WEAK": 25, "NORMAL": 50, "STRONG": 75, "EXCELLENT": 100}
                                 device_data["signal_strength"] = signal_map.get(signal_str, 50)
                                 attributes["signal_level"] = signal_str
-                                _LOGGER.debug("Signal level: %s (%d%%)", signal_str, device_data["signal_strength"])
 
                     except (ValueError, AttributeError) as e:
                         # Some status fields may not exist on all devices
@@ -801,7 +711,6 @@ class AjaxApi:
                     if len(sim_cards) == 1 and sim_cards[0]["status"] == "MISSING" and expected_slots == 2:
                         total_slots = 2
                         installed_count = 0
-                        _LOGGER.info("Hub has 2 SIM slots, both empty (API returned single MISSING status)")
                     else:
                         total_slots = max(len(sim_cards), expected_slots)
 
@@ -809,7 +718,6 @@ class AjaxApi:
                     attributes["sim_cards"] = sim_cards
                     attributes["sim_slots_total"] = total_slots
                     attributes["sim_slots_used"] = installed_count
-                    _LOGGER.info("SIM status: %d/%d slots used (device type: %s)", installed_count, total_slots, object_type_str)
 
                 # Parse Hub-specific fields (GSM, WiFi, tamper, external power, etc.)
                 if "hub" in object_type_str.lower():
@@ -820,11 +728,9 @@ class AjaxApi:
                             if hasattr(gsm, "signal_level"):
                                 signal_level_str = str(gsm.signal_level).split("_")[-1]
                                 attributes["gsm_signal_level"] = signal_level_str
-                                _LOGGER.debug("GSM signal level: %s", signal_level_str)
                             if hasattr(gsm, "network_status"):
                                 network_status_str = str(gsm.network_status).split("_")[-1]
                                 attributes["network_status"] = network_status_str
-                                _LOGGER.debug("Network status: %s", network_status_str)
                     except (ValueError, AttributeError) as e:
                         _LOGGER.debug("Could not parse GSM data: %s", e)
 
@@ -835,7 +741,6 @@ class AjaxApi:
                             if hasattr(wifi, "signal_level"):
                                 wifi_signal_str = str(wifi.signal_level).split("_")[-1]
                                 attributes["wifi_signal_level"] = wifi_signal_str
-                                _LOGGER.debug("WiFi signal level: %s", wifi_signal_str)
                     except (ValueError, AttributeError) as e:
                         _LOGGER.debug("Could not parse WiFi data: %s", e)
 
@@ -844,7 +749,6 @@ class AjaxApi:
                         channels = [str(ch).split("_")[-1] for ch in hub_dev.active_channels]
                         if channels:
                             attributes["active_connection"] = ", ".join(channels)
-                            _LOGGER.debug("Active connections: %s", channels)
 
                     # Tamper status (cover open/closed)
                     if hasattr(hub_dev, "tampered"):
@@ -949,18 +853,6 @@ class AjaxApi:
                 if attributes:
                     device_data["attributes"] = attributes
 
-                # Add detailed logging for hub final data
-                if "hub" in object_type_str.lower():
-                    _LOGGER.info("=" * 80)
-                    _LOGGER.info("FINAL HUB DEVICE DATA: %s", profile.name)
-                    _LOGGER.info("=" * 80)
-                    _LOGGER.info("Device data keys: %s", list(device_data.keys()))
-                    _LOGGER.info("Device data: %s", device_data)
-                    if "attributes" in device_data:
-                        _LOGGER.info("Attributes (%d): %s", len(device_data["attributes"]), device_data["attributes"])
-                    _LOGGER.info("=" * 80)
-
-                _LOGGER.debug("Parsed device data: %s", device_data)
                 return device_data
 
             elif light_device.HasField("video_edge"):
@@ -1517,6 +1409,45 @@ class AjaxApi:
                                     notification_data["device_name"],
                                     notification_data["device_id"],
                                 )
+                else:
+                    # Handle space notifications (system events like arming/disarming)
+                    content_type = content.WhichOneof("content")
+
+                    if content_type == "space_notification_content":
+                        space_content = content.space_notification_content
+
+                        # Extract event type from qualifier.tag
+                        if hasattr(space_content, "qualifier"):
+                            qualifier = space_content.qualifier
+                            if hasattr(qualifier, "tag"):
+                                tag = qualifier.tag
+                                # Check which tag field is set - the oneOf is in the tag itself
+                                if hasattr(tag, "DESCRIPTOR"):
+                                    # Find which field is set by checking all fields
+                                    for field in tag.DESCRIPTOR.fields:
+                                        if tag.HasField(field.name):
+                                            tag_type = field.name
+
+                                            # Map tag types to event types and messages
+                                            tag_mapping = {
+                                                "space_armed": ("armed", "Système armé"),
+                                                "space_disarmed": ("disarmed", "Système désarmé"),
+                                                "space_night_mode_on": ("night_mode_on", "Mode nuit activé"),
+                                                "space_partially_armed": ("partially_armed", "Armement partiel activé"),
+                                            }
+
+                                            if tag_type in tag_mapping:
+                                                notification_data["event_type"], notification_data["message"] = tag_mapping[tag_type]
+                                            break
+
+                        # Extract source information (who triggered the event)
+                        if hasattr(space_content, "space_source"):
+                            space_source = space_content.space_source
+                            if hasattr(space_source, "name") and space_source.name:
+                                source_name = space_source.name
+                                # Append source to message if we have a message
+                                if notification_data.get("message"):
+                                    notification_data["message"] = f"{notification_data['message']} par {source_name}"
 
             return notification_data
 
