@@ -5,6 +5,69 @@ All notable changes to the Ajax Security System integration will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Improved debug support for unknown device types**
+  - Added `raw_type` field to AjaxDevice model to store original device type before parsing
+  - Added `unknown_device_raw_types` summary in device info report
+  - Warning logs when unknown device types are detected with their raw type
+  - Enhanced notification to alert users when unknown devices are detected
+  - Added `debug_unknown_devices.py` script for detailed device analysis
+
+### Changed
+- `ajax.generate_device_info` service now includes `raw_type` for each device to help identify unsupported device types
+
+## [0.4.3] - 2025-11-10
+
+### Fixed
+- **Group/zone alarm panels not being created on initial setup** (Fixes #6)
+  - Fixed timing issue where group/zone alarm control panel entities were not created even though groups were detected
+  - Added synchronization to wait for stream data containing groups before entity creation
+  - Platform setup now waits up to 10 seconds for groups to be loaded from stream
+  - Ensures group entities are created during initial setup without requiring additional API calls
+
+### Technical
+- Added `_groups_loaded_events` dictionary to track when groups are received from stream
+- Added `_async_wait_for_groups()` method with 10-second timeout
+- Enhanced `_async_handle_single_update()` to signal when security/group data arrives
+
+## [0.4.2] - 2025-11-10
+
+### Fixed
+- **Duplicate malfunctions sensor**: Fixed unique ID conflict causing "ID already exists" errors
+  - Removed redundant malfunctions sensor definition for hub devices
+  - Now only one malfunctions sensor per device (problem binary sensor handles this)
+
+### Documentation
+- Updated README to clarify that 2FA is not yet supported
+- Added note about authentication limitations
+
+## [0.4.1] - 2025-11-10
+
+### Fixed
+- **TypeError in malfunctions sensor**: Fixed `object of type 'int' has no len()` error
+  - Removed incorrect `len()` call on malfunctions count (already an integer)
+  - Malfunctions sensor now correctly displays the count value
+
+## [0.4.0] - 2025-11-10
+
+### Fixed
+- **Arm night state synchronization** (Fixes #16)
+  - Removed all optimistic state updates that caused race conditions with real-time stream
+  - Integration now relies solely on real-time stream for state updates
+  - Fixed issue where alarm panel would get stuck in arming/pending state
+  - All arm/disarm transitions now work correctly and synchronize with Ajax app
+
+### Changed
+- Alarm control panel entities no longer use optimistic updates
+- State changes are only reflected after confirmation from Ajax cloud via stream
+
+### Technical
+- Removed `assumed_state` property from alarm control panel
+- Removed optimistic state setting in arm/disarm methods
+- Enhanced logging for arm/disarm operations
+
 ## [0.3.1] - 2025-11-10
 
 ### Added
