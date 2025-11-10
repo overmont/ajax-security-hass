@@ -212,6 +212,36 @@ icon: mdi:alarm-light
 
 ⚠️ **Warning**: The panic button triggers a **real emergency alarm**. Only use it in genuine emergencies or for testing with your monitoring center's knowledge.
 
+### Device Information Report
+
+Generate a diagnostic report of your Ajax devices to help improve the integration:
+
+```yaml
+# Call the service in Developer Tools > Services
+service: ajax.generate_device_info
+```
+
+This service creates a JSON file `ajax_device_info.json` in your Home Assistant config directory (`/config/`) containing:
+- Device types and models
+- Firmware and hardware versions
+- Available attributes (battery, signal, temperature, etc.)
+- Device statistics
+
+**Privacy**: The report **excludes all sensitive data**:
+- ❌ No device names
+- ❌ No unique IDs
+- ❌ No MAC addresses
+- ❌ No location information
+
+This anonymized report is perfect for sharing when requesting support for new device types!
+
+**Where to find the file:**
+- Docker: `/config/ajax_device_info.json`
+- Standard install: `~/.homeassistant/ajax_device_info.json`
+- Access via: File Editor add-on, Studio Code Server, or Samba Share
+
+After running the service, you'll receive a persistent notification with the file location.
+
 ### Sensors & Binary Sensors
 
 All Ajax devices appear as appropriate Home Assistant entities:
@@ -504,6 +534,36 @@ icon: mdi:alarm-light
 ```
 
 ⚠️ **Attention** : Le bouton panique déclenche une **vraie alarme d'urgence**. Ne l'utilisez qu'en cas d'urgence réelle ou pour des tests avec l'accord de votre centre de télésurveillance.
+
+### Rapport d'Information des Appareils
+
+Générez un rapport de diagnostic de vos appareils Ajax pour aider à améliorer l'intégration :
+
+```yaml
+# Appelez le service dans Outils de développement > Services
+service: ajax.generate_device_info
+```
+
+Ce service crée un fichier JSON `ajax_device_info.json` dans votre répertoire de configuration Home Assistant (`/config/`) contenant :
+- Types et modèles d'appareils
+- Versions firmware et hardware
+- Attributs disponibles (batterie, signal, température, etc.)
+- Statistiques des appareils
+
+**Confidentialité** : Le rapport **exclut toutes les données sensibles** :
+- ❌ Pas de noms d'appareils
+- ❌ Pas d'IDs uniques
+- ❌ Pas d'adresses MAC
+- ❌ Pas d'informations de localisation
+
+Ce rapport anonymisé est parfait pour partager lors d'une demande de support pour de nouveaux types d'appareils !
+
+**Où trouver le fichier :**
+- Docker : `/config/ajax_device_info.json`
+- Installation standard : `~/.homeassistant/ajax_device_info.json`
+- Accès via : Add-on File Editor, Studio Code Server, ou Samba Share
+
+Après avoir exécuté le service, vous recevrez une notification persistante avec l'emplacement du fichier.
 
 ### Capteurs et Capteurs Binaires
 

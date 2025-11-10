@@ -347,6 +347,11 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                     notification, formatted_message, notif_type
                 )
 
+                # Fire Home Assistant event for automations
+                await self._fire_ajax_event(
+                    space, notification, event_type, device_id, device_name, room_name, timestamp
+                )
+
                 # Trigger update
                 _LOGGER.info(
                     "Real-time notification: %s (%s)",
@@ -479,18 +484,26 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
 
             elif success.HasField("update"):
                 # Single update
-                await self._async_handle_single_update(space_id, success.update)
+                await self._async_handle_single_update(space_id, success.update, batch_mode=False)
 
             elif success.HasField("updates"):
-                # Multiple updates
+                # Multiple updates - use batch mode to avoid multiple refreshes
                 for update in success.updates.updates:
-                    await self._async_handle_single_update(space_id, update)
+                    await self._async_handle_single_update(space_id, update, batch_mode=True)
+                # Trigger single refresh at the end
+                self.async_set_updated_data(self.account)
 
         except Exception as err:
             _LOGGER.error("Error processing stream update for space %s: %s", space_id, err)
 
-    async def _async_handle_single_update(self, space_id: str, update) -> None:
-        """Handle a single update from the stream."""
+    async def _async_handle_single_update(self, space_id: str, update, batch_mode: bool = False) -> None:
+        """Handle a single update from the stream.
+
+        Args:
+            space_id: The space ID
+            update: The update protobuf message
+            batch_mode: If True, don't trigger async_set_updated_data (for batch processing)
+        """
         try:
             # Security mode update
             if update.HasField("security_mode"):
@@ -545,7 +558,8 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                             else:
                                 space.security_state = SecurityState.PARTIALLY_ARMED
 
-                            self.async_set_updated_data(self.account)
+                            if not batch_mode:
+                                self.async_set_updated_data(self.account)
 
                         # Regular mode (not group mode)
                         elif security_mode.HasField("regular_mode"):
@@ -577,7 +591,10 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                                         old_state.value,
                                         new_state.value
                                     )
-                                    self.async_set_updated_data(self.account)
+                                    # Fire event for state change
+                                    self._fire_security_state_event(space, old_state, new_state)
+                                    if not batch_mode:
+                                        self.async_set_updated_data(self.account)
 
                         # Check displayed_security_state as fallback
                         elif hasattr(security_mode, "displayed_security_state"):
@@ -605,7 +622,10 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                                         old_state.value,
                                         new_state.value
                                     )
-                                    self.async_set_updated_data(self.account)
+                                    # Fire event for state change
+                                    self._fire_security_state_event(space, old_state, new_state)
+                                    if not batch_mode:
+                                        self.async_set_updated_data(self.account)
 
                     except Exception as mode_err:
                         _LOGGER.error("Error parsing security mode: %s", mode_err)
@@ -640,7 +660,8 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 if group_id in space.groups:
                     del space.groups[group_id]
                     _LOGGER.info("Group %s removed from space %s", group_id, space.name)
-                    self.async_set_updated_data(self.account)
+                    if not batch_mode:
+                        self.async_set_updated_data(self.account)
                 return
 
             # SPACE_UPDATE_TYPE_ADD = 1 or SPACE_UPDATE_TYPE_UPDATE = 2
@@ -678,7 +699,8 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 space.groups[group_id] = group
                 _LOGGER.info("Added new group %s to space %s", group_name, space.name)
 
-            self.async_set_updated_data(self.account)
+            if not batch_mode:
+                self.async_set_updated_data(self.account)
 
         except Exception as err:
             _LOGGER.exception("Error handling group update: %s", err)
@@ -939,6 +961,155 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 "message": formatted_message,
                 "notification_id": f"ajax_{notification.id}",
             },
+        )
+
+    async def _fire_ajax_event(
+        self,
+        space: AjaxSpace,
+        notification: AjaxNotification,
+        event_type: str,
+        device_id: str | None,
+        device_name: str,
+        room_name: str | None,
+        timestamp,
+    ) -> None:
+        """Fire a Home Assistant event for Ajax notifications.
+
+        This allows users to create automations based on Ajax events.
+
+        Args:
+            space: The AjaxSpace object
+            notification: The AjaxNotification object
+            event_type: The raw event type from Ajax
+            device_id: Device ID that triggered the event
+            device_name: Device name
+            room_name: Room name if available
+            timestamp: Event timestamp
+        """
+        if not event_type:
+            return
+
+        event_type_lower = event_type.lower()
+
+        # Map Ajax event types to HA event names
+        event_mapping = {
+            "motion_detected": "ajax_motion_detected",
+            "door_opened": "ajax_door_opened",
+            "door_closed": "ajax_door_closed",
+            "window_opened": "ajax_window_opened",
+            "window_closed": "ajax_window_closed",
+            "alarm_triggered": "ajax_alarm_triggered",
+            "tamper": "ajax_device_tampered",
+            "tampered": "ajax_device_tampered",
+            "armed": "ajax_armed",
+            "disarmed": "ajax_disarmed",
+            "smoke_detected": "ajax_smoke_detected",
+            "leak_detected": "ajax_leak_detected",
+            "gas_detected": "ajax_gas_detected",
+            "glass_break_detected": "ajax_glass_break_detected",
+        }
+
+        # Find matching event
+        ha_event_name = None
+        for key, event_name in event_mapping.items():
+            if key in event_type_lower:
+                ha_event_name = event_name
+                break
+
+        # If no specific mapping, use generic event
+        if not ha_event_name:
+            ha_event_name = "ajax_event"
+
+        # Get device type if available
+        device_type = None
+        if device_id and device_id in space.devices:
+            device = space.devices[device_id]
+            device_type = device.type.value if device.type else None
+
+        # Prepare event data
+        event_data = {
+            "space_id": space.id,
+            "space_name": space.name,
+            "event_type": event_type,
+            "notification_type": notification.type.value,
+            "message": notification.message,
+            "timestamp": timestamp.isoformat(),
+            "device_name": device_name,
+        }
+
+        # Add optional fields if available
+        if device_id:
+            event_data["device_id"] = device_id
+        if device_type:
+            event_data["device_type"] = device_type
+        if room_name:
+            event_data["room_name"] = room_name
+
+        # Fire the event
+        self.hass.bus.async_fire(ha_event_name, event_data)
+
+        _LOGGER.debug(
+            "Fired event '%s' for device %s in room %s",
+            ha_event_name,
+            device_name,
+            room_name or "unknown",
+        )
+
+    def _fire_security_state_event(
+        self,
+        space: AjaxSpace,
+        old_state: SecurityState,
+        new_state: SecurityState,
+    ) -> None:
+        """Fire a Home Assistant event when security state changes.
+
+        Args:
+            space: The AjaxSpace object
+            old_state: Previous security state
+            new_state: New security state
+        """
+        from datetime import datetime, timezone
+
+        # Determine event type based on new state
+        if new_state == SecurityState.ARMED:
+            event_name = "ajax_armed"
+        elif new_state == SecurityState.DISARMED:
+            event_name = "ajax_disarmed"
+        elif new_state == SecurityState.NIGHT_MODE:
+            event_name = "ajax_armed_night"
+        elif new_state == SecurityState.PARTIALLY_ARMED:
+            event_name = "ajax_armed_home"
+        else:
+            event_name = "ajax_security_state_changed"
+
+        # Prepare event data
+        event_data = {
+            "space_id": space.id,
+            "space_name": space.name,
+            "old_state": old_state.value,
+            "new_state": new_state.value,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # Add group information if in group mode
+        if space.group_mode_enabled and space.groups:
+            armed_groups = [g.name for g in space.groups.values() if g.state == GroupState.ARMED]
+            disarmed_groups = [g.name for g in space.groups.values() if g.state == GroupState.DISARMED]
+            event_data["armed_groups"] = armed_groups
+            event_data["disarmed_groups"] = disarmed_groups
+            event_data["group_mode"] = True
+        else:
+            event_data["group_mode"] = False
+
+        # Fire the event
+        self.hass.bus.async_fire(event_name, event_data)
+
+        _LOGGER.debug(
+            "Fired event '%s' for space %s: %s -> %s",
+            event_name,
+            space.name,
+            old_state.value,
+            new_state.value,
         )
 
     def _update_device_from_notification(self, space: AjaxSpace, notification: AjaxNotification) -> None:

@@ -130,6 +130,120 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         except Exception as err:
             _LOGGER.error("Failed to force arm night mode: %s", err)
 
+    async def async_handle_generate_device_info(call: ServiceCall) -> None:
+        """Generate device info diagnostic report (without sensitive data)."""
+        import json
+        from pathlib import Path
+
+        _LOGGER.info("Generating device info diagnostic report")
+
+        # Collect device information from all spaces
+        devices_info = []
+
+        for space_id, space in coordinator.account.spaces.items():
+            for device_id, device in space.devices.items():
+                # Get room name if available
+                room_name = None
+                if device.room_id and device.room_id in space.rooms:
+                    room_name = space.rooms[device.room_id].name
+
+                device_info = {
+                    "type": device.type.value if device.type else "unknown",
+                    "has_room": bool(room_name),
+                    "firmware_version": device.firmware_version or "unknown",
+                    "hardware_version": device.hardware_version or "unknown",
+                    "attributes": {
+                        "battery": device.battery_level is not None,
+                        "signal_strength": device.signal_strength is not None,
+                        "temperature": device.attributes.get("temperature") is not None,
+                        "humidity": device.attributes.get("humidity") is not None,
+                        "co2": device.attributes.get("co2") is not None,
+                        "tamper": device.attributes.get("tamper") is not None,
+                        "online": device.online,
+                        "bypassed": device.bypassed,
+                        "malfunctions": device.malfunctions > 0,
+                    },
+                }
+
+                # Add device-specific attributes based on type
+                if device.type:
+                    type_value = device.type.value
+                    if "motion" in type_value.lower():
+                        device_info["attributes"]["motion_detected"] = "motion_detected" in device.states
+                    elif "door" in type_value.lower() or "contact" in type_value.lower():
+                        device_info["attributes"]["opened"] = "opened" in device.states
+                    elif "smoke" in type_value.lower():
+                        device_info["attributes"]["smoke_detected"] = "smoke_detected" in device.states
+                    elif "leak" in type_value.lower() or "water" in type_value.lower():
+                        device_info["attributes"]["leak_detected"] = "leak_detected" in device.states
+
+                # Add any additional states
+                if device.states:
+                    device_info["states"] = device.states
+
+                devices_info.append(device_info)
+
+        # Generate report
+        report = {
+            "total_devices": len(devices_info),
+            "spaces": len(coordinator.account.spaces),
+            "devices_by_type": {},
+            "firmware_versions": {},
+            "hardware_versions": {},
+            "devices": devices_info,
+        }
+
+        # Count by type
+        for dev in devices_info:
+            dev_type = dev["type"]
+            report["devices_by_type"][dev_type] = report["devices_by_type"].get(dev_type, 0) + 1
+
+            # Count firmware versions
+            fw = dev["firmware_version"]
+            if fw != "unknown":
+                report["firmware_versions"][fw] = report["firmware_versions"].get(fw, 0) + 1
+
+            # Count hardware versions
+            hw = dev["hardware_version"]
+            if hw != "unknown":
+                report["hardware_versions"][hw] = report["hardware_versions"].get(hw, 0) + 1
+
+        # Save to file in config directory
+        config_path = Path(hass.config.config_dir)
+        report_path = config_path / "ajax_device_info.json"
+
+        try:
+            with open(report_path, "w", encoding="utf-8") as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
+
+            _LOGGER.info("Device info report saved to: %s", report_path)
+
+            # Send persistent notification to user
+            await hass.services.async_call(
+                "persistent_notification",
+                "create",
+                {
+                    "title": "Ajax Device Info Generated",
+                    "message": f"Device information report has been generated.\n\n"
+                              f"Location: {report_path}\n"
+                              f"Total devices: {report['total_devices']}\n"
+                              f"Device types: {len(report['devices_by_type'])}",
+                    "notification_id": "ajax_device_info_generated",
+                },
+            )
+
+        except Exception as err:
+            _LOGGER.error("Failed to save device info report: %s", err)
+            await hass.services.async_call(
+                "persistent_notification",
+                "create",
+                {
+                    "title": "Ajax Device Info Error",
+                    "message": f"Failed to generate device info report: {err}",
+                    "notification_id": "ajax_device_info_error",
+                },
+            )
+
     # Register services
     hass.services.async_register(
         DOMAIN,
@@ -149,6 +263,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         }),
     )
 
+    hass.services.async_register(
+        DOMAIN,
+        "generate_device_info",
+        async_handle_generate_device_info,
+        schema=vol.Schema({}),
+    )
+
     return True
 
 
@@ -164,5 +285,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not hass.data[DOMAIN]:
             hass.services.async_remove(DOMAIN, "force_arm")
             hass.services.async_remove(DOMAIN, "force_arm_night")
+            hass.services.async_remove(DOMAIN, "generate_device_info")
 
     return unload_ok
