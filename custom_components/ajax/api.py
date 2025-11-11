@@ -169,8 +169,10 @@ class AjaxApi:
     async def async_login(self) -> dict[str, Any]:
         """Login to Ajax and get session token."""
         try:
-            # Hash password with SHA256
-            password_hash = hashlib.sha256(self.password.encode()).hexdigest()
+            # Hash password with SHA256 (required by Ajax API protocol)
+            # Note: SHA256 is mandated by Ajax Systems API, not our choice
+            # The password is transmitted as SHA256 hash over TLS
+            password_hash = hashlib.sha256(self.password.encode()).hexdigest()  # nosec B324
 
             # Create login request
             request = login_request_pb2.LoginByPasswordRequest(
