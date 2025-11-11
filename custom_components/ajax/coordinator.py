@@ -597,9 +597,19 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                             if not armed_groups:
                                 space.security_state = SecurityState.DISARMED
                             elif len(armed_groups) == len(space.groups):
-                                space.security_state = SecurityState.ARMED
+                                # Check if all armed groups have night mode enabled
+                                all_night_mode = all(g.night_mode_enabled for g in armed_groups)
+                                if all_night_mode:
+                                    space.security_state = SecurityState.NIGHT_MODE
+                                else:
+                                    space.security_state = SecurityState.ARMED
                             else:
-                                space.security_state = SecurityState.PARTIALLY_ARMED
+                                # Partially armed - check if any armed groups have night mode
+                                any_night_mode = any(g.night_mode_enabled for g in armed_groups if g.state == GroupState.ARMED)
+                                if any_night_mode:
+                                    space.security_state = SecurityState.NIGHT_MODE
+                                else:
+                                    space.security_state = SecurityState.PARTIALLY_ARMED
 
                             if not batch_mode:
                                 self.async_set_updated_data(self.account)
