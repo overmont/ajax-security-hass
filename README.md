@@ -19,6 +19,16 @@ This integration is **actively developed** but I'm just getting started with Aja
 - ✅ **Hub 2 Plus**
 - ✅ **MotionCam** (Motion detector with photo capture)
 
+Users tested:
+- ✅ **Superior Hub Hybrid 4G**
+- ✅ **KeyPad TouchScreen Jeweller** (not much info from it)
+- ✅ **Superior DoorProtect Plus Jeweller**
+- ✅ **FireProtect 2 RB (Heat/Smoke Jeweller)**
+- ✅ **Superior HomeSiren Jeweller**
+- ✅ **ReX 2 Jeweller**
+- ✅ **StreetSiren Jeweller**
+- ✅ **Superior MotionCam (PhOD) Jeweller**
+
 Since I don't have access to all Ajax devices yet, **I cannot test every device type**. However, the integration is built on Ajax's official API and should theoretically work with all Ajax devices.
 
 **🤝 Community Help Needed**: If you own other Ajax devices and want to help test and improve this integration, your contributions would be greatly appreciated! Together we can make this the best Ajax integration for Home Assistant.
