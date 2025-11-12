@@ -224,6 +224,37 @@
           }
         }
       },
+      "gsm_signal_level": {
+        "name": "Niveau de signal GSM"
+      },
+      "wifi_signal_level": {
+        "name": "Niveau de signal Wi-Fi"
+      },
+      "active_connection": {
+        "name": "Connexion active"
+      },
+      "network_status": {
+        "name": "État du réseau"
+      },
+      "gsm_type": {
+        "name": "Type GSM",
+        "state": {
+          "UNKNOWN": "Inconnu",
+          "2G": "2G",
+          "3G": "3G",
+          "4G": "4G",
+          "5G": "5G"
+        }
+      },
+      "gsm_connection_status": {
+        "name": "État de connexion GSM",
+        "state": {
+          "DISCONNECTED": "Déconnecté",
+          "CONNECTING": "Connexion en cours",
+          "CONNECTED": "Connecté",
+          "ERROR": "Erreur"
+        }
+      },
       "battery_state": {
         "name": "État de la batterie"
       },

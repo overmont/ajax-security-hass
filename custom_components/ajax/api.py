@@ -729,6 +729,51 @@ class AjaxApi:
 
                             sim_cards.append(sim_info)
 
+                        # GSM status (for hubs with cellular connection)
+                        elif status.HasField("gsm_status"):
+                            gsm = status.gsm_status
+                            gsm_data = {}
+
+                            # Parse GSM type (2G, 3G, 4G, etc.)
+                            if hasattr(gsm, "type"):
+                                gsm_type_raw = str(gsm.type)
+                                # Handle both text and numeric enum formats
+                                if "GSM_TYPE_" in gsm_type_raw:
+                                    gsm_type_str = gsm_type_raw.split("GSM_TYPE_")[-1]
+                                elif gsm_type_raw.isdigit():
+                                    # Numeric enum: 0=UNSPECIFIED, 1=2G, 2=3G, 3=4G, 4=5G
+                                    gsm_type_map = {0: "UNKNOWN", 1: "2G", 2: "3G", 3: "4G", 4: "5G"}
+                                    gsm_type_str = gsm_type_map.get(int(gsm_type_raw), gsm_type_raw)
+                                else:
+                                    gsm_type_str = gsm_type_raw.split("_")[-1]
+
+                                gsm_data["type"] = gsm_type_str
+                                attributes["gsm_type"] = gsm_type_str
+
+                            # Parse GSM connection status
+                            if hasattr(gsm, "status"):
+                                gsm_status_raw = str(gsm.status)
+                                # Handle both text and numeric enum formats
+                                if "STATUS_" in gsm_status_raw:
+                                    gsm_status_str = gsm_status_raw.split("STATUS_")[-1]
+                                elif gsm_status_raw.isdigit():
+                                    # Numeric enum: 0=DISCONNECTED, 1=CONNECTING, 2=CONNECTED, 3=ERROR
+                                    gsm_status_map = {
+                                        0: "DISCONNECTED",
+                                        1: "CONNECTING",
+                                        2: "CONNECTED",
+                                        3: "ERROR"
+                                    }
+                                    gsm_status_str = gsm_status_map.get(int(gsm_status_raw), gsm_status_raw)
+                                else:
+                                    gsm_status_str = gsm_status_raw.split("_")[-1]
+
+                                gsm_data["status"] = gsm_status_str
+                                attributes["gsm_connection_status"] = gsm_status_str
+
+                            if gsm_data:
+                                attributes["gsm_info"] = gsm_data
+
                         # Temperature (simple ValueStatus)
                         elif status.HasField("temperature"):
                             # Temperature is in degrees Celsius
