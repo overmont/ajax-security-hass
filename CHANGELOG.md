@@ -5,6 +5,22 @@ All notable changes to the Ajax Security System integration will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.11] - 2025-11-12
+
+### Added
+- **Added support for CombiProtect device** (Fixes #32)
+  - MotionProtect Combi now properly recognized (no longer shows as "unknown")
+  - Motion detection sensor
+  - Glass break detection sensor
+  - Full support for all standard sensors (battery, signal, temperature, etc.)
+  - CombiProtect combines both motion and glass break detection in a single device
+
+### Changed
+- **AI transparency** (Fixes #31)
+  - Added "Development Process & AI Transparency" section to README
+  - Documents collaborative approach: human expertise + AI assistance (Claude, Cursor) + community contributions
+  - Explains code review and security practices
+
 ## [0.4.10] - 2025-11-11
 
 ### Fixed
