@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=github)](https://github.com/sponsors/foXaCe)
 [![Revolut](https://img.shields.io/badge/Revolut-Donate-0075EB?logo=revolut&logoColor=white)](https://revolut.me/foxace)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal&logoColor=white)](https://paypal.me/foXaCe66)
 [![Community Forum](https://img.shields.io/badge/Home_Assistant-Community-blue?logo=home-assistant)](https://community.home-assistant.io/t/custom-component-ajax-systems/948939/2)
 
 **Full-featured** Home Assistant integration for Ajax Security Systems via the official Cloud API with **real-time synchronization**.
@@ -356,6 +357,8 @@ If this integration is useful to you, you can support its development:
 💖 **[GitHub Sponsors](https://github.com/sponsors/foXaCe)** - Support via GitHub
 
 💳 **[Revolut](https://revolut.me/foxace)** - Instant payment via Revolut
+
+💰 **[PayPal](https://paypal.me/foXaCe66)** - Donation via PayPal
 
 🪙 **Bitcoin**: `bc1qhe4ge22x0anuyeg0fmts6rdmz3t735dnqwt3p7`
 
@@ -711,6 +714,8 @@ Si cette intégration vous est utile, vous pouvez soutenir son développement :
 💖 **[GitHub Sponsors](https://github.com/sponsors/foXaCe)** - Soutenir via GitHub
 
 💳 **[Revolut](https://revolut.me/foxace)** - Paiement instantané via Revolut
+
+💰 **[PayPal](https://paypal.me/foXaCe66)** - Donation via PayPal
 
 🪙 **Bitcoin** : `bc1qhe4ge22x0anuyeg0fmts6rdmz3t735dnqwt3p7`
 

@@ -914,11 +914,43 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 try:
                     hub_obj_data = await self.api.async_stream_hub_object(device.id)
                     if hub_obj_data:
-                        _LOGGER.info("Received HubObject data: %s", hub_obj_data)
-                        # Merge hub_obj_data into device attributes
-                        if "attributes" not in device_data:
-                            device.attributes = {}
-                        device.attributes.update(hub_obj_data)
+                        _LOGGER.debug("Received HubObject data for hub %s", device.id)
+
+                        # Process SIM card data from HubObject
+                        if "sim_card" in hub_obj_data:
+                            sim_card = hub_obj_data["sim_card"]
+                            sim_card_status = sim_card.get("sim_card_status", "UNKNOWN")
+                            active_sim = sim_card.get("active_sim_card", 1)
+
+                            # Create sim_cards list in the same format as _parse_light_device
+                            sim_info = {
+                                "status": sim_card_status,
+                                "installed": sim_card_status not in ["MISSING", "NOT_INSTALLED", "2"],
+                                "slot": active_sim,
+                                "imei": sim_card.get("imei"),
+                            }
+
+                            # Determine total slots (Hub 2 Plus has 2 slots)
+                            # If we only get info for one SIM, assume single-SIM hub
+                            total_slots = 1 if active_sim == 1 else 2
+                            installed_count = 1 if sim_info["installed"] else 0
+
+                            # Create sim_status attributes
+                            device.attributes["sim_status"] = f"{installed_count}/{total_slots}"
+                            device.attributes["sim_cards"] = [sim_info]
+                            device.attributes["sim_slots_total"] = total_slots
+                            device.attributes["sim_slots_used"] = installed_count
+
+                            _LOGGER.debug(
+                                "Processed SIM data for hub %s: %s",
+                                device.id,
+                                device.attributes["sim_status"]
+                            )
+
+                        # Merge other hub_obj_data (except sim_card which we processed)
+                        for key, value in hub_obj_data.items():
+                            if key != "sim_card":
+                                device.attributes[key] = value
                     else:
                         _LOGGER.warning("No HubObject data received for hub %s", device.id)
                 except Exception as err:
