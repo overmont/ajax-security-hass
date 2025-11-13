@@ -6,6 +6,7 @@ This module creates binary sensors for:
 - Smoke detectors
 - Leak/Water detectors
 - Tamper detection
+- Hub status sensors (battery, power, signal, antenna, noise, faults)
 """
 from __future__ import annotations
 
@@ -60,7 +61,7 @@ BINARY_SENSORS: tuple[AjaxBinarySensorDescription, ...] = (
         key="motion",
         translation_key="motion",
         device_class=BinarySensorDeviceClass.MOTION,
-        value_fn=lambda device: device.is_triggered if device.type in [DeviceType.MOTION_DETECTOR, DeviceType.COMBI_PROTECT] else device.attributes.get("motion_detected", False),
+        value_fn=lambda device: device.attributes.get("motion_detected", False),
         should_create=lambda device: device.type in [DeviceType.MOTION_DETECTOR, DeviceType.COMBI_PROTECT]
         or "motion_detected" in device.attributes,
         enabled_by_default=True,
@@ -155,6 +156,86 @@ BINARY_SENSORS: tuple[AjaxBinarySensorDescription, ...] = (
         icon="mdi:power-plug",
         value_fn=lambda device: device.attributes.get("externally_powered", False),
         should_create=lambda device: "externally_powered" in device.attributes,
+        enabled_by_default=True,
+    ),
+    # Hub-specific sensors (always created for hub devices)
+    # Inverted logic: On = OK, Off = Problem (more intuitive)
+    AjaxBinarySensorDescription(
+        key="battery_connected",
+        translation_key="battery_connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        icon="mdi:battery-check",
+        value_fn=lambda device: not device.attributes.get("battery_disconnected", False),
+        should_create=lambda device: (
+            device.type == DeviceType.HUB
+            and "battery_disconnected" in device.attributes
+        ),
+        enabled_by_default=True,
+    ),
+    AjaxBinarySensorDescription(
+        key="external_power",
+        translation_key="external_power",
+        device_class=BinarySensorDeviceClass.POWER,
+        icon="mdi:power-plug",
+        value_fn=lambda device: not device.attributes.get("external_power_loss", False),
+        should_create=lambda device: device.type == DeviceType.HUB,
+        enabled_by_default=True,
+    ),
+    AjaxBinarySensorDescription(
+        key="cellular_signal",
+        translation_key="cellular_signal",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        icon="mdi:signal-cellular-3",
+        value_fn=lambda device: not device.attributes.get("cellular_signal_low", False),
+        should_create=lambda device: device.type == DeviceType.HUB,
+        enabled_by_default=True,
+    ),
+    AjaxBinarySensorDescription(
+        key="gsm_antenna",
+        translation_key="gsm_antenna",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        icon="mdi:antenna",
+        value_fn=lambda device: not (device.attributes.get("gsm_antenna_damaged", False) or device.attributes.get("gsm_antenna_disconnected", False)),
+        should_create=lambda device: device.type == DeviceType.HUB,
+        enabled_by_default=True,
+    ),
+    AjaxBinarySensorDescription(
+        key="jeweller_radio",
+        translation_key="jeweller_radio",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        icon="mdi:radio-tower",
+        value_fn=lambda device: not device.attributes.get("jeweller_noise_high", False),
+        should_create=lambda device: device.type == DeviceType.HUB,
+        enabled_by_default=True,
+    ),
+    AjaxBinarySensorDescription(
+        key="wings_radio",
+        translation_key="wings_radio",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        icon="mdi:radio-tower",
+        value_fn=lambda device: not device.attributes.get("wings_noise_high", False),
+        should_create=lambda device: device.type == DeviceType.HUB,
+        enabled_by_default=True,
+    ),
+    AjaxBinarySensorDescription(
+        key="system_health",
+        translation_key="system_health",
+        device_class=BinarySensorDeviceClass.RUNNING,
+        icon="mdi:check-circle",
+        value_fn=lambda device: not device.attributes.get("system_fault", False),
+        should_create=lambda device: device.type == DeviceType.HUB,
+        enabled_by_default=True,
+    ),
+    AjaxBinarySensorDescription(
+        key="cms_connection",
+        translation_key="cms_connection",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        icon="mdi:server-network",
+        value_fn=lambda device: not device.attributes.get("cms_connection_loss", False),
+        should_create=lambda device: (
+            device.type == DeviceType.HUB
+            and ("cms_connection_loss" in device.attributes or "cms_connected" in device.attributes)
+        ),
         enabled_by_default=True,
     ),
 )
@@ -274,9 +355,11 @@ class AjaxBinarySensor(CoordinatorEntity[AjaxDataCoordinator], BinarySensorEntit
         # For hub devices, use the space identifier to merge with space-level sensors
         # This prevents duplicate hub devices in Home Assistant
         if device.type == DeviceType.HUB:
+            # Avoid redundant name if device.name is already "Hub"
+            hub_name = "Ajax Hub" if device.name == "Hub" else f"Ajax {device.name}"
             return {
                 "identifiers": {(DOMAIN, self._space_id)},
-                "name": f"Ajax Hub - {device.name}",
+                "name": hub_name,
                 "manufacturer": "Ajax Systems",
                 "model": device.type.value.replace("_", " ").title(),
                 "sw_version": device.firmware_version,

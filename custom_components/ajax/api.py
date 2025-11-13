@@ -1,6 +1,7 @@
 """Ajax API client."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import logging
 from typing import Any
@@ -486,6 +487,253 @@ class AjaxApi:
             _LOGGER.exception("Unexpected error getting devices")
             raise AjaxApiError(f"Failed to get devices: {err}") from err
 
+    async def async_stream_light_devices(
+        self,
+        space_id: str,
+        update_callback: callable = None
+    ):
+        """Stream light devices with real-time updates.
+
+        Args:
+            space_id: The space ID to stream devices for
+            update_callback: Optional callback function to handle device updates.
+                           Called with (device_id, update_data) when updates arrive.
+
+        Yields:
+            Initial snapshot as list of device dicts, then continues streaming updates
+        """
+        if not self.session_token:
+            raise AjaxAuthError("Not authenticated. Call async_login() first.")
+
+        try:
+            # Create request for streaming light devices
+            request = light_devices_request_pb2.StreamLightDevicesRequest(
+                space_id=space_id
+            )
+
+            # Create stub and call service (streaming response)
+            stub = light_devices_pb2_grpc.StreamLightDevicesServiceStub(self.channel)
+            response_stream = stub.execute(
+                request, metadata=self._get_metadata(include_auth=True)
+            )
+
+            snapshot_sent = False
+            last_log_time = datetime.now(timezone.utc)
+
+            # Read the stream continuously for real-time updates
+            async for response in response_stream:
+                # Log every 30 seconds to confirm stream is alive
+                now = datetime.now(timezone.utc)
+                if (now - last_log_time).total_seconds() >= 30:
+                    _LOGGER.debug("Device stream for space %s is still active, waiting for updates...", space_id)
+                    last_log_time = now
+                if response.HasField("success"):
+                    if response.success.HasField("snapshot"):
+                        snapshot = response.success.snapshot
+                        _LOGGER.info(
+                            "Received device snapshot with %d light_devices",
+                            len(snapshot.light_devices)
+                        )
+
+                        # Process and yield snapshot
+                        devices = []
+                        for light_device in snapshot.light_devices:
+                            device_data = self._parse_light_device(light_device)
+                            if device_data:
+                                devices.append(device_data)
+
+                        yield {"type": "snapshot", "devices": devices}
+                        snapshot_sent = True
+
+                    elif response.success.HasField("updates"):
+                        # Process real-time updates
+                        if not snapshot_sent:
+                            _LOGGER.warning("Received updates before snapshot")
+                            continue
+
+                        updates_obj = response.success.updates
+                        for update in updates_obj.updates:
+                            update_data = self._parse_device_update(update)
+                            if update_data:
+                                _LOGGER.debug(
+                                    "Device update: %s - %s",
+                                    update_data.get("device_id"),
+                                    update_data.get("update_type")
+                                )
+
+                                # Call callback if provided
+                                if update_callback:
+                                    await update_callback(update_data)
+
+                                yield {"type": "update", "data": update_data}
+
+                elif response.HasField("failure"):
+                    _LOGGER.error("Stream failure: %s", response.failure)
+                    raise AjaxApiError("Stream failed")
+                else:
+                    _LOGGER.warning("Unknown response type received")
+
+        except grpc.RpcError as err:
+            _LOGGER.error("gRPC error streaming devices: %s", err)
+            if err.code() == grpc.StatusCode.UNAUTHENTICATED:
+                raise AjaxAuthError("Session expired") from err
+            raise AjaxApiError(f"gRPC error: {err}") from err
+        except (AjaxAuthError, AjaxApiError):
+            raise
+        except Exception as err:
+            _LOGGER.exception("Unexpected error streaming devices")
+            raise AjaxApiError(f"Failed to stream devices: {err}") from err
+
+    def _parse_device_update(self, update) -> dict[str, Any] | None:
+        """Parse a device update from the stream.
+
+        Returns:
+            Dict with device_id and update details, or None if parsing fails
+        """
+        try:
+            update_data = {}
+
+            # Extract device ID
+            if hasattr(update, "device_id"):
+                device_id_obj = update.device_id
+
+                # The device_id is a oneof field, try different types
+                device_id = None
+
+                # Try hub_light_device_id (for door sensors, motion detectors, etc.)
+                if hasattr(device_id_obj, "hub_light_device_id") and device_id_obj.HasField("hub_light_device_id"):
+                    hub_light = device_id_obj.hub_light_device_id
+                    if hasattr(hub_light, "device_id"):
+                        device_id = hub_light.device_id
+                        _LOGGER.debug("Extracted device_id from hub_light_device_id: %s", device_id)
+
+                # Try smart_lock_id
+                elif hasattr(device_id_obj, "smart_lock_id") and device_id_obj.HasField("smart_lock_id"):
+                    smart_lock = device_id_obj.smart_lock_id
+                    if hasattr(smart_lock, "device_id"):
+                        device_id = smart_lock.device_id
+                        _LOGGER.debug("Extracted device_id from smart_lock_id: %s", device_id)
+
+                # Try video_edge_id
+                elif hasattr(device_id_obj, "video_edge_id") and device_id_obj.HasField("video_edge_id"):
+                    video_edge = device_id_obj.video_edge_id
+                    if hasattr(video_edge, "device_id"):
+                        device_id = video_edge.device_id
+                        _LOGGER.debug("Extracted device_id from video_edge_id: %s", device_id)
+
+                # Try video_edge_channel_reference
+                elif hasattr(device_id_obj, "video_edge_channel_reference") and device_id_obj.HasField("video_edge_channel_reference"):
+                    video_channel = device_id_obj.video_edge_channel_reference
+                    if hasattr(video_channel, "device_id"):
+                        device_id = video_channel.device_id
+                        _LOGGER.debug("Extracted device_id from video_edge_channel_reference: %s", device_id)
+
+                if device_id:
+                    update_data["device_id"] = device_id
+                else:
+                    _LOGGER.warning("Could not extract device_id from update. Type: %s", type(device_id_obj))
+                    return None
+            else:
+                _LOGGER.debug("Update missing device_id field")
+                return None
+
+            # Check which type of update this is
+            if hasattr(update, "status_update") and update.HasField("status_update"):
+                status_update = update.status_update
+                update_data["update_type"] = "status"
+
+                # Parse status fields
+                status_data = {}
+                if hasattr(status_update, "status"):
+                    status = status_update.status
+
+                    # Get list of set fields to determine what changed
+                    set_fields = [field.name for field, _ in status.ListFields()]
+
+                    # Motion detected
+                    if hasattr(status, "motion_detected") and status.HasField("motion_detected"):
+                        motion = status.motion_detected
+                        if hasattr(motion, "detected_at"):
+                            from google.protobuf.timestamp_pb2 import Timestamp
+                            timestamp = motion.detected_at
+                            detected_at = datetime.fromtimestamp(
+                                timestamp.seconds + timestamp.nanos / 1e9,
+                                tz=timezone.utc
+                            )
+                            status_data["motion_detected"] = True
+                            status_data["motion_detected_at"] = detected_at
+                            _LOGGER.info(
+                                "Motion detected on device %s at %s",
+                                update_data["device_id"],
+                                detected_at
+                            )
+
+                    # Door status
+                    # Check if door_opened field exists and is set
+                    if hasattr(status, "door_opened"):
+                        # Check if the field is actually set
+                        if status.HasField("door_opened"):
+                            status_data["door_opened"] = True
+                            _LOGGER.debug("Door opened on device %s", update_data["device_id"])
+                        else:
+                            # Field exists but is not set - door is closed
+                            status_data["door_opened"] = False
+                            _LOGGER.debug("Door closed on device %s", update_data["device_id"])
+
+                    # Wire input status (EOL sensors)
+                    if hasattr(status, "wire_input_status") and status.HasField("wire_input_status"):
+                        wire_status = status.wire_input_status
+                        if hasattr(wire_status, "is_alert"):
+                            status_data["wire_input_alert"] = wire_status.is_alert
+                            _LOGGER.info(
+                                "Wire input alert on device %s: %s",
+                                update_data["device_id"],
+                                wire_status.is_alert
+                            )
+
+                    # External contact broken
+                    if hasattr(status, "external_contact_broken") and status.HasField("external_contact_broken"):
+                        status_data["external_contact_broken"] = True
+                        _LOGGER.info("External contact broken on device %s", update_data["device_id"])
+
+                update_data["status"] = status_data
+
+            elif hasattr(update, "state_update") and update.HasField("state_update"):
+                state_update = update.state_update
+                update_data["update_type"] = "state"
+                if hasattr(state_update, "state"):
+                    update_data["state"] = str(state_update.state)
+
+                # DEBUG: Log state_update for door sensor
+                if update_data.get("device_id") == "30DD9A8B":
+                    _LOGGER.info("=== DOOR SENSOR STATE UPDATE ===")
+                    _LOGGER.info("State: %s", update_data.get("state"))
+                    _LOGGER.info("Full state_update: %s", state_update)
+
+            elif hasattr(update, "snapshot_update") and update.HasField("snapshot_update"):
+                snapshot_update = update.snapshot_update
+                update_data["update_type"] = "snapshot"
+                if hasattr(snapshot_update, "light_device"):
+                    # Full device update - parse like a normal device
+                    device_data = self._parse_light_device(snapshot_update.light_device)
+                    if device_data:
+                        update_data["device_data"] = device_data
+
+                # DEBUG: Log snapshot_update for door sensor
+                if update_data.get("device_id") == "30DD9A8B":
+                    _LOGGER.info("=== DOOR SENSOR SNAPSHOT UPDATE ===")
+                    _LOGGER.info("Device data: %s", device_data.get("attributes") if device_data else "No data")
+
+            else:
+                _LOGGER.debug("Unknown update type for device %s", update_data["device_id"])
+                return None
+
+            return update_data
+
+        except Exception as err:
+            _LOGGER.exception("Error parsing device update: %s", err)
+            return None
+
     async def async_stream_hub_object(self, hub_id: str) -> dict[str, Any] | None:
         """Stream Hub object data to get detailed Hub information."""
         if not self.session_token:
@@ -516,6 +764,19 @@ class AjaxApi:
                 if which in ('snapshot', 'update', 'create'):
                     hub_obj = getattr(response, which)
                     _LOGGER.info("Received HubObject %s for hub %s", which, hub_id)
+
+                    # TEMPORARY DEBUG: Dump all HubObject fields
+                    if which == 'snapshot':  # Only dump on snapshot to avoid spam
+                        _LOGGER.info("=== HubObject FULL DUMP START ===")
+                        for attr in dir(hub_obj):
+                            if not attr.startswith('_') and not attr.startswith('DESCRIPTOR'):
+                                try:
+                                    value = getattr(hub_obj, attr)
+                                    if not callable(value):
+                                        _LOGGER.info("  HubObject.%s = %s", attr, value)
+                                except Exception as e:
+                                    _LOGGER.debug("  HubObject.%s = <error: %s>", attr, e)
+                        _LOGGER.info("=== HubObject FULL DUMP END ===")
 
                     # Parse the HubObject
                     hub_data = self._parse_hub_object(hub_obj)
@@ -674,6 +935,25 @@ class AjaxApi:
             if hasattr(light_device, "hub_device") and light_device.hub_device:
                 hub_dev = light_device.hub_device
 
+                # TEMPORARY DEBUG: Dump all hub_device fields (only for hub type)
+                try:
+                    common_test = hub_dev.common_device
+                    if hasattr(common_test, "object_type"):
+                        object_type_test = self._get_device_type(common_test.object_type)
+                        if "hub" in object_type_test.lower():
+                            _LOGGER.info("=== HUB DEVICE FULL DUMP START ===")
+                            for attr in dir(hub_dev):
+                                if not attr.startswith('_') and not attr.startswith('DESCRIPTOR'):
+                                    try:
+                                        value = getattr(hub_dev, attr)
+                                        if not callable(value):
+                                            _LOGGER.info("  hub_device.%s = %s", attr, value)
+                                    except Exception as e:
+                                        _LOGGER.debug("  hub_device.%s = <error: %s>", attr, e)
+                            _LOGGER.info("=== HUB DEVICE FULL DUMP END ===")
+                except:
+                    pass
+
                 # Check if common_device exists
                 try:
                     common = hub_dev.common_device
@@ -702,7 +982,7 @@ class AjaxApi:
 
                 # Add device color, label, and marketing ID
                 if hasattr(profile, "device_color"):
-                    device_data["device_color"] = str(profile.device_color).split("_")[-1]
+                    device_data["device_color"] = int(profile.device_color)
                 if hasattr(profile, "device_label"):
                     device_data["device_label"] = str(profile.device_label).split("_")[-1]
                 if hasattr(profile, "device_marketing_id"):
@@ -1033,11 +1313,11 @@ class AjaxApi:
                     common_part = device_specific.common_part
 
                     # Temperature
-                    if hasattr(common_part, 'temperature') and common_part.temperature:
+                    if hasattr(common_part, 'temperature') and common_part.temperature is not None:
                         attributes["temperature"] = common_part.temperature
 
                     # Battery level
-                    if hasattr(common_part, 'battery_charge_level_percentage') and common_part.battery_charge_level_percentage:
+                    if hasattr(common_part, 'battery_charge_level_percentage') and common_part.battery_charge_level_percentage is not None:
                         device_data["battery_level"] = common_part.battery_charge_level_percentage
 
                     # Night mode arm
@@ -1071,6 +1351,9 @@ class AjaxApi:
                         device_data["signal_strength"] = signal_map.get(signal_str, 50)
                         attributes["signal_level"] = signal_str
                         _LOGGER.debug("Device %s signal_strength: %s%%", profile.name, device_data["signal_strength"])
+
+                # Note: Device state (ACTIVE/PASSIVE) is not provided by Ajax API in stream_light_devices
+                # Motion/door states must be retrieved via notifications or periodic polling
 
                 # Parse device-specific fields (e.g., external_contact_always_active for Transmitter)
                 if device_specific:
@@ -1591,6 +1874,14 @@ class AjaxApi:
                 elif response.HasField("failure"):
                     failure = response.failure
                     error_msg = "Unknown error"
+
+                    # Log all fields in the failure to debug
+                    _LOGGER.error("Device stream failure for %s. Failure fields:", device_id)
+                    for field in failure.DESCRIPTOR.fields:
+                        if failure.HasField(field.name):
+                            field_value = getattr(failure, field.name)
+                            _LOGGER.error("  - %s: %s", field.name, field_value)
+                            error_msg = f"{field.name}: {field_value}"
 
                     if failure.HasField("bad_request"):
                         error_msg = "Bad request"

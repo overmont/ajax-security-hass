@@ -218,7 +218,11 @@
         "name": "Battery state"
       },
       "device_color": {
-        "name": "Device color"
+        "name": "Device color",
+        "state": {
+          "White": "White",
+          "Black": "Black"
+        }
       },
       "device_label": {
         "name": "Device label"
@@ -297,6 +301,30 @@
       },
       "externally_powered": {
         "name": "External power supply"
+      },
+      "battery_connected": {
+        "name": "Hub battery"
+      },
+      "external_power": {
+        "name": "External power"
+      },
+      "cellular_signal": {
+        "name": "Cellular signal"
+      },
+      "gsm_antenna": {
+        "name": "GSM antenna"
+      },
+      "jeweller_radio": {
+        "name": "Jeweller radio"
+      },
+      "wings_radio": {
+        "name": "Wings radio"
+      },
+      "system_health": {
+        "name": "System health"
+      },
+      "cms_connection": {
+        "name": "CMS connection"
       }
     },
     "button": {

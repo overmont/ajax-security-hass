@@ -37,6 +37,19 @@ _LOGGER = logging.getLogger(__name__)
 # ==============================================================================
 
 
+def get_device_color_name(color_code: int | None) -> str | None:
+    """Convert Ajax device color code to human-readable name."""
+    if color_code is None:
+        return None
+
+    color_map = {
+        1: "White",
+        2: "Black",
+    }
+
+    return color_map.get(color_code, f"Unknown ({color_code})")
+
+
 def get_last_alert_timestamp(space: AjaxSpace) -> datetime | None:
     """Get the last alert/security event timestamp with proper timezone."""
     if not space.notifications:
@@ -201,9 +214,7 @@ DEVICE_SENSORS: tuple[AjaxDeviceSensorDescription, ...] = (
     ),
 )
 
-# Hub-specific sensor descriptions (for SIM status only)
-# Note: Other Hub sensors (GSM signal, WiFi signal, active connection, network status, noise level)
-# are not available because the Ajax gRPC API does not expose these details
+# Hub-specific sensor descriptions
 HUB_SENSORS: tuple[AjaxDeviceSensorDescription, ...] = (
     AjaxDeviceSensorDescription(
         key="sim_status",
@@ -219,6 +230,25 @@ HUB_SENSORS: tuple[AjaxDeviceSensorDescription, ...] = (
             "sim_cards": device.attributes.get("sim_cards", []),
         } if "sim_cards" in device.attributes else {},
     ),
+    AjaxDeviceSensorDescription(
+        key="gsm_type",
+        translation_key="gsm_type",
+        icon="mdi:signal",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda device: device.attributes.get("gsm_type"),
+        should_create=lambda device: "gsm_type" in device.attributes,
+        enabled_by_default=True,
+    ),
+    AjaxDeviceSensorDescription(
+        key="gsm_connection_status",
+        translation_key="gsm_connection_status",
+        icon="mdi:access-point-network",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda device: device.attributes.get("gsm_connection_status"),
+        should_create=lambda device: "gsm_connection_status" in device.attributes,
+        enabled_by_default=True,
+        extra_attributes_fn=lambda device: device.attributes.get("gsm_info", {}),
+    ),
 )
 
 # Additional device sensor descriptions (metadata, etc.)
@@ -228,7 +258,7 @@ DEVICE_METADATA_SENSORS: tuple[AjaxDeviceSensorDescription, ...] = (
         translation_key="device_color",
         icon="mdi:palette",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda device: device.device_color,
+        value_fn=lambda device: get_device_color_name(device.device_color),
         should_create=lambda device: device.device_color is not None,
         enabled_by_default=False,
     ),
@@ -540,9 +570,11 @@ class AjaxDeviceSensor(CoordinatorEntity[AjaxDataCoordinator], SensorEntity):
         # For hub devices, use the space identifier to merge with space-level sensors
         # This prevents duplicate hub devices in Home Assistant
         if device.type == DeviceType.HUB:
+            # Avoid redundant name if device.name is already "Hub"
+            hub_name = "Ajax Hub" if device.name == "Hub" else f"Ajax {device.name}"
             return {
                 "identifiers": {(DOMAIN, self._space_id)},
-                "name": f"Ajax Hub - {device.name}",
+                "name": hub_name,
                 "manufacturer": "Ajax Systems",
                 "model": device.type.value.replace("_", " ").title(),
                 "sw_version": device.firmware_version,

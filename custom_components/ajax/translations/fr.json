@@ -259,7 +259,11 @@
         "name": "État de la batterie"
       },
       "device_color": {
-        "name": "Couleur du dispositif"
+        "name": "Couleur du dispositif",
+        "state": {
+          "White": "Blanc",
+          "Black": "Noir"
+        }
       },
       "device_label": {
         "name": "Étiquette du dispositif"
@@ -338,6 +342,30 @@
       },
       "externally_powered": {
         "name": "Alimentation externe"
+      },
+      "battery_connected": {
+        "name": "Batterie Hub"
+      },
+      "external_power": {
+        "name": "Alimentation externe"
+      },
+      "cellular_signal": {
+        "name": "Signal cellulaire"
+      },
+      "gsm_antenna": {
+        "name": "Antenne GSM"
+      },
+      "jeweller_radio": {
+        "name": "Radio Jeweller"
+      },
+      "wings_radio": {
+        "name": "Radio Wings"
+      },
+      "system_health": {
+        "name": "État du système"
+      },
+      "cms_connection": {
+        "name": "Connexion CMS"
       }
     },
     "button": {

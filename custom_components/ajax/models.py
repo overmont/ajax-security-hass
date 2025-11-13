@@ -42,6 +42,7 @@ class DeviceType(Enum):
     # Security Devices
     KEYPAD = "keypad"
     REMOTE_CONTROL = "remote_control"
+    BUTTON = "button"  # Button / DoubleButton devices
     SIREN = "siren"
     TRANSMITTER = "transmitter"
     REPEATER = "repeater"
@@ -52,6 +53,7 @@ class DeviceType(Enum):
     SOCKET = "socket"
     RELAY = "relay"
     THERMOSTAT = "thermostat"
+    LIFE_QUALITY = "life_quality"  # LifeQuality air quality sensor (CO2, temperature, humidity)
 
     # Cameras
     CAMERA = "camera"
@@ -157,7 +159,7 @@ class AjaxDevice:
     photo_urls: list[str] = field(default_factory=list)
 
     # Metadata
-    device_color: str | None = None
+    device_color: int | None = None
     device_label: str | None = None
     device_marketing_id: str | None = None
 
