@@ -160,20 +160,19 @@ SPACE_SENSORS: tuple[AjaxSpaceSensorDescription, ...] = (
         value_fn=lambda space: len(space.get_devices_with_malfunctions()),
     ),
     AjaxSpaceSensorDescription(
-        key="unread_notifications",
-        translation_key="unread_notifications",
-        icon="mdi:bell-badge",
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda space: space.unread_notifications,
-    ),
-    AjaxSpaceSensorDescription(
         key="bypassed_devices",
         translation_key="bypassed_devices",
         icon="mdi:shield-off",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda space: len(space.get_bypassed_devices()),
+    ),
+    AjaxSpaceSensorDescription(
+        key="recent_events",
+        translation_key="recent_events",
+        icon="mdi:history",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: len(space.recent_events),
     ),
     # Hub hardware information
     AjaxSpaceSensorDescription(
@@ -183,6 +182,18 @@ SPACE_SENSORS: tuple[AjaxSpaceSensorDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda space: space.hub_details.get("battery", {}).get("chargeLevelPercentage") if space.hub_details else None,
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_tamper",
+        translation_key="hub_tamper",
+        icon="mdi:lock-open-alert",
+        value_fn=lambda space: "Ouvert" if space.hub_details.get("tampered") else "Fermé" if space.hub_details else None,
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_external_power",
+        translation_key="hub_external_power",
+        icon="mdi:power-plug",
+        value_fn=lambda space: "Connecté" if space.hub_details.get("externallyPowered") else "Déconnecté" if space.hub_details else None,
     ),
     # Network - Ethernet
     AjaxSpaceSensorDescription(
@@ -268,7 +279,7 @@ SPACE_SENSORS: tuple[AjaxSpaceSensorDescription, ...] = (
         icon="mdi:sim",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda space: (
-            space.hub_details.get('gsm', {}).get('simCards', [{}])[0].get('apn') or "Non configuré"
+            f"{space.hub_details.get('gsm', {}).get('simCards', [{}])[0].get('apn') or 'Non configuré'}{' (actif)' if space.hub_details.get('gsm', {}).get('activeSimCard', 0) == 0 else ''}"
             if space.hub_details
             and space.hub_details.get('gsm', {}).get('simCards')
             and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 0
@@ -286,7 +297,7 @@ SPACE_SENSORS: tuple[AjaxSpaceSensorDescription, ...] = (
         icon="mdi:sim",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda space: (
-            space.hub_details.get('gsm', {}).get('simCards', [{}, {}])[1].get('apn') or "Non configuré"
+            f"{space.hub_details.get('gsm', {}).get('simCards', [{}, {}])[1].get('apn') or 'Non configuré'}{' (actif)' if space.hub_details.get('gsm', {}).get('activeSimCard', 0) == 1 else ''}"
             if space.hub_details
             and space.hub_details.get('gsm', {}).get('simCards')
             and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 1
@@ -716,6 +727,27 @@ class AjaxSpaceSensor(CoordinatorEntity[AjaxDataCoordinator], SensorEntity):
                 }
                 for room_id, room in space.rooms.items()
             }
+
+        # Add recent events details for recent_events sensor
+        if self.entity_description.key == "recent_events" and space.recent_events:
+            attributes["events"] = []
+            for event in space.recent_events:
+                event_data = {
+                    "type": event.get("event_type", "unknown"),
+                    "action": event.get("action", "unknown"),
+                    "source": event.get("source_name", "unknown"),
+                    "timestamp": event.get("timestamp", 0),
+                }
+                # Add device info if available
+                if event.get("device_id"):
+                    event_data["device_id"] = event["device_id"]
+                if event.get("device_name"):
+                    event_data["device_name"] = event["device_name"]
+                # Add user info if available
+                if event.get("user_name"):
+                    event_data["user_name"] = event["user_name"]
+
+                attributes["events"].append(event_data)
 
         return attributes
 

@@ -265,6 +265,9 @@ class AjaxSpace:
     # Raw hub details from API (all available hub information)
     hub_details: dict[str, Any] = field(default_factory=dict)
 
+    # Recent events from SQS (last 5 events)
+    recent_events: list[dict[str, Any]] = field(default_factory=list)
+
     def __str__(self) -> str:
         return f"Space({self.name}, state={self.security_state.value}, devices={len(self.devices)})"
 

@@ -288,8 +288,17 @@
           }
         }
       },
+      "recent_events": {
+        "name": "Événements récents"
+      },
       "hub_battery": {
         "name": "Batterie Hub"
+      },
+      "hub_tamper": {
+        "name": "Couvercle Hub"
+      },
+      "hub_external_power": {
+        "name": "Alimentation externe Hub"
       },
       "hub_ethernet_ip": {
         "name": "IP Ethernet Hub"

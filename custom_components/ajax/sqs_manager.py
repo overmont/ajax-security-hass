@@ -104,6 +104,16 @@ class SQSManager:
             # Update last event time
             self._last_event_time = event.get("timestamp", 0)
 
+            # Store event in space recent_events (keep last 5)
+            space_id = event.get("space_id")
+            if space_id and self.coordinator.account:
+                space = self.coordinator.account.spaces.get(space_id)
+                if space:
+                    # Add event to beginning of list
+                    space.recent_events.insert(0, event)
+                    # Keep only last 5 events
+                    space.recent_events = space.recent_events[:5]
+
             # Trigger coordinator update based on event type
             await self._process_event(event)
 

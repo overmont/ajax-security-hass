@@ -1,0 +1,169 @@
+"""Smart socket/relay handler for Ajax Socket and Relay.
+
+Handles:
+- Socket (smart socket with power monitoring)
+- Relay (relay for controlling lights/appliances)
+- WallSwitch (smart wall switch)
+"""
+
+from __future__ import annotations
+
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorStateClass,
+)
+from homeassistant.const import (
+    PERCENTAGE,
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    UnitOfElectricCurrent,
+    UnitOfElectricPotential,
+    UnitOfEnergy,
+    UnitOfPower,
+)
+
+from .base import AjaxDeviceHandler
+
+
+class SocketHandler(AjaxDeviceHandler):
+    """Handler for Ajax Socket/Relay smart devices."""
+
+    def get_binary_sensors(self) -> list[dict]:
+        """Return binary sensor entities for sockets/relays."""
+        sensors = [
+            {
+                "key": "problem",
+                "translation_key": "problem",
+                "device_class": BinarySensorDeviceClass.PROBLEM,
+                "value_fn": lambda: bool(self.device.malfunctions),
+                "enabled_by_default": True,
+            }
+        ]
+
+        # External power status (some models)
+        if "external_power" in self.device.attributes:
+            sensors.append(
+                {
+                    "key": "external_power",
+                    "translation_key": "external_power",
+                    "device_class": BinarySensorDeviceClass.POWER,
+                    "value_fn": lambda: self.device.attributes.get("external_power", False),
+                    "enabled_by_default": True,
+                }
+            )
+
+        return sensors
+
+    def get_sensors(self) -> list[dict]:
+        """Return sensor entities for sockets/relays."""
+        sensors = []
+
+        # Signal strength
+        if "signal_strength" in self.device.attributes:
+            sensors.append(
+                {
+                    "key": "signal_strength",
+                    "translation_key": "signal_strength",
+                    "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
+                    "native_unit_of_measurement": SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+                    "state_class": SensorStateClass.MEASUREMENT,
+                    "value_fn": lambda: self.device.attributes.get("signal_strength"),
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Power consumption (Socket with power monitoring)
+        if "power" in self.device.attributes:
+            sensors.append(
+                {
+                    "key": "power",
+                    "translation_key": "power",
+                    "device_class": SensorDeviceClass.POWER,
+                    "native_unit_of_measurement": UnitOfPower.WATT,
+                    "state_class": SensorStateClass.MEASUREMENT,
+                    "value_fn": lambda: self.device.attributes.get("power"),
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Energy consumption (Socket with power monitoring)
+        if "energy" in self.device.attributes:
+            sensors.append(
+                {
+                    "key": "energy",
+                    "translation_key": "energy",
+                    "device_class": SensorDeviceClass.ENERGY,
+                    "native_unit_of_measurement": UnitOfEnergy.KILO_WATT_HOUR,
+                    "state_class": SensorStateClass.TOTAL_INCREASING,
+                    "value_fn": lambda: self.device.attributes.get("energy"),
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Voltage (Socket with power monitoring)
+        if "voltage" in self.device.attributes:
+            sensors.append(
+                {
+                    "key": "voltage",
+                    "translation_key": "voltage",
+                    "device_class": SensorDeviceClass.VOLTAGE,
+                    "native_unit_of_measurement": UnitOfElectricPotential.VOLT,
+                    "state_class": SensorStateClass.MEASUREMENT,
+                    "value_fn": lambda: self.device.attributes.get("voltage"),
+                    "enabled_by_default": False,
+                }
+            )
+
+        # Current (Socket with power monitoring)
+        if "current" in self.device.attributes:
+            sensors.append(
+                {
+                    "key": "current",
+                    "translation_key": "current",
+                    "device_class": SensorDeviceClass.CURRENT,
+                    "native_unit_of_measurement": UnitOfElectricCurrent.AMPERE,
+                    "state_class": SensorStateClass.MEASUREMENT,
+                    "value_fn": lambda: self.device.attributes.get("current"),
+                    "enabled_by_default": False,
+                }
+            )
+
+        # Malfunctions
+        if self.device.malfunctions:
+            sensors.append(
+                {
+                    "key": "malfunctions",
+                    "translation_key": "malfunctions",
+                    "icon": "mdi:alert-circle",
+                    "value_fn": lambda: ", ".join(self.device.malfunctions) if self.device.malfunctions else "None",
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Firmware version
+        if "firmware_version" in self.device.attributes:
+            sensors.append(
+                {
+                    "key": "firmware_version",
+                    "translation_key": "firmware_version",
+                    "icon": "mdi:chip",
+                    "value_fn": lambda: self.device.attributes.get("firmware_version"),
+                    "enabled_by_default": False,
+                }
+            )
+
+        return sensors
+
+    def get_switches(self) -> list[dict]:
+        """Return switch entities for sockets/relays."""
+        return [
+            {
+                "key": "socket",
+                "translation_key": "socket",
+                "value_fn": lambda: self.device.attributes.get("is_on", False),
+                "turn_on_fn": lambda: {"action": "turn_on"},
+                "turn_off_fn": lambda: {"action": "turn_off"},
+                "icon": "mdi:power-socket-eu",
+                "enabled_by_default": True,
+            }
+        ]
