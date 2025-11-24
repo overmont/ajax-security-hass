@@ -12,17 +12,14 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from .api import AjaxRestApi, AjaxRestApiError, AjaxRestAuthError
 from .const import (
     CONF_API_KEY,
-    CONF_AWS_ACCESS_KEY,
-    CONF_AWS_REGION,
-    CONF_AWS_SECRET_KEY,
-    CONF_EVENTS_QUEUE,
-    CONF_INTEGRATION_ID,
-    DEFAULT_AWS_REGION,
-    DEFAULT_SCAN_INTERVAL,
+    CONF_AWS_ACCESS_KEY_ID,
+    CONF_AWS_SECRET_ACCESS_KEY,
+    CONF_EMAIL,
+    CONF_PASSWORD,
+    CONF_QUEUE_NAME,
     DOMAIN,
 )
 from .coordinator import AjaxDataCoordinator
-from .sqs_client import AjaxSQSClient
 
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import ConfigType
@@ -48,22 +45,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
     # Get API credentials
-    integration_id = entry.data[CONF_INTEGRATION_ID]
     api_key = entry.data[CONF_API_KEY]
+    email = entry.data[CONF_EMAIL]
+    password_hash = entry.data[CONF_PASSWORD]  # Already hashed in config_flow
 
-    # Get AWS SQS configuration (optional)
-    aws_access_key = entry.data.get(CONF_AWS_ACCESS_KEY)
-    aws_secret_key = entry.data.get(CONF_AWS_SECRET_KEY)
-    events_queue = entry.data.get(CONF_EVENTS_QUEUE)
-    aws_region = entry.data.get(CONF_AWS_REGION, DEFAULT_AWS_REGION)
+    # Get optional AWS SQS credentials (for real-time events)
+    aws_access_key_id = entry.data.get(CONF_AWS_ACCESS_KEY_ID)
+    aws_secret_access_key = entry.data.get(CONF_AWS_SECRET_ACCESS_KEY)
+    queue_name = entry.data.get(CONF_QUEUE_NAME)
 
     # Create REST API instance
+    # password_is_hashed=True because we store only SHA256 hash, never plain password
     api = AjaxRestApi(
-        integration_id=integration_id,
         api_key=api_key,
+        email=email,
+        password=password_hash,
+        password_is_hashed=True,  # Password is already SHA256 hash
     )
 
     try:
+        # Login to get temporary token
+        await api.async_login()
+        _LOGGER.info("Successfully logged in to Ajax REST API")
+
         # Test API connection by getting hubs
         await api.async_get_hubs()
         _LOGGER.info("Successfully connected to Ajax REST API")
@@ -76,32 +80,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady from err
 
     # Create coordinator
-    coordinator = AjaxDataCoordinator(hass, api)
-
-    # Initialize AWS SQS client if credentials are provided
-    if aws_access_key and aws_secret_key and events_queue:
-        _LOGGER.info("Initializing AWS SQS client for real-time events")
-        try:
-            sqs_client = AjaxSQSClient(
-                aws_access_key=aws_access_key,
-                aws_secret_key=aws_secret_key,
-                queue_name=events_queue,
-                region=aws_region,
-            )
-            # Set event callback to coordinator's handle_event method
-            sqs_client.set_event_callback(coordinator.handle_event)
-            coordinator.sqs_client = sqs_client
-            # Start SQS listener
-            await sqs_client.start()
-            _LOGGER.info("AWS SQS listener started successfully")
-        except Exception as err:
-            _LOGGER.error("Failed to initialize AWS SQS client: %s", err)
-            _LOGGER.info("Will use polling fallback (%ss interval)", DEFAULT_SCAN_INTERVAL)
-    else:
-        _LOGGER.info(
-            "AWS SQS not configured, using polling fallback (%ss interval)",
-            DEFAULT_SCAN_INTERVAL,
-        )
+    # - REST polling: Baseline updates every 30s
+    # - AWS SQS: Optional real-time events (if credentials provided)
+    coordinator = AjaxDataCoordinator(
+        hass,
+        api,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        queue_name=queue_name,
+    )
 
     # Store coordinator
     hass.data[DOMAIN][entry.entry_id] = coordinator
@@ -122,12 +109,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     ):
         coordinator: AjaxDataCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
 
-        # Stop SQS client if running
-        if hasattr(coordinator, "sqs_client") and coordinator.sqs_client:
-            _LOGGER.info("Stopping AWS SQS client")
-            await coordinator.sqs_client.stop()
-
-        # Close API connection
-        await coordinator.api.close()
+        # Shutdown coordinator (closes SQS manager, API connection, and all tasks)
+        await coordinator.async_shutdown()
 
     return unload_ok

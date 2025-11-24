@@ -3,52 +3,43 @@
     "step": {
       "user": {
         "title": "Connect to Ajax",
-        "description": "Enter your Ajax API credentials. You can request them from Ajax Systems at https://www.ajax.systems/api/",
+        "description": "Enter your Ajax API credentials. You can request them from Ajax Systems at https://ajax.systems/api-request/\n\nOptional: Add AWS credentials for real-time event notifications (faster than polling).",
         "data": {
-          "integration_id": "Integration ID",
           "api_key": "API Key",
-          "aws_access_key": "AWS Access Key (optional)",
-          "aws_secret_key": "AWS Secret Key (optional)",
-          "events_queue": "SQS Queue Name (optional)",
-          "aws_region": "AWS Region"
+          "email": "Email Address",
+          "password": "Password",
+          "aws_access_key_id": "AWS Access Key ID (Optional)",
+          "aws_secret_access_key": "AWS Secret Access Key (Optional)",
+          "queue_name": "SQS Queue Name (Optional)"
         },
         "data_description": {
-          "integration_id": "Your Integration ID provided by Ajax Systems",
           "api_key": "Your API Key provided by Ajax Systems",
-          "aws_access_key": "AWS Access Key for real-time events via SQS (optional)",
-          "aws_secret_key": "AWS Secret Access Key for SQS (optional)",
-          "events_queue": "SQS Queue Name (e.g., ajax-events-XXXXXXXX-prod.fifo)",
-          "aws_region": "AWS Region (default: eu-central-1)"
+          "email": "Your Ajax account email address",
+          "password": "Your Ajax account password",
+          "aws_access_key_id": "AWS Access Key ID for real-time SQS events (optional)",
+          "aws_secret_access_key": "AWS Secret Access Key for real-time SQS events (optional)",
+          "queue_name": "SQS Queue name (e.g., ajax-events-xxxxx-prod.fifo)"
+        }
+      },
+      "2fa": {
+        "title": "Two-Factor Authentication",
+        "description": "Enter the 6-digit verification code sent to your device for {email}",
+        "data": {
+          "code": "Verification Code"
+        },
+        "data_description": {
+          "code": "6-digit code from your authenticator app or SMS"
         }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect to Ajax API. Check your internet connection.",
-      "invalid_auth": "Invalid API credentials. Check your Integration ID and API Key.",
+      "invalid_auth": "Invalid API credentials. Check your API Key, email, and password.",
+      "invalid_2fa": "Invalid verification code. Please try again.",
       "unknown": "Unexpected error. Check the logs for more details."
     },
     "abort": {
       "already_configured": "This Ajax integration is already configured."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Ajax AWS SQS Options",
-        "description": "Update AWS SQS credentials for real-time events",
-        "data": {
-          "aws_access_key": "AWS Access Key",
-          "aws_secret_key": "AWS Secret Key",
-          "events_queue": "SQS Queue Name",
-          "aws_region": "AWS Region"
-        },
-        "data_description": {
-          "aws_access_key": "AWS Access Key for SQS",
-          "aws_secret_key": "AWS Secret Access Key for SQS",
-          "events_queue": "SQS Queue Name",
-          "aws_region": "AWS Region"
-        }
-      }
     }
   },
   "entity": {

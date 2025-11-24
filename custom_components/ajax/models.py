@@ -262,6 +262,9 @@ class AjaxSpace:
     address: str | None = None
     timezone: str | None = None
 
+    # Raw hub details from API (all available hub information)
+    hub_details: dict[str, Any] = field(default_factory=dict)
+
     def __str__(self) -> str:
         return f"Space({self.name}, state={self.security_state.value}, devices={len(self.devices)})"
 

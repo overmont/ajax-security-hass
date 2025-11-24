@@ -75,12 +75,20 @@ class AjaxAlarmControlPanel(CoordinatorEntity[AjaxDataCoordinator], AlarmControl
         if not space:
             return {}
 
-        return {
+        device_info = {
             "identifiers": {(DOMAIN, self._space_id)},
             "name": f"Ajax Hub - {space.name}",
             "manufacturer": "Ajax Systems",
-            "model": "Security Hub",
+            "model": space.hub_details.get("hubSubtype", "Security Hub") if space.hub_details else "Security Hub",
         }
+
+        # Add firmware version if available
+        if space.hub_details and space.hub_details.get("firmware"):
+            firmware = space.hub_details["firmware"]
+            if firmware.get("version"):
+                device_info["sw_version"] = firmware["version"]
+
+        return device_info
 
     @property
     def alarm_state(self) -> AlarmControlPanelState | None:

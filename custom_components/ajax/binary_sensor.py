@@ -1,24 +1,17 @@
-"""Ajax binary sensor platform.
+"""Ajax binary sensor platform (refactored).
 
-This module creates binary sensors for:
-- Door/Window contact sensors
-- Motion detectors
-- Smoke detectors
-- Leak/Water detectors
-- Tamper detection
-- Hub status sensors (battery, power, signal, antenna, noise, faults)
+This module creates binary sensors for Ajax devices using the device handler architecture.
+Each device type (MotionProtect, DoorProtect, etc.) has its own handler that defines
+which binary sensors to create.
 """
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass
 import logging
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
-    BinarySensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -27,241 +20,30 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AjaxDataCoordinator
+from .devices import (
+    DoorContactHandler,
+    FloodDetectorHandler,
+    HubHandler,
+    MotionDetectorHandler,
+    SmokeDetectorHandler,
+    SocketHandler,
+)
 from .models import AjaxDevice, DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 
-
-# ==============================================================================
-# Binary Sensor Descriptions
-# ==============================================================================
-
-
-@dataclass
-class AjaxBinarySensorDescription(BinarySensorEntityDescription):
-    """Description for Ajax binary sensors."""
-
-    value_fn: Callable[[AjaxDevice], bool | None] | None = None
-    should_create: Callable[[AjaxDevice], bool] | None = None
-    enabled_by_default: bool = True
-
-
-# Device-level binary sensor descriptions
-BINARY_SENSORS: tuple[AjaxBinarySensorDescription, ...] = (
-    AjaxBinarySensorDescription(
-        key="door",
-        translation_key="door",
-        device_class=BinarySensorDeviceClass.DOOR,
-        value_fn=lambda device: device.attributes.get("door_opened", False),
-        should_create=lambda device: device.type in [DeviceType.DOOR_CONTACT, DeviceType.WIRE_INPUT]
-        or "door_opened" in device.attributes,
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="external_contact",
-        translation_key="external_contact",
-        device_class=BinarySensorDeviceClass.DOOR,
-        value_fn=lambda device: device.attributes.get("external_contact_opened", False),
-        should_create=lambda device: (
-            device.type in [DeviceType.DOOR_CONTACT, DeviceType.WIRE_INPUT]
-            and "external_contact_opened" in device.attributes
-        ),
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="motion",
-        translation_key="motion",
-        device_class=BinarySensorDeviceClass.MOTION,
-        value_fn=lambda device: device.attributes.get("motion_detected", False),
-        should_create=lambda device: device.type in [DeviceType.MOTION_DETECTOR, DeviceType.COMBI_PROTECT]
-        or "motion_detected" in device.attributes,
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="glass_break",
-        translation_key="glass_break",
-        device_class=BinarySensorDeviceClass.VIBRATION,
-        value_fn=lambda device: device.attributes.get("glass_break_detected", False),
-        should_create=lambda device: device.type in [DeviceType.GLASS_BREAK, DeviceType.COMBI_PROTECT]
-        or "glass_break_detected" in device.attributes,
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="smoke",
-        translation_key="smoke",
-        device_class=BinarySensorDeviceClass.SMOKE,
-        value_fn=lambda device: device.attributes.get("smoke_detected", False),
-        should_create=lambda device: device.type == DeviceType.SMOKE_DETECTOR
-        or "smoke_detected" in device.attributes,
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="moisture",
-        translation_key="moisture",
-        device_class=BinarySensorDeviceClass.MOISTURE,
-        value_fn=lambda device: device.attributes.get("leak_detected", False),
-        should_create=lambda device: device.type == DeviceType.FLOOD_DETECTOR
-        or "leak_detected" in device.attributes,
-        enabled_by_default=True,
-    ),
-    # Tamper sensor removed - was causing issues with buggy sensors
-    AjaxBinarySensorDescription(
-        key="always_active",
-        translation_key="always_active",
-        icon="mdi:moon-waning-crescent",
-        value_fn=lambda device: device.attributes.get("always_active", False),
-        should_create=lambda device: (
-            "always_active" in device.attributes
-            and device.type in [
-                DeviceType.MOTION_DETECTOR,
-                DeviceType.DOOR_CONTACT,
-                DeviceType.GLASS_BREAK,
-                DeviceType.COMBI_PROTECT,
-                DeviceType.SMOKE_DETECTOR,
-                DeviceType.FLOOD_DETECTOR,
-                DeviceType.TEMPERATURE_SENSOR,
-            ]
-        ),
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="armed_in_night_mode",
-        translation_key="armed_in_night_mode",
-        icon="mdi:shield-moon",
-        value_fn=lambda device: device.attributes.get("armed_in_night_mode", False),
-        should_create=lambda device: (
-            "armed_in_night_mode" in device.attributes
-            and device.type in [
-                DeviceType.MOTION_DETECTOR,
-                DeviceType.DOOR_CONTACT,
-                DeviceType.GLASS_BREAK,
-                DeviceType.COMBI_PROTECT,
-                DeviceType.SMOKE_DETECTOR,
-                DeviceType.FLOOD_DETECTOR,
-                DeviceType.TEMPERATURE_SENSOR,
-            ]
-        ),
-        enabled_by_default=True,
-    ),
-    # Problem detection for all devices
-    AjaxBinarySensorDescription(
-        key="problem",
-        translation_key="problem",
-        device_class=BinarySensorDeviceClass.PROBLEM,
-        value_fn=lambda device: device.malfunctions > 0,
-        should_create=lambda device: True,  # Create for all devices
-        enabled_by_default=True,
-    ),
-    # External power supply (for range extenders, motion detectors outdoor, etc.)
-    AjaxBinarySensorDescription(
-        key="externally_powered",
-        translation_key="externally_powered",
-        device_class=BinarySensorDeviceClass.PLUG,
-        icon="mdi:power-plug",
-        value_fn=lambda device: device.attributes.get("externally_powered", False),
-        should_create=lambda device: "externally_powered" in device.attributes,
-        enabled_by_default=True,
-    ),
-    # Hub-specific sensors (always created for hub devices)
-    # Inverted logic: On = OK, Off = Problem (more intuitive)
-    AjaxBinarySensorDescription(
-        key="battery_connected",
-        translation_key="battery_connected",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        icon="mdi:battery-check",
-        value_fn=lambda device: not device.attributes.get("battery_disconnected", False),
-        should_create=lambda device: (
-            device.type == DeviceType.HUB
-            and "battery_disconnected" in device.attributes
-        ),
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="external_power",
-        translation_key="external_power",
-        device_class=BinarySensorDeviceClass.POWER,
-        icon="mdi:power-plug",
-        value_fn=lambda device: not device.attributes.get("external_power_loss", False),
-        should_create=lambda device: device.type in [DeviceType.HUB, DeviceType.REPEATER],
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="tampered",
-        translation_key="tampered",
-        device_class=BinarySensorDeviceClass.TAMPER,
-        value_fn=lambda device: device.attributes.get("tampered", False),
-        should_create=lambda device: "tampered" in device.attributes,
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="cellular_signal",
-        translation_key="cellular_signal",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        icon="mdi:signal-cellular-3",
-        value_fn=lambda device: not device.attributes.get("cellular_signal_low", False),
-        should_create=lambda device: (
-            device.type == DeviceType.HUB
-            and device.attributes.get("sim_slots_used", 0) > 0
-        ),
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="gsm_antenna",
-        translation_key="gsm_antenna",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        icon="mdi:antenna",
-        value_fn=lambda device: not (device.attributes.get("gsm_antenna_damaged", False) or device.attributes.get("gsm_antenna_disconnected", False)),
-        should_create=lambda device: (
-            device.type == DeviceType.HUB
-            and device.attributes.get("sim_slots_used", 0) > 0
-        ),
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="jeweller_radio",
-        translation_key="jeweller_radio",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        icon="mdi:radio-tower",
-        value_fn=lambda device: not device.attributes.get("jeweller_noise_high", False),
-        should_create=lambda device: device.type == DeviceType.HUB,
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="wings_radio",
-        translation_key="wings_radio",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        icon="mdi:radio-tower",
-        value_fn=lambda device: not device.attributes.get("wings_noise_high", False),
-        should_create=lambda device: device.type == DeviceType.HUB,
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="system_health",
-        translation_key="system_health",
-        device_class=BinarySensorDeviceClass.RUNNING,
-        icon="mdi:check-circle",
-        value_fn=lambda device: not device.attributes.get("system_fault", False),
-        should_create=lambda device: device.type == DeviceType.HUB,
-        enabled_by_default=True,
-    ),
-    AjaxBinarySensorDescription(
-        key="cms_connection",
-        translation_key="cms_connection",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        icon="mdi:server-network",
-        value_fn=lambda device: not device.attributes.get("cms_connection_loss", False),
-        should_create=lambda device: (
-            device.type == DeviceType.HUB
-            and ("cms_connection_loss" in device.attributes or "cms_connected" in device.attributes)
-        ),
-        enabled_by_default=True,
-    ),
-)
-
-
-# ==============================================================================
-# Setup
-# ==============================================================================
+# Mapping of device types to handlers
+DEVICE_HANDLERS = {
+    DeviceType.MOTION_DETECTOR: MotionDetectorHandler,
+    DeviceType.COMBI_PROTECT: MotionDetectorHandler,
+    DeviceType.DOOR_CONTACT: DoorContactHandler,
+    DeviceType.WIRE_INPUT: DoorContactHandler,
+    DeviceType.SMOKE_DETECTOR: SmokeDetectorHandler,
+    DeviceType.FLOOD_DETECTOR: FloodDetectorHandler,
+    DeviceType.SOCKET: SocketHandler,
+    DeviceType.RELAY: SocketHandler,
+    DeviceType.HUB: HubHandler,
+}
 
 
 async def async_setup_entry(
@@ -269,94 +51,109 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Ajax binary sensors from a config entry."""
+    """Set up Ajax binary sensor platform."""
     coordinator: AjaxDataCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    entities: list[BinarySensorEntity] = []
+    entities = []
 
-    if not coordinator.account:
-        _LOGGER.warning("No Ajax account found, no binary sensors created")
-        return
-
-    # Create binary sensors for each device
+    # Create binary sensors for all devices using handlers
     for space_id, space in coordinator.account.spaces.items():
         for device_id, device in space.devices.items():
-            for description in BINARY_SENSORS:
-                if description.should_create and description.should_create(device):
+            handler_class = DEVICE_HANDLERS.get(device.type)
+            if handler_class:
+                handler = handler_class(device)
+                binary_sensors = handler.get_binary_sensors()
+
+                for sensor_desc in binary_sensors:
                     entities.append(
                         AjaxBinarySensor(
-                            coordinator, entry, space_id, device_id, description
+                            coordinator=coordinator,
+                            space_id=space_id,
+                            device_id=device_id,
+                            sensor_key=sensor_desc["key"],
+                            sensor_desc=sensor_desc,
                         )
                     )
                     _LOGGER.debug(
-                        "Creating %s binary sensor for device '%s'",
-                        description.key,
+                        "Created binary sensor '%s' for device: %s (type: %s)",
+                        sensor_desc["key"],
                         device.name,
+                        device.type.value,
                     )
 
+    async_add_entities(entities)
     if entities:
-        async_add_entities(entities)
         _LOGGER.info("Added %d Ajax binary sensor(s)", len(entities))
-    else:
-        _LOGGER.debug("No Ajax binary sensors created")
-
-
-# ==============================================================================
-# Binary Sensor Entity
-# ==============================================================================
 
 
 class AjaxBinarySensor(CoordinatorEntity[AjaxDataCoordinator], BinarySensorEntity):
     """Representation of an Ajax binary sensor."""
 
-    entity_description: AjaxBinarySensorDescription
+    _attr_has_entity_name = True
 
     def __init__(
         self,
         coordinator: AjaxDataCoordinator,
-        entry: ConfigEntry,
         space_id: str,
         device_id: str,
-        description: AjaxBinarySensorDescription,
+        sensor_key: str,
+        sensor_desc: dict,
     ) -> None:
-        """Initialize the binary sensor."""
+        """Initialize the Ajax binary sensor."""
         super().__init__(coordinator)
-        self.entity_description = description
         self._space_id = space_id
         self._device_id = device_id
-        self._entry = entry
+        self._sensor_key = sensor_key
+        self._sensor_desc = sensor_desc
 
-        # Get initial device data
-        device = coordinator.get_device(space_id, device_id)
-        device_name = device.name if device else "Unknown"
+        # Set unique ID
+        self._attr_unique_id = f"{device_id}_{sensor_key}"
 
-        # Set entity attributes
-        self._attr_has_entity_name = True
-        self._attr_translation_key = description.translation_key
-        self._attr_unique_id = f"{entry.entry_id}_{device_id}_{description.key}"
-        self._attr_entity_registry_enabled_default = description.enabled_by_default
+        # Set translation key
+        self._attr_translation_key = sensor_desc.get("translation_key", sensor_key)
+
+        # Set device class if provided
+        if "device_class" in sensor_desc:
+            self._attr_device_class = sensor_desc["device_class"]
+
+        # Set icon if provided
+        if "icon" in sensor_desc:
+            self._attr_icon = sensor_desc["icon"]
+
+        # Set enabled by default
+        if "enabled_by_default" in sensor_desc:
+            self._attr_entity_registry_enabled_default = sensor_desc["enabled_by_default"]
 
     @property
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
-        device = self.coordinator.get_device(self._space_id, self._device_id)
-        if not device or not self.entity_description.value_fn:
+        device = self._get_device()
+        if not device:
             return None
 
-        return self.entity_description.value_fn(device)
+        # Use value_fn from sensor description
+        value_fn = self._sensor_desc.get("value_fn")
+        if value_fn:
+            try:
+                return value_fn()
+            except Exception as err:
+                _LOGGER.error(
+                    "Error getting value for sensor %s: %s",
+                    self._sensor_key,
+                    err,
+                )
+                return None
+        return None
 
     @property
     def available(self) -> bool:
-        """Return if entity is available."""
-        if not self.coordinator.last_update_success:
-            return False
-
-        device = self.coordinator.get_device(self._space_id, self._device_id)
+        """Return True if entity is available."""
+        device = self._get_device()
         if not device:
             return False
 
-        # Binary sensors are unavailable if device is offline
-        return device.online
+        # Most sensors require device to be online
+        return device.attributes.get("online", True)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -366,25 +163,10 @@ class AjaxBinarySensor(CoordinatorEntity[AjaxDataCoordinator], BinarySensorEntit
     @property
     def device_info(self) -> dict[str, Any]:
         """Return device information."""
-        device = self.coordinator.get_device(self._space_id, self._device_id)
+        device = self._get_device()
         if not device:
             return {}
 
-        # For hub devices, use the space identifier to merge with space-level sensors
-        # This prevents duplicate hub devices in Home Assistant
-        if device.type == DeviceType.HUB:
-            # Avoid redundant name if device.name is already "Hub"
-            hub_name = "Ajax Hub" if device.name == "Hub" else f"Ajax {device.name}"
-            return {
-                "identifiers": {(DOMAIN, self._space_id)},
-                "name": hub_name,
-                "manufacturer": "Ajax Systems",
-                "model": device.type.value.replace("_", " ").title(),
-                "sw_version": device.firmware_version,
-                "hw_version": device.hardware_version,
-            }
-
-        # For non-hub devices, use device identifier
         # Get room name if available
         room_name = None
         if device.room_id:
@@ -405,73 +187,9 @@ class AjaxBinarySensor(CoordinatorEntity[AjaxDataCoordinator], BinarySensorEntit
             "hw_version": device.hardware_version,
         }
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return extra state attributes."""
-        device = self.coordinator.get_device(self._space_id, self._device_id)
-        if not device:
-            return {}
-
-        attributes = {
-            "device_id": device.id,
-            "device_type": device.type.value,
-            "space_id": device.space_id,
-            "hub_id": device.hub_id,
-            "online": device.online,
-            "bypassed": device.bypassed,
-        }
-
-        # Add room information if available
-        if device.room_id:
-            room = self.coordinator.get_room(self._space_id, device.room_id)
-            if room:
-                attributes["room_id"] = room.id
-                attributes["room_name"] = room.name
-
-        # Add external contact indicator
-        if self.entity_description.key == "external_contact":
-            attributes["is_external_contact"] = True
-
-        # Add motion detection timestamp if available
-        if (
-            self.entity_description.key == "motion"
-            and "motion_detected_at" in device.attributes
-        ):
-            attributes["last_motion"] = device.attributes["motion_detected_at"]
-
-        # Add battery and signal info for motion sensors
-        if self.entity_description.key == "motion":
-            if device.battery_level is not None:
-                attributes["battery_level"] = device.battery_level
-            if device.signal_strength is not None:
-                attributes["signal_strength"] = device.signal_strength
-            if "temperature" in device.attributes:
-                attributes["temperature"] = device.attributes["temperature"]
-
-        # Add malfunction details for hub problem sensor
-        if self.entity_description.key == "problem" and device.type == DeviceType.HUB:
-            # Get all devices in this space with malfunctions
-            space = self.coordinator.account.spaces.get(self._space_id)
-            if space:
-                devices_with_problems = []
-                for dev_id, dev in space.devices.items():
-                    if dev.malfunctions > 0:
-                        problem_info = {
-                            "device_id": dev.id,
-                            "device_name": dev.name,
-                            "device_type": dev.type.value,
-                            "malfunction_count": dev.malfunctions,
-                        }
-                        # Add room info if available
-                        if dev.room_id:
-                            room = self.coordinator.get_room(self._space_id, dev.room_id)
-                            if room:
-                                problem_info["room_name"] = room.name
-                        devices_with_problems.append(problem_info)
-
-                attributes["total_malfunctions"] = device.malfunctions
-                attributes["devices_with_problems"] = len(devices_with_problems)
-                if devices_with_problems:
-                    attributes["problem_devices"] = devices_with_problems
-
-        return attributes
+    def _get_device(self) -> AjaxDevice | None:
+        """Get the device from coordinator data."""
+        space = self.coordinator.account.spaces.get(self._space_id)
+        if not space:
+            return None
+        return space.devices.get(self._device_id)

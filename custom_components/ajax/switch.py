@@ -133,21 +133,20 @@ class AjaxSwitch(CoordinatorEntity[AjaxDataCoordinator], SwitchEntity):
             return
 
         try:
-            # Get channel ID from attributes
-            channel_id = 1
-            if "channel" in device.attributes:
-                channel_id = device.attributes["channel"].get("channel_id", 1)
-
-            # Get hub ID
-            hub_id = device.hub_id
-
-            # Call API to turn on
-            await self.coordinator.api.async_turn_on_device(
-                space_id=self._space_id,
-                device_id=self._device_id,
-                hub_id=hub_id,
-                channel_id=channel_id,
-            )
+            # Call appropriate API method based on device type
+            if device.type == DeviceType.SOCKET:
+                await self.coordinator.api.async_set_socket_state(
+                    device_id=self._device_id,
+                    state=True,
+                )
+            elif device.type == DeviceType.RELAY:
+                await self.coordinator.api.async_set_relay_state(
+                    device_id=self._device_id,
+                    state=True,
+                )
+            else:
+                _LOGGER.error("Unsupported device type for switch: %s", device.type)
+                return
 
             # Request immediate refresh
             await self.coordinator.async_request_refresh()
@@ -164,21 +163,20 @@ class AjaxSwitch(CoordinatorEntity[AjaxDataCoordinator], SwitchEntity):
             return
 
         try:
-            # Get channel ID from attributes
-            channel_id = 1
-            if "channel" in device.attributes:
-                channel_id = device.attributes["channel"].get("channel_id", 1)
-
-            # Get hub ID
-            hub_id = device.hub_id
-
-            # Call API to turn off
-            await self.coordinator.api.async_turn_off_device(
-                space_id=self._space_id,
-                device_id=self._device_id,
-                hub_id=hub_id,
-                channel_id=channel_id,
-            )
+            # Call appropriate API method based on device type
+            if device.type == DeviceType.SOCKET:
+                await self.coordinator.api.async_set_socket_state(
+                    device_id=self._device_id,
+                    state=False,
+                )
+            elif device.type == DeviceType.RELAY:
+                await self.coordinator.api.async_set_relay_state(
+                    device_id=self._device_id,
+                    state=False,
+                )
+            else:
+                _LOGGER.error("Unsupported device type for switch: %s", device.type)
+                return
 
             # Request immediate refresh
             await self.coordinator.async_request_refresh()

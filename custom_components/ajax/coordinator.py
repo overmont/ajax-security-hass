@@ -128,8 +128,8 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
 
             # Only do full data load on first run or manual reload
             if not self._initial_load_done:
-                # Update spaces
-                await self._async_update_spaces()
+                # Update spaces - use hubs endpoint directly to get hubId
+                await self._async_update_spaces_from_hubs()
 
                 # Load devices and notifications in parallel for all spaces
                 tasks = []
@@ -391,6 +391,78 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             if "new_notifications_count" in space_data:
                 space.unread_notifications = space_data["new_notifications_count"]
 
+    async def _async_update_spaces_from_hubs(self) -> None:
+        """Update spaces by fetching hubs directly (use hub_id as space_id)."""
+        hubs_data = await self.api.async_get_hubs()
+
+        for hub_data in hubs_data:
+            hub_id = hub_data.get("hubId")
+            if not hub_id:
+                continue
+
+            # Get hub details to get the name and state
+            try:
+                hub_details = await self.api.async_get_hub(hub_id)
+                # Try to get hub name from multiple possible fields
+                hub_name = (
+                    hub_details.get("name")
+                    or hub_details.get("hubName")
+                    or hub_details.get("deviceName")
+                    or f"Hub {hub_id[:6]}"  # Use first 6 chars of hub_id as fallback
+                )
+                # Parse security state from hub details - use 'state' field, not 'securityMode'
+                hub_state = hub_details.get("state", "DISARMED")
+                security_state = self._parse_security_state(hub_state)
+                _LOGGER.debug("Hub %s (name: %s) state from API: '%s' -> %s", hub_id, hub_name, hub_state, security_state)
+            except Exception as err:
+                _LOGGER.warning("Failed to get hub details for %s: %s", hub_id, err)
+                hub_name = f"Hub {hub_id}"
+                security_state = SecurityState.NONE
+                hub_details = {}
+
+            # Use hub_id as space_id since we're mapping 1:1
+            space_id = hub_id
+
+            # Create or update space
+            if space_id not in self.account.spaces:
+                # New space - always use API state for initial value
+                space = AjaxSpace(
+                    id=space_id,
+                    name=hub_name,
+                    hub_id=hub_id,
+                    security_state=security_state,  # Use API state at creation
+                    hub_details=hub_details,  # Store all hub information
+                )
+                self.account.spaces[space_id] = space
+                _LOGGER.info("Added new space from hub: %s (hub_id: %s, initial state: %s)", space.name, space.hub_id, security_state)
+            else:
+                # Existing space - update name, hub_id, hub_details, and potentially state
+                space = self.account.spaces[space_id]
+                space.name = hub_name
+                space.hub_id = hub_id
+                space.hub_details = hub_details  # Update hub information
+
+                # Update state from API unless SQS has recent activity (< 5 min)
+                should_update_from_api = True
+                if self.sqs_manager and self.sqs_manager.is_enabled:
+                    import time
+                    time_since_last_sqs = time.time() - self.sqs_manager.last_event_time
+                    _LOGGER.debug("Hub %s: time_since_last_sqs=%.0fs, should_update=%s",
+                                 hub_id, time_since_last_sqs, time_since_last_sqs >= 300)
+                    if time_since_last_sqs < 300:  # 5 minutes
+                        should_update_from_api = False
+                        _LOGGER.debug("Skipping API state update for hub %s (SQS active, last event %.0fs ago)",
+                                     hub_id, time_since_last_sqs)
+
+                if should_update_from_api:
+                    old_state = space.security_state
+                    _LOGGER.debug("Updating state from API: old=%s, new=%s", old_state, security_state)
+                    space.security_state = security_state
+                    if old_state != security_state:
+                        _LOGGER.info("Hub %s state updated from API: %s -> %s", hub_id, old_state, security_state)
+                    else:
+                        _LOGGER.debug("Hub %s state unchanged: %s", hub_id, security_state)
+
     async def _async_update_devices(self, space_id: str) -> None:
         """Update devices for a specific space."""
 
@@ -407,21 +479,21 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             if not device_id:
                 continue
 
-            # Parse device type
-            raw_device_type = device_data.get("type", "unknown")
+            # Parse device type - API uses camelCase (deviceType, deviceName)
+            raw_device_type = device_data.get("deviceType", device_data.get("type", "unknown"))
             device_type = self._parse_device_type(raw_device_type)
 
             # Create or update device
             if device_id not in space.devices:
                 device = AjaxDevice(
                     id=device_id,
-                    name=device_data.get("name", "Unknown Device"),
+                    name=device_data.get("deviceName", device_data.get("name", "Unknown Device")),
                     type=device_type,
                     space_id=space_id,
                     hub_id=device_data.get("hub_id", space.hub_id or ""),
                     raw_type=raw_device_type,
-                    room_id=device_data.get("room_id"),
-                    group_id=device_data.get("group_id"),
+                    room_id=device_data.get("roomId", device_data.get("room_id")),
+                    group_id=device_data.get("groupId", device_data.get("group_id")),
                 )
                 space.devices[device_id] = device
                 new_devices_count += 1
@@ -589,8 +661,10 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             return
 
         try:
-            # Fetch notifications from API
-            notifications_data = await self.api.async_find_notifications(space_id, limit)
+            # TODO: Fetch notifications from API when endpoint is available
+            # For now, notifications come from SQS real-time events
+            # notifications_data = await self.api.async_find_notifications(space_id, limit)
+            notifications_data = []
 
             # Clear existing notifications and add new ones
             space.notifications.clear()

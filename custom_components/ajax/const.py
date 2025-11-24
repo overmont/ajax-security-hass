@@ -5,18 +5,16 @@ from enum import Enum
 DOMAIN = "ajax"
 
 # Configuration and defaults
-CONF_INTEGRATION_ID = "integration_id"
 CONF_API_KEY = "api_key"
-
-# AWS SQS Configuration (optional)
-CONF_AWS_ACCESS_KEY = "aws_access_key"
-CONF_AWS_SECRET_KEY = "aws_secret_key"
-CONF_EVENTS_QUEUE = "events_queue"
-CONF_AWS_REGION = "aws_region"
-
-# Options
-CONF_PERSISTENT_NOTIFICATION = "persistent_notification"
+CONF_EMAIL = "email"
+CONF_PASSWORD = "password"
 CONF_NOTIFICATION_FILTER = "notification_filter"
+CONF_PERSISTENT_NOTIFICATION = "persistent_notification"
+
+# AWS SQS configuration (optional - for real-time events)
+CONF_AWS_ACCESS_KEY_ID = "aws_access_key_id"
+CONF_AWS_SECRET_ACCESS_KEY = "aws_secret_access_key"
+CONF_QUEUE_NAME = "queue_name"
 
 # Notification filter options
 NOTIFICATION_FILTER_NONE = "none"
@@ -28,12 +26,8 @@ NOTIFICATION_FILTER_ALL = "all"
 AJAX_REST_API_BASE_URL = "https://api.ajax.systems/api"
 AJAX_REST_API_TIMEOUT = 30  # seconds
 
-# AWS SQS defaults
-DEFAULT_AWS_REGION = "eu-central-1"  # Frankfurt
-DEFAULT_SCAN_INTERVAL = 30  # seconds
-
 # Update intervals (seconds)
-UPDATE_INTERVAL = 30  # Poll every 30 seconds (real-time updates via SQS)
+UPDATE_INTERVAL = 30  # Poll every 30 seconds
 
 
 # ==============================================================================

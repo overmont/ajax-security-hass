@@ -3,52 +3,43 @@
     "step": {
       "user": {
         "title": "Connexion à Ajax",
-        "description": "Entrez vos identifiants API Ajax. Vous pouvez les demander à Ajax Systems sur https://www.ajax.systems/api/",
+        "description": "Entrez vos identifiants API Ajax. Vous pouvez les demander à Ajax Systems sur https://ajax.systems/fr/api-request/\n\nOptionnel : Ajoutez les identifiants AWS pour recevoir les événements en temps réel (plus rapide que le polling).",
         "data": {
-          "integration_id": "ID d'intégration",
           "api_key": "Clé API",
-          "aws_access_key": "Clé d'accès AWS (optionnel)",
-          "aws_secret_key": "Clé secrète AWS (optionnel)",
-          "events_queue": "Nom de la file SQS (optionnel)",
-          "aws_region": "Région AWS"
+          "email": "Adresse email",
+          "password": "Mot de passe",
+          "aws_access_key_id": "Clé d'accès AWS (Optionnel)",
+          "aws_secret_access_key": "Clé secrète AWS (Optionnel)",
+          "queue_name": "Nom de file SQS (Optionnel)"
         },
         "data_description": {
-          "integration_id": "Votre ID d'intégration fourni par Ajax Systems",
           "api_key": "Votre clé API fournie par Ajax Systems",
-          "aws_access_key": "Clé d'accès AWS pour les événements temps réel via SQS (optionnel)",
-          "aws_secret_key": "Clé d'accès secrète AWS pour SQS (optionnel)",
-          "events_queue": "Nom de la file SQS (ex: ajax-events-XXXXXXXX-prod.fifo)",
-          "aws_region": "Région AWS (par défaut: eu-central-1)"
+          "email": "Votre adresse email de compte Ajax",
+          "password": "Votre mot de passe de compte Ajax",
+          "aws_access_key_id": "Clé d'accès AWS pour les événements SQS en temps réel (optionnel)",
+          "aws_secret_access_key": "Clé secrète AWS pour les événements SQS en temps réel (optionnel)",
+          "queue_name": "Nom de la file SQS (ex: ajax-events-xxxxx-prod.fifo)"
+        }
+      },
+      "2fa": {
+        "title": "Authentification à deux facteurs",
+        "description": "Entrez le code de vérification à 6 chiffres envoyé sur votre appareil pour {email}",
+        "data": {
+          "code": "Code de vérification"
+        },
+        "data_description": {
+          "code": "Code à 6 chiffres de votre application d'authentification ou SMS"
         }
       }
     },
     "error": {
       "cannot_connect": "Échec de la connexion à l'API Ajax. Vérifiez votre connexion Internet.",
-      "invalid_auth": "Identifiants API invalides. Vérifiez votre ID d'intégration et votre clé API.",
+      "invalid_auth": "Identifiants API invalides. Vérifiez votre clé API, email et mot de passe.",
+      "invalid_2fa": "Code de vérification invalide. Veuillez réessayer.",
       "unknown": "Erreur inattendue. Consultez les journaux pour plus de détails."
     },
     "abort": {
       "already_configured": "Cette intégration Ajax est déjà configurée."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Options AWS SQS Ajax",
-        "description": "Mettre à jour les identifiants AWS SQS pour les événements temps réel",
-        "data": {
-          "aws_access_key": "Clé d'accès AWS",
-          "aws_secret_key": "Clé secrète AWS",
-          "events_queue": "Nom de la file SQS",
-          "aws_region": "Région AWS"
-        },
-        "data_description": {
-          "aws_access_key": "Clé d'accès AWS pour SQS",
-          "aws_secret_key": "Clé d'accès secrète AWS pour SQS",
-          "events_queue": "Nom de la file SQS",
-          "aws_region": "Région AWS"
-        }
-      }
     }
   },
   "entity": {
@@ -296,6 +287,48 @@
             "name": "Armé en mode nuit"
           }
         }
+      },
+      "hub_battery": {
+        "name": "Batterie Hub"
+      },
+      "hub_ethernet_ip": {
+        "name": "IP Ethernet Hub"
+      },
+      "hub_wifi_ssid": {
+        "name": "Réseau WiFi Hub"
+      },
+      "hub_wifi_signal": {
+        "name": "Signal WiFi Hub"
+      },
+      "hub_wifi_ip": {
+        "name": "IP WiFi Hub"
+      },
+      "hub_gsm_signal": {
+        "name": "Signal GSM Hub"
+      },
+      "hub_gsm_network": {
+        "name": "Réseau GSM Hub"
+      },
+      "hub_led_brightness": {
+        "name": "Luminosité LED Hub"
+      },
+      "hub_timezone": {
+        "name": "Fuseau horaire Hub"
+      },
+      "hub_active_sim": {
+        "name": "SIM active"
+      },
+      "hub_sim1_apn": {
+        "name": "SIM 1 APN"
+      },
+      "hub_sim2_apn": {
+        "name": "SIM 2 APN"
+      },
+      "hub_sim1_traffic": {
+        "name": "SIM 1 Trafic"
+      },
+      "hub_sim2_traffic": {
+        "name": "SIM 2 Trafic"
       }
     },
     "binary_sensor": {

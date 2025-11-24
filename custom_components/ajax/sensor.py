@@ -66,6 +66,65 @@ def get_last_alert_timestamp(space: AjaxSpace) -> datetime | None:
     return None
 
 
+def format_timezone(tz_string: str | None) -> str | None:
+    """Format timezone string to be more readable.
+
+    Converts formats like:
+    - EUROPE_PARIS -> Europe/Paris
+    - AMERICA_NEW_YORK -> America/New_York
+    """
+    if not tz_string:
+        return None
+
+    # Replace underscores with slashes and title case each part
+    parts = tz_string.split("_")
+    if len(parts) >= 2:
+        # First part is region (Europe, America, etc.)
+        region = parts[0].title()
+        # Rest is city (may contain underscores)
+        city = "_".join(parts[1:]).replace("_", " ").title().replace(" ", "_")
+        return f"{region}/{city}"
+
+    return tz_string
+
+
+def format_hub_type(hub_type: str | None) -> str | None:
+    """Format hub type string to be more readable.
+
+    Converts formats like:
+    - HUB_2_PLUS -> Hub 2 Plus
+    - HUB_HYBRID_2G -> Hub Hybrid 2G
+    """
+    if not hub_type:
+        return None
+
+    # Replace underscores with spaces and title case
+    return hub_type.replace("_", " ").title()
+
+
+def format_signal_level(signal: str | None) -> str | None:
+    """Format signal level string to be more readable.
+
+    Converts formats like:
+    - STRONG -> Fort
+    - WEAK -> Faible
+    - MEDIUM -> Moyen
+    """
+    if not signal:
+        return None
+
+    signal_map = {
+        "STRONG": "Fort",
+        "WEAK": "Faible",
+        "MEDIUM": "Moyen",
+        "EXCELLENT": "Excellent",
+        "GOOD": "Bon",
+        "POOR": "Mauvais",
+    }
+
+    return signal_map.get(signal.upper(), signal.title())
+
+
 # ==============================================================================
 # Sensor Descriptions
 # ==============================================================================
@@ -76,6 +135,7 @@ class AjaxSpaceSensorDescription(SensorEntityDescription):
     """Description for Ajax space-level sensors."""
 
     value_fn: Callable[[AjaxSpace], Any] | None = None
+    should_create: Callable[[AjaxSpace], bool] | None = None
     entity_category: EntityCategory | None = None
 
 
@@ -137,6 +197,167 @@ SPACE_SENSORS: tuple[AjaxSpaceSensorDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         icon="mdi:bell-alert",
         value_fn=get_last_alert_timestamp,
+    ),
+    # Hub hardware information
+    AjaxSpaceSensorDescription(
+        key="hub_battery",
+        translation_key="hub_battery",
+        device_class=SensorDeviceClass.BATTERY,
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda space: space.hub_details.get("battery", {}).get("chargeLevelPercentage") if space.hub_details else None,
+    ),
+    # Network - Ethernet
+    AjaxSpaceSensorDescription(
+        key="hub_ethernet_ip",
+        translation_key="hub_ethernet_ip",
+        icon="mdi:ethernet",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: space.hub_details.get("ethernet", {}).get("ip") if space.hub_details and space.hub_details.get("ethernet", {}).get("enabled") else None,
+    ),
+    # Network - WiFi
+    AjaxSpaceSensorDescription(
+        key="hub_wifi_ssid",
+        translation_key="hub_wifi_ssid",
+        icon="mdi:wifi",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: space.hub_details.get("wifi", {}).get("ssid") if space.hub_details and space.hub_details.get("wifi", {}).get("enabled") else None,
+        should_create=lambda space: space.hub_details and space.hub_details.get("wifi", {}).get("enabled", False),
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_wifi_signal",
+        translation_key="hub_wifi_signal",
+        icon="mdi:wifi-strength-3",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: format_signal_level(space.hub_details.get("wifi", {}).get("signalLevel")) if space.hub_details and space.hub_details.get("wifi", {}).get("enabled") else None,
+        should_create=lambda space: space.hub_details and space.hub_details.get("wifi", {}).get("enabled", False),
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_wifi_ip",
+        translation_key="hub_wifi_ip",
+        icon="mdi:wifi",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: space.hub_details.get("wifi", {}).get("ip") if space.hub_details and space.hub_details.get("wifi", {}).get("enabled") else None,
+        should_create=lambda space: space.hub_details and space.hub_details.get("wifi", {}).get("enabled", False),
+    ),
+    # Network - GSM
+    AjaxSpaceSensorDescription(
+        key="hub_gsm_signal",
+        translation_key="hub_gsm_signal",
+        icon="mdi:signal",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: format_signal_level(space.hub_details.get("gsm", {}).get("signalLevel")) if space.hub_details else None,
+        should_create=lambda space: space.hub_details and space.hub_details.get("gsm") is not None,
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_gsm_network",
+        translation_key="hub_gsm_network",
+        icon="mdi:signal-cellular-3",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: space.hub_details.get("gsm", {}).get("networkStatus") if space.hub_details else None,
+        should_create=lambda space: space.hub_details and space.hub_details.get("gsm") is not None,
+    ),
+    # System info
+    AjaxSpaceSensorDescription(
+        key="hub_led_brightness",
+        translation_key="hub_led_brightness",
+        icon="mdi:brightness-6",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: space.hub_details.get("ledBrightnessLevel") if space.hub_details else None,
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_timezone",
+        translation_key="hub_timezone",
+        icon="mdi:clock-outline",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: format_timezone(space.hub_details.get("timeZone")) if space.hub_details else None,
+    ),
+    # SIM Cards
+    AjaxSpaceSensorDescription(
+        key="hub_active_sim",
+        translation_key="hub_active_sim",
+        icon="mdi:sim",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: (
+            f"SIM {space.hub_details.get('gsm', {}).get('activeSimCard', 0) + 1}/{len(space.hub_details.get('gsm', {}).get('simCards', []))}"
+            if space.hub_details and space.hub_details.get('gsm') and space.hub_details.get('gsm', {}).get('simCards')
+            else None
+        ),
+        should_create=lambda space: space.hub_details and space.hub_details.get('gsm') and space.hub_details.get('gsm', {}).get('simCards'),
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_sim1_apn",
+        translation_key="hub_sim1_apn",
+        icon="mdi:sim",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: (
+            space.hub_details.get('gsm', {}).get('simCards', [{}])[0].get('apn') or "Non configuré"
+            if space.hub_details
+            and space.hub_details.get('gsm', {}).get('simCards')
+            and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 0
+            else None
+        ),
+        should_create=lambda space: (
+            space.hub_details
+            and space.hub_details.get('gsm', {}).get('simCards')
+            and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 0
+        ),
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_sim2_apn",
+        translation_key="hub_sim2_apn",
+        icon="mdi:sim",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: (
+            space.hub_details.get('gsm', {}).get('simCards', [{}, {}])[1].get('apn') or "Non configuré"
+            if space.hub_details
+            and space.hub_details.get('gsm', {}).get('simCards')
+            and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 1
+            else None
+        ),
+        should_create=lambda space: (
+            space.hub_details
+            and space.hub_details.get('gsm', {}).get('simCards')
+            and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 1
+            and space.hub_details.get('gsm', {}).get('simCards', [{}, {}])[1].get('lastTrafficResetTimestamp', 0) > 0  # Only if SIM card has been used
+        ),
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_sim1_traffic",
+        translation_key="hub_sim1_traffic",
+        icon="mdi:swap-vertical",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: (
+            f"↑{space.hub_details.get('gsm', {}).get('simCards', [{}])[0].get('trafficTxKb', 0)} Ko / ↓{space.hub_details.get('gsm', {}).get('simCards', [{}])[0].get('trafficRxKb', 0)} Ko"
+            if space.hub_details
+            and space.hub_details.get('gsm', {}).get('simCards')
+            and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 0
+            else None
+        ),
+        should_create=lambda space: (
+            space.hub_details
+            and space.hub_details.get('gsm', {}).get('simCards')
+            and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 0
+        ),
+    ),
+    AjaxSpaceSensorDescription(
+        key="hub_sim2_traffic",
+        translation_key="hub_sim2_traffic",
+        icon="mdi:swap-vertical",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda space: (
+            f"↑{space.hub_details.get('gsm', {}).get('simCards', [{}, {}])[1].get('trafficTxKb', 0)} Ko / ↓{space.hub_details.get('gsm', {}).get('simCards', [{}, {}])[1].get('trafficRxKb', 0)} Ko"
+            if space.hub_details
+            and space.hub_details.get('gsm', {}).get('simCards')
+            and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 1
+            else None
+        ),
+        should_create=lambda space: (
+            space.hub_details
+            and space.hub_details.get('gsm', {}).get('simCards')
+            and len(space.hub_details.get('gsm', {}).get('simCards', [])) > 1
+            and space.hub_details.get('gsm', {}).get('simCards', [{}, {}])[1].get('lastTrafficResetTimestamp', 0) > 0  # Only if SIM card has been used
+        ),
     ),
 )
 
@@ -332,13 +553,18 @@ async def async_setup_entry(
 
     # Create space-level sensors for each space (hub)
     for space_id, space in coordinator.account.spaces.items():
+        space_sensor_count = 0
         for description in SPACE_SENSORS:
+            # Check if sensor should be created
+            if description.should_create and not description.should_create(space):
+                continue
             entities.append(
                 AjaxSpaceSensor(coordinator, entry, space_id, description)
             )
+            space_sensor_count += 1
         _LOGGER.debug(
             "Created %d space-level sensors for space '%s'",
-            len(SPACE_SENSORS),
+            space_sensor_count,
             space.name,
         )
 
@@ -439,12 +665,20 @@ class AjaxSpaceSensor(CoordinatorEntity[AjaxDataCoordinator], SensorEntity):
         if not space:
             return {}
 
-        return {
+        device_info = {
             "identifiers": {(DOMAIN, self._space_id)},
             "name": f"Ajax Hub - {space.name}",
             "manufacturer": "Ajax Systems",
-            "model": "Security Hub",
+            "model": format_hub_type(space.hub_details.get("hubSubtype")) if space.hub_details else "Security Hub",
         }
+
+        # Add firmware version if available
+        if space.hub_details and space.hub_details.get("firmware"):
+            firmware = space.hub_details["firmware"]
+            if firmware.get("version"):
+                device_info["sw_version"] = firmware["version"]
+
+        return device_info
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
