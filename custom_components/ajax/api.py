@@ -379,6 +379,15 @@ class AjaxRestApi:
             _LOGGER.error("API request to %s timed out after %ss", endpoint, AJAX_REST_API_TIMEOUT)
             raise AjaxRestApiError("API request timeout") from err
 
+    # User methods
+    async def async_get_account(self) -> dict[str, Any]:
+        """Get current user account information.
+
+        Returns:
+            User account dictionary with phone, firstName, language, etc.
+        """
+        return await self._request("GET", "user")
+
     # Hub methods
     async def async_get_hubs(self) -> list[dict[str, Any]]:
         """Get all hubs.
@@ -388,7 +397,7 @@ class AjaxRestApi:
         """
         if not self.user_id:
             raise AjaxRestApiError("No user_id available. Call async_login() first.")
-        return await self._request("GET", f"users/{self.user_id}/hubs")
+        return await self._request("GET", f"user/{self.user_id}/hubs")
 
     async def async_get_hub(self, hub_id: str) -> dict[str, Any]:
         """Get hub details.
@@ -399,7 +408,9 @@ class AjaxRestApi:
         Returns:
             Hub details dictionary
         """
-        return await self._request("GET", f"hubs/{hub_id}")
+        if not self.user_id:
+            raise AjaxRestApiError("No user_id available. Call async_login() first.")
+        return await self._request("GET", f"user/{self.user_id}/hubs/{hub_id}")
 
     async def async_get_hub_mode(self, hub_id: str) -> dict[str, Any]:
         """Get hub alarm mode.
@@ -425,27 +436,28 @@ class AjaxRestApi:
         return await self._request("POST", f"hubs/{hub_id}/mode", {"mode": mode})
 
     # Device methods
-    async def async_get_devices(self, space_id: str) -> list[dict[str, Any]]:
-        """Get all devices for a specific space/hub.
+    async def async_get_devices(self, hub_id: str) -> list[dict[str, Any]]:
+        """Get all devices for a specific hub.
 
         Args:
-            space_id: Space (hub) ID
+            hub_id: Hub ID
 
         Returns:
             List of device dictionaries
         """
-        return await self._request("GET", f"hubs/{space_id}/devices")
+        return await self._request("GET", f"user/{self.user_id}/hubs/{hub_id}/devices")
 
-    async def async_get_device(self, device_id: str) -> dict[str, Any]:
+    async def async_get_device(self, hub_id: str, device_id: str) -> dict[str, Any]:
         """Get device details.
 
         Args:
+            hub_id: Hub ID
             device_id: Device ID
 
         Returns:
             Device details dictionary
         """
-        return await self._request("GET", f"devices/{device_id}")
+        return await self._request("GET", f"user/{self.user_id}/hubs/{hub_id}/devices/{device_id}")
 
     async def async_get_device_state(self, device_id: str) -> dict[str, Any]:
         """Get device state.

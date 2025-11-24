@@ -42,8 +42,8 @@ class DoorContactHandler(AjaxDeviceHandler):
         )
 
         # External contact (for connecting wired sensors)
-        # Only create if the device has this capability
-        if "external_contact_opened" in self.device.attributes:
+        # Only create if extraContactAware is True (feature enabled on device)
+        if self.device.attributes.get("extra_contact_aware", False):
             sensors.append(
                 {
                     "key": "external_contact",
@@ -88,7 +88,8 @@ class DoorContactHandler(AjaxDeviceHandler):
         )
 
         # Tilt sensor / Capteur d'inclinaison (DoorProtect Plus)
-        if "tilt_detected" in self.device.attributes or "tilt" in self.device.attributes:
+        # Only create if accelerometerAware is True (feature enabled on device)
+        if self.device.attributes.get("accelerometer_aware", False):
             sensors.append(
                 {
                     "key": "tilt",
@@ -101,7 +102,8 @@ class DoorContactHandler(AjaxDeviceHandler):
             )
 
         # Shock sensor / Capteur de choc (DoorProtect Plus)
-        if "shock_detected" in self.device.attributes or "shock" in self.device.attributes:
+        # Only create if shockSensorAware is True (feature enabled on device)
+        if self.device.attributes.get("shock_sensor_aware", False):
             sensors.append(
                 {
                     "key": "shock",
@@ -159,29 +161,8 @@ class DoorContactHandler(AjaxDeviceHandler):
                 }
             )
 
-        # Firmware version - enable by default and also add hardware version
-        if self.device.firmware_version is not None:
-            sensors.append(
-                {
-                    "key": "firmware_version",
-                    "translation_key": "firmware_version",
-                    "icon": "mdi:chip",
-                    "value_fn": lambda: self.device.firmware_version,
-                    "enabled_by_default": True,
-                }
-            )
-
-        # Hardware version
-        if self.device.hardware_version is not None:
-            sensors.append(
-                {
-                    "key": "hardware_version",
-                    "translation_key": "hardware_version",
-                    "icon": "mdi:chip",
-                    "value_fn": lambda: self.device.hardware_version,
-                    "enabled_by_default": True,
-                }
-            )
+        # Note: firmware_version and hardware_version are available on device_info
+        # so we don't need separate sensors for them
 
         # Connection type / Connexion via Jeweller
         if "connection_type" in self.device.attributes:

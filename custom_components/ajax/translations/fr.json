@@ -201,6 +201,9 @@
       "battery_state": {
         "name": "État de la batterie"
       },
+      "sensitivity": {
+        "name": "Sensibilité"
+      },
       "sim_status": {
         "name": "État des cartes SIM",
         "state_attributes": {
@@ -356,8 +359,8 @@
       "tamper": {
         "name": "Couvercle",
         "state": {
-          "on": "Fermé",
-          "off": "Ouvert"
+          "on": "Ouvert",
+          "off": "Fermé"
         }
       },
       "moisture": {

@@ -20,6 +20,7 @@ Structure:
 from .base import AjaxDeviceHandler
 from .door_contact import DoorContactHandler
 from .flood_detector import FloodDetectorHandler
+from .glass_break import GlassBreakHandler
 from .hub import HubHandler
 from .light import LightHandler
 from .motion_detector import MotionDetectorHandler
@@ -31,6 +32,7 @@ __all__ = [
     "AjaxDeviceHandler",
     "DoorContactHandler",
     "FloodDetectorHandler",
+    "GlassBreakHandler",
     "HubHandler",
     "LightHandler",
     "MotionDetectorHandler",

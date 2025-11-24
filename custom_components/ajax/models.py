@@ -281,7 +281,16 @@ class AjaxSpace:
 
     def get_devices_with_malfunctions(self) -> list[AjaxDevice]:
         """Get all devices with malfunctions."""
-        return [d for d in self.devices.values() if d.malfunctions > 0]
+        result = []
+        for d in self.devices.values():
+            # malfunctions can be a list or an int
+            if isinstance(d.malfunctions, list):
+                if len(d.malfunctions) > 0:
+                    result.append(d)
+            elif isinstance(d.malfunctions, int):
+                if d.malfunctions > 0:
+                    result.append(d)
+        return result
 
     def get_bypassed_devices(self) -> list[AjaxDevice]:
         """Get all bypassed devices."""

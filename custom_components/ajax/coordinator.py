@@ -272,16 +272,25 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
 
     async def _async_init_account(self) -> None:
         """Initialize the account data."""
-        # Get account info
-        account_data = await self.api.async_get_account()
+        # Get account info from GET /user endpoint
+        try:
+            account_data = await self.api.async_get_account()
+            # Swagger returns: phone, firstName, language, etc.
+            user_name = account_data.get("firstName", "Unknown")
+            user_email = account_data.get("email", self.api.email or "")
+        except Exception as err:
+            _LOGGER.warning("Could not fetch account details: %s, using login info", err)
+            account_data = {}
+            user_name = "Unknown"
+            user_email = self.api.email or ""
 
         self.account = AjaxAccount(
-            user_id=account_data.get("user_hex_id", ""),
-            name=account_data.get("name", "Unknown"),
-            email=account_data.get("email", ""),
+            user_id=self.api.user_id or "",  # Use user_id from login response
+            name=user_name,
+            email=user_email,
         )
 
-        _LOGGER.info("Initialized account for %s", self.account.name)
+        _LOGGER.info("Initialized account for %s (user_id: %s)", self.account.name, self.account.user_id)
 
     async def _async_init_sqs(self) -> None:
         """Initialize AWS SQS for real-time events (optional).
@@ -414,6 +423,7 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 hub_state = hub_details.get("state", "DISARMED")
                 security_state = self._parse_security_state(hub_state)
                 _LOGGER.debug("Hub %s (name: %s) state from API: '%s' -> %s", hub_id, hub_name, hub_state, security_state)
+                _LOGGER.debug("Hub details for %s: %s", hub_name, hub_details)
             except Exception as err:
                 _LOGGER.warning("Failed to get hub details for %s: %s", hub_id, err)
                 hub_name = f"Hub {hub_id}"
@@ -512,16 +522,72 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 # Update raw_type in case it changed
                 device.raw_type = raw_device_type
 
-            # Update device attributes
+            # Update basic device attributes from list endpoint
             device.online = device_data.get("online", True)
             device.bypassed = device_data.get("bypassed", False)
-            device.malfunctions = device_data.get("malfunctions", 0)
-            device.battery_level = device_data.get("battery_level")
-            device.battery_state = device_data.get("battery_state")
-            device.signal_strength = device_data.get("signal_strength")
-            device.firmware_version = device_data.get("firmware_version")
-            device.hardware_version = device_data.get("hardware_version")
-            device.states = device_data.get("states", [])
+
+            # Fetch detailed device info for battery, signal, tamper, etc.
+            try:
+                device_details = await self.api.async_get_device(space_id, device_id)
+                if device_details:
+                    _LOGGER.debug(
+                        "Device details for %s: %s",
+                        device.name,
+                        device_details,
+                    )
+                    # malfunctions can be a list or an int - normalize to int (count)
+                    malfunctions_data = device_details.get("malfunctions", 0)
+                    if isinstance(malfunctions_data, list):
+                        device.malfunctions = len(malfunctions_data)
+                    else:
+                        device.malfunctions = malfunctions_data
+                    device.battery_level = device_details.get("batteryChargeLevelPercentage", device_details.get("battery_level"))
+                    device.battery_state = device_details.get("batteryState", device_details.get("battery_state"))
+                    # Convert signal level string to percentage
+                    signal_level = device_details.get("signalLevel", device_details.get("signal_strength"))
+                    if isinstance(signal_level, str):
+                        signal_map = {
+                            "EXCELLENT": 100,
+                            "STRONG": 85,
+                            "GOOD": 70,
+                            "MEDIUM": 50,
+                            "WEAK": 30,
+                            "POOR": 15,
+                        }
+                        device.signal_strength = signal_map.get(signal_level.upper(), None)
+                    else:
+                        device.signal_strength = signal_level
+                    device.firmware_version = device_details.get("firmwareVersion", device_details.get("firmware_version"))
+                    device.hardware_version = device_details.get("hardwareVersion", device_details.get("hardware_version"))
+                    device.states = device_details.get("states", [])
+
+                    # Store tampered status in attributes
+                    if "tampered" in device_details:
+                        device.attributes["tampered"] = device_details.get("tampered", False)
+
+                    # Store temperature if available (DoorProtect Plus)
+                    if "temperature" in device_details:
+                        device.attributes["temperature"] = device_details.get("temperature")
+
+                    # Store other useful attributes
+                    if "alwaysActive" in device_details:
+                        device.attributes["always_active"] = device_details.get("alwaysActive", False)
+                    if "nightModeArm" in device_details or "armedInNightMode" in device_details:
+                        device.attributes["armed_in_night_mode"] = device_details.get("nightModeArm", device_details.get("armedInNightMode", False))
+
+                    # DoorProtect Plus specific attributes
+                    if "extraContactAware" in device_details:
+                        device.attributes["extra_contact_aware"] = device_details.get("extraContactAware", False)
+                    if "shockSensorAware" in device_details:
+                        device.attributes["shock_sensor_aware"] = device_details.get("shockSensorAware", False)
+                    if "accelerometerAware" in device_details:
+                        device.attributes["accelerometer_aware"] = device_details.get("accelerometerAware", False)
+
+                    # Sensitivity (GlassProtect, MotionProtect, etc.)
+                    if "sensitivity" in device_details:
+                        device.attributes["sensitivity"] = device_details.get("sensitivity")
+            except Exception as err:
+                _LOGGER.debug("Could not fetch device details for %s: %s", device.name, err)
 
             # Update device metadata
             device.device_color = device_data.get("device_color")

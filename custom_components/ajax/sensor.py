@@ -158,7 +158,7 @@ SPACE_SENSORS: tuple[AjaxSpaceSensorDescription, ...] = (
         icon="mdi:alert-circle",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda space: len(space.get_devices_with_malfunctions()),
+        value_fn=lambda space: space.hub_details.get("warnings", {}).get("allDevices", 0) if space.hub_details else len(space.get_devices_with_malfunctions()),
     ),
     AjaxSpaceSensorDescription(
         key="bypassed_devices",
@@ -405,23 +405,16 @@ DEVICE_SENSORS: tuple[AjaxDeviceSensorDescription, ...] = (
         enabled_by_default=True,
     ),
     AjaxDeviceSensorDescription(
-        key="firmware_version",
-        translation_key="firmware_version",
-        icon="mdi:chip",
+        key="sensitivity",
+        translation_key="sensitivity",
+        icon="mdi:tune",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda device: device.firmware_version,
-        should_create=lambda device: device.firmware_version is not None,
+        value_fn=lambda device: {0: "Faible", 1: "Normal", 2: "Élevé"}.get(device.attributes.get("sensitivity"), device.attributes.get("sensitivity")),
+        should_create=lambda device: "sensitivity" in device.attributes,
         enabled_by_default=True,
     ),
-    AjaxDeviceSensorDescription(
-        key="hardware_version",
-        translation_key="hardware_version",
-        icon="mdi:chip",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda device: device.hardware_version,
-        should_create=lambda device: device.hardware_version is not None,
-        enabled_by_default=True,
-    ),
+    # Note: firmware_version and hardware_version are available in device_info (sw_version)
+    # so we don't create separate sensors for them
 )
 
 # Hub-specific sensor descriptions

@@ -24,6 +24,7 @@ from .coordinator import AjaxDataCoordinator
 from .devices import (
     DoorContactHandler,
     FloodDetectorHandler,
+    GlassBreakHandler,
     HubHandler,
     MotionDetectorHandler,
     SmokeDetectorHandler,
@@ -41,6 +42,7 @@ DEVICE_HANDLERS = {
     DeviceType.WIRE_INPUT: DoorContactHandler,
     DeviceType.SMOKE_DETECTOR: SmokeDetectorHandler,
     DeviceType.FLOOD_DETECTOR: FloodDetectorHandler,
+    DeviceType.GLASS_BREAK: GlassBreakHandler,
     DeviceType.SOCKET: SocketHandler,
     DeviceType.RELAY: SocketHandler,
     DeviceType.HUB: HubHandler,
