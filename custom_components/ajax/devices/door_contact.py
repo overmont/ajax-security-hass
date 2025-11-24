@@ -93,7 +93,7 @@ class DoorContactHandler(AjaxDeviceHandler):
         sensors = []
 
         # Battery level
-        if "battery_level" in self.device.attributes:
+        if self.device.battery_level is not None:
             sensors.append(
                 {
                     "key": "battery",
@@ -101,13 +101,13 @@ class DoorContactHandler(AjaxDeviceHandler):
                     "device_class": SensorDeviceClass.BATTERY,
                     "native_unit_of_measurement": PERCENTAGE,
                     "state_class": SensorStateClass.MEASUREMENT,
-                    "value_fn": lambda: self.device.attributes.get("battery_level"),
+                    "value_fn": lambda: self.device.battery_level,
                     "enabled_by_default": True,
                 }
             )
 
         # Signal strength
-        if "signal_strength" in self.device.attributes:
+        if self.device.signal_strength is not None:
             sensors.append(
                 {
                     "key": "signal_strength",
@@ -115,7 +115,7 @@ class DoorContactHandler(AjaxDeviceHandler):
                     "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
                     "native_unit_of_measurement": SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
                     "state_class": SensorStateClass.MEASUREMENT,
-                    "value_fn": lambda: self.device.attributes.get("signal_strength"),
+                    "value_fn": lambda: self.device.signal_strength,
                     "enabled_by_default": True,
                 }
             )
@@ -146,15 +146,27 @@ class DoorContactHandler(AjaxDeviceHandler):
                 }
             )
 
-        # Firmware version
-        if "firmware_version" in self.device.attributes:
+        # Firmware version - enable by default and also add hardware version
+        if self.device.firmware_version is not None:
             sensors.append(
                 {
                     "key": "firmware_version",
                     "translation_key": "firmware_version",
                     "icon": "mdi:chip",
-                    "value_fn": lambda: self.device.attributes.get("firmware_version"),
-                    "enabled_by_default": False,
+                    "value_fn": lambda: self.device.firmware_version,
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Hardware version
+        if self.device.hardware_version is not None:
+            sensors.append(
+                {
+                    "key": "hardware_version",
+                    "translation_key": "hardware_version",
+                    "icon": "mdi:chip",
+                    "value_fn": lambda: self.device.hardware_version,
+                    "enabled_by_default": True,
                 }
             )
 

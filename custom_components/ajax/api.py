@@ -425,13 +425,16 @@ class AjaxRestApi:
         return await self._request("POST", f"hubs/{hub_id}/mode", {"mode": mode})
 
     # Device methods
-    async def async_get_devices(self) -> list[dict[str, Any]]:
-        """Get all devices.
+    async def async_get_devices(self, space_id: str) -> list[dict[str, Any]]:
+        """Get all devices for a specific space/hub.
+
+        Args:
+            space_id: Space (hub) ID
 
         Returns:
             List of device dictionaries
         """
-        return await self._request("GET", "devices")
+        return await self._request("GET", f"hubs/{space_id}/devices")
 
     async def async_get_device(self, device_id: str) -> dict[str, Any]:
         """Get device details.
