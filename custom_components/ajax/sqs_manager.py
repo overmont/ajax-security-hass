@@ -355,6 +355,44 @@ class SQSManager:
         if is_active:
             device.last_trigger_time = datetime.now(timezone.utc)
 
+        # Update actual device state based on action
+        state_updated = False
+
+        if action == "door_opened":
+            # is_active=True means door is open, is_active=False means door is closed (recovered)
+            device.attributes["door_opened"] = is_active
+            state_updated = True
+            _LOGGER.info("Door sensor %s: door_opened=%s", device.name, is_active)
+
+        elif action == "external_contact_opened":
+            device.attributes["external_contact_opened"] = is_active
+            state_updated = True
+            _LOGGER.info("External contact %s: opened=%s", device.name, is_active)
+
+        elif action == "motion_detected":
+            device.attributes["motion_detected"] = is_active
+            state_updated = True
+
+        elif action == "smoke_detected":
+            device.attributes["smoke_detected"] = is_active
+            state_updated = True
+
+        elif action == "leak_detected":
+            device.attributes["leak_detected"] = is_active
+            state_updated = True
+
+        elif action == "glass_break_detected":
+            device.attributes["glass_break_detected"] = is_active
+            state_updated = True
+
+        elif action == "device_tampered":
+            device.attributes["tampered"] = is_active
+            state_updated = True
+
+        # Notify HA of the state change
+        if state_updated:
+            self.coordinator.async_set_updated_data(self.coordinator.account)
+
         _LOGGER.info(
             "Updated device %s state from SQS: %s (active=%s)",
             device.name,

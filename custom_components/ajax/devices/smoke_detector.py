@@ -15,7 +15,6 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
-    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     UnitOfTemperature,
 )
 
@@ -32,27 +31,31 @@ class SmokeDetectorHandler(AjaxDeviceHandler):
                 "key": "smoke",
                 "translation_key": "smoke",
                 "device_class": BinarySensorDeviceClass.SMOKE,
-                "value_fn": lambda: self.device.attributes.get("smoke_detected", False),
+                # Note: Ajax API uses 'state' field - ALARM when smoke detected
+                "value_fn": lambda: self.device.attributes.get("state") == "ALARM",
                 "enabled_by_default": True,
             },
             # Note: "armed_in_night_mode" is now a switch, not a binary sensor
             {
-                "key": "problem",
-                "translation_key": "problem",
-                "device_class": BinarySensorDeviceClass.PROBLEM,
-                "value_fn": lambda: bool(self.device.malfunctions),
+                "key": "tamper",
+                "translation_key": "tamper",
+                "device_class": BinarySensorDeviceClass.TAMPER,
+                "icon": "mdi:lock-open-alert",
+                "value_fn": lambda: self.device.attributes.get("tampered", False),
                 "enabled_by_default": True,
             },
         ]
 
         # CO detector (FireProtect Plus, FireProtect 2)
-        if "co_detected" in self.device.attributes:
+        # CO alarm is separate from smoke - check for CO-specific state
+        if self.device.device_type in ["FireProtect2", "FireProtectPlus"]:
             sensors.append(
                 {
                     "key": "gas",
                     "translation_key": "gas",
                     "device_class": BinarySensorDeviceClass.GAS,
-                    "value_fn": lambda: self.device.attributes.get("co_detected", False),
+                    # CO alarm indicated by specific state or attribute
+                    "value_fn": lambda: self.device.attributes.get("co_alarm", False),
                     "enabled_by_default": True,
                 }
             )
@@ -63,33 +66,31 @@ class SmokeDetectorHandler(AjaxDeviceHandler):
         """Return sensor entities for smoke detectors."""
         sensors = []
 
-        # Battery level (for battery-powered models)
-        if "battery_level" in self.device.attributes:
-            sensors.append(
-                {
-                    "key": "battery",
-                    "translation_key": "battery",
-                    "device_class": SensorDeviceClass.BATTERY,
-                    "native_unit_of_measurement": PERCENTAGE,
-                    "state_class": SensorStateClass.MEASUREMENT,
-                    "value_fn": lambda: self.device.attributes.get("battery_level"),
-                    "enabled_by_default": True,
-                }
-            )
+        # Battery level - always create (all FireProtect are battery powered)
+        sensors.append(
+            {
+                "key": "battery",
+                "translation_key": "battery",
+                "device_class": SensorDeviceClass.BATTERY,
+                "native_unit_of_measurement": PERCENTAGE,
+                "state_class": SensorStateClass.MEASUREMENT,
+                "value_fn": lambda: self.device.battery_level if self.device.battery_level is not None else None,
+                "enabled_by_default": True,
+            }
+        )
 
-        # Signal strength
-        if "signal_strength" in self.device.attributes:
-            sensors.append(
-                {
-                    "key": "signal_strength",
-                    "translation_key": "signal_strength",
-                    "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
-                    "native_unit_of_measurement": SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-                    "state_class": SensorStateClass.MEASUREMENT,
-                    "value_fn": lambda: self.device.attributes.get("signal_strength"),
-                    "enabled_by_default": True,
-                }
-            )
+        # Signal strength - always create
+        sensors.append(
+            {
+                "key": "signal_strength",
+                "translation_key": "signal_strength",
+                "icon": "mdi:signal",
+                "native_unit_of_measurement": PERCENTAGE,
+                "state_class": SensorStateClass.MEASUREMENT,
+                "value_fn": lambda: self.device.signal_strength if self.device.signal_strength is not None else None,
+                "enabled_by_default": True,
+            }
+        )
 
         # Temperature (FireProtect Plus, FireProtect 2)
         if "temperature" in self.device.attributes:
@@ -144,3 +145,25 @@ class SmokeDetectorHandler(AjaxDeviceHandler):
             )
 
         return sensors
+
+    def get_switches(self) -> list[dict]:
+        """Return switch entities for smoke detectors."""
+        switches = []
+
+        # LED Indicator switch
+        if "indicatorLightMode" in self.device.attributes:
+            switches.append(
+                {
+                    "key": "indicator_light",
+                    "translation_key": "indicator_light",
+                    "name": "Indication LED",
+                    "icon": "mdi:led-on",
+                    "value_fn": lambda: self.device.attributes.get("indicatorLightMode") == "STANDARD",
+                    "api_key": "indicatorLightMode",
+                    "api_value_on": "STANDARD",
+                    "api_value_off": "DONT_BLINK_ON_ALARM",
+                    "enabled_by_default": True,
+                }
+            )
+
+        return switches

@@ -46,11 +46,33 @@
     "step": {
       "init": {
         "title": "Options Ajax",
-        "description": "Configurez les options de votre intégration Ajax",
+        "description": "Choisissez une catégorie à configurer",
+        "menu_options": {
+          "notifications": "Notifications",
+          "aws_credentials": "Credentials AWS SQS"
+        }
+      },
+      "notifications": {
+        "title": "Options de notifications",
+        "description": "Configurez les notifications de votre intégration Ajax",
         "data": {
           "persistent_notification": "Afficher les notifications persistantes",
           "notification_filter": "Filtre de notifications",
           "monitored_spaces": "Espaces à surveiller"
+        }
+      },
+      "aws_credentials": {
+        "title": "Credentials AWS SQS",
+        "description": "Configurez les identifiants AWS pour recevoir les événements en temps réel.\n\n**Configuration actuelle:**\n- Clé d'accès: {current_access_key}\n- Clé secrète: {current_secret_key}\n- File SQS: {current_queue}\n\nLaissez un champ vide pour conserver la valeur actuelle.",
+        "data": {
+          "aws_access_key_id": "Clé d'accès AWS",
+          "aws_secret_access_key": "Clé secrète AWS",
+          "queue_name": "Nom de file SQS"
+        },
+        "data_description": {
+          "aws_access_key_id": "Exemple: AKIA3SFSAKBHLDDOCGFG",
+          "aws_secret_access_key": "Clé secrète fournie par Ajax (40 caractères)",
+          "queue_name": "Exemple: ajax-events-V6WHbk3e-prod.fifo"
         }
       }
     }

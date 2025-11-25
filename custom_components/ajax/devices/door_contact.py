@@ -182,3 +182,146 @@ class DoorContactHandler(AjaxDeviceHandler):
             )
 
         return sensors
+
+    def get_switches(self) -> list[dict]:
+        """Return switch entities for door contacts."""
+        switches = []
+
+        # Always Active switch
+        switches.append(
+            {
+                "key": "always_active",
+                "translation_key": "always_active",
+                "name": "Toujours actif",
+                "icon": "mdi:shield-alert",
+                "value_fn": lambda: self.device.attributes.get("always_active", False),
+                "api_key": "alwaysActive",
+                "enabled_by_default": True,
+            }
+        )
+
+        # LED Indicator switch
+        if "indicatorLightMode" in self.device.attributes:
+            switches.append(
+                {
+                    "key": "indicator_light",
+                    "translation_key": "indicator_light",
+                    "name": "Indication LED",
+                    "icon": "mdi:led-on",
+                    "value_fn": lambda: self.device.attributes.get("indicatorLightMode") == "STANDARD",
+                    "api_key": "indicatorLightMode",
+                    "api_value_on": "STANDARD",
+                    "api_value_off": "DONT_BLINK_ON_ALARM",
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Night Mode switch
+        switches.append(
+            {
+                "key": "night_mode",
+                "translation_key": "night_mode",
+                "name": "Armé en mode nuit",
+                "icon": "mdi:weather-night",
+                "value_fn": lambda: self.device.attributes.get("night_mode_arm", False),
+                "api_key": "nightModeArm",
+                "enabled_by_default": True,
+            }
+        )
+
+        # DoorProtect Plus specific switches
+        raw_type = self.device.raw_type or ""
+        if "Plus" in raw_type:
+            # External contact switch
+            switches.append(
+                {
+                    "key": "external_contact_enabled",
+                    "translation_key": "external_contact_enabled",
+                    "name": "Contact externe",
+                    "icon": "mdi:electric-switch",
+                    "value_fn": lambda: self.device.attributes.get("extra_contact_aware", False),
+                    "api_key": "extraContactAware",
+                    "enabled_by_default": True,
+                }
+            )
+
+            # Shock sensor switch
+            switches.append(
+                {
+                    "key": "shock_sensor",
+                    "translation_key": "shock_sensor",
+                    "name": "Capteur de choc",
+                    "icon": "mdi:vibrate",
+                    "value_fn": lambda: self.device.attributes.get("shock_sensor_aware", False),
+                    "api_key": "shockSensorAware",
+                    "enabled_by_default": True,
+                }
+            )
+
+            # Ignore simple impact switch
+            switches.append(
+                {
+                    "key": "ignore_impact",
+                    "translation_key": "ignore_impact",
+                    "name": "Ignorer impact simple",
+                    "icon": "mdi:shield-off",
+                    "value_fn": lambda: self.device.attributes.get("ignore_simple_impact", False),
+                    "api_key": "ignoreSimpleImpact",
+                    "enabled_by_default": True,
+                }
+            )
+
+            # Tilt sensor switch
+            switches.append(
+                {
+                    "key": "tilt_sensor",
+                    "translation_key": "tilt_sensor",
+                    "name": "Capteur d'inclinaison",
+                    "icon": "mdi:angle-acute",
+                    "value_fn": lambda: self.device.attributes.get("accelerometer_aware", False),
+                    "api_key": "accelerometerAware",
+                    "enabled_by_default": True,
+                }
+            )
+
+            # Siren trigger switches
+            switches.append(
+                {
+                    "key": "siren_trigger_reed",
+                    "translation_key": "siren_trigger_reed",
+                    "name": "Sirène si ouverture",
+                    "icon": "mdi:door-open",
+                    "value_fn": lambda: "REED" in self.device.attributes.get("siren_triggers", []),
+                    "api_key": "sirenTriggers",
+                    "trigger_key": "REED",
+                    "enabled_by_default": True,
+                }
+            )
+
+            switches.append(
+                {
+                    "key": "siren_trigger_shock",
+                    "translation_key": "siren_trigger_shock",
+                    "name": "Sirène si choc",
+                    "icon": "mdi:vibrate",
+                    "value_fn": lambda: "SHOCK" in self.device.attributes.get("siren_triggers", []),
+                    "api_key": "sirenTriggers",
+                    "trigger_key": "SHOCK",
+                    "enabled_by_default": True,
+                }
+            )
+
+            switches.append(
+                {
+                    "key": "siren_trigger_tilt",
+                    "translation_key": "siren_trigger_tilt",
+                    "name": "Sirène si inclinaison",
+                    "icon": "mdi:angle-acute",
+                    "value_fn": lambda: "TILT" in self.device.attributes.get("siren_triggers", []),
+                    "api_key": "sirenTriggers",
+                    "trigger_key": "TILT",
+                    "enabled_by_default": True,
+                }
+            )
+
+        return switches

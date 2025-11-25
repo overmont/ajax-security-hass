@@ -405,6 +405,41 @@
       }
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ajax Options",
+        "description": "Choose a category to configure",
+        "menu_options": {
+          "notifications": "Notifications",
+          "aws_credentials": "AWS SQS Credentials"
+        }
+      },
+      "notifications": {
+        "title": "Notification Options",
+        "description": "Configure your Ajax integration notifications",
+        "data": {
+          "persistent_notification": "Show persistent notifications",
+          "notification_filter": "Notification filter",
+          "monitored_spaces": "Spaces to monitor"
+        }
+      },
+      "aws_credentials": {
+        "title": "AWS SQS Credentials",
+        "description": "Configure AWS credentials for real-time event notifications.\n\n**Current configuration:**\n- Access Key: {current_access_key}\n- Secret Key: {current_secret_key}\n- SQS Queue: {current_queue}\n\nLeave a field empty to keep current value.",
+        "data": {
+          "aws_access_key_id": "AWS Access Key ID",
+          "aws_secret_access_key": "AWS Secret Access Key",
+          "queue_name": "SQS Queue Name"
+        },
+        "data_description": {
+          "aws_access_key_id": "Example: AKIA3SFSAKBHLDDOCGFG",
+          "aws_secret_access_key": "Secret key provided by Ajax (40 characters)",
+          "queue_name": "Example: ajax-events-V6WHbk3e-prod.fifo"
+        }
+      }
+    }
+  },
   "selector": {
     "notification_filter": {
       "options": {

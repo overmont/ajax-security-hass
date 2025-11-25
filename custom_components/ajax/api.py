@@ -312,8 +312,6 @@ class AjaxRestApi:
             "X-Session-Token": self.session_token,
         }
 
-        _LOGGER.debug("Making %s request to %s", method, endpoint)
-
         try:
             async with session.request(
                 method,
@@ -322,16 +320,9 @@ class AjaxRestApi:
                 json=data,
                 timeout=aiohttp.ClientTimeout(total=AJAX_REST_API_TIMEOUT),
             ) as response:
-                _LOGGER.debug(
-                    "Response from %s: status=%s", endpoint, response.status
-                )
-
                 if response.status == 401:
                     if _retry_on_auth_error:
                         # Token expired, try to refresh it first
-                        _LOGGER.warning(
-                            "Token expired (401), attempting token refresh"
-                        )
                         try:
                             # Try refresh token first (faster, no password needed)
                             await self.async_refresh_token()
@@ -368,9 +359,7 @@ class AjaxRestApi:
                     raise AjaxRestAuthError("Access denied")
 
                 response.raise_for_status()
-                result = await response.json()
-                _LOGGER.debug("Successfully received data from %s", endpoint)
-                return result
+                return await response.json()
 
         except aiohttp.ClientError as err:
             _LOGGER.error("API request to %s failed: %s", endpoint, err)
@@ -764,8 +753,6 @@ class AjaxRestApi:
             "X-Session-Token": self.session_token,
         }
 
-        _LOGGER.debug("Making %s request to %s", method, endpoint)
-
         try:
             async with session.request(
                 method,
@@ -774,13 +761,8 @@ class AjaxRestApi:
                 json=data,
                 timeout=aiohttp.ClientTimeout(total=AJAX_REST_API_TIMEOUT),
             ) as response:
-                _LOGGER.debug(
-                    "Response from %s: status=%s", endpoint, response.status
-                )
-
                 if response.status == 401:
                     if _retry_on_auth_error:
-                        _LOGGER.warning("Token expired (401), attempting refresh")
                         try:
                             await self.async_refresh_token()
                             return await self._request_no_response(
@@ -798,8 +780,6 @@ class AjaxRestApi:
                     error_text = await response.text()
                     _LOGGER.error("API error %s: %s", response.status, error_text)
                     raise AjaxRestApiError(f"API error {response.status}: {error_text}")
-
-                _LOGGER.debug("Request to %s successful (status=%s)", endpoint, response.status)
 
         except aiohttp.ClientError as err:
             _LOGGER.error("API request to %s failed: %s", endpoint, err)

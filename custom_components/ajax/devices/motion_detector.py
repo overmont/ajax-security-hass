@@ -33,7 +33,10 @@ class MotionDetectorHandler(AjaxDeviceHandler):
                 "key": "motion",
                 "translation_key": "motion",
                 "device_class": BinarySensorDeviceClass.MOTION,
-                "value_fn": lambda: self.device.attributes.get("motion_detected", False),
+                # Note: Ajax API doesn't provide real-time motion detection when disarmed.
+                # The 'state' field only shows ALARM when armed and motion triggers alarm.
+                # This sensor will only be ON when an alarm is triggered.
+                "value_fn": lambda: self.device.attributes.get("state") == "ALARM",
                 "enabled_by_default": True,
             },
             # Note: "armed_in_night_mode" is now a switch, not a binary sensor
@@ -122,3 +125,51 @@ class MotionDetectorHandler(AjaxDeviceHandler):
             )
 
         return sensors
+
+    def get_switches(self) -> list[dict]:
+        """Return switch entities for motion detectors."""
+        switches = []
+
+        # Always Active switch
+        switches.append(
+            {
+                "key": "always_active",
+                "translation_key": "always_active",
+                "name": "Toujours actif",
+                "icon": "mdi:shield-alert",
+                "value_fn": lambda: self.device.attributes.get("always_active", False),
+                "api_key": "alwaysActive",
+                "enabled_by_default": True,
+            }
+        )
+
+        # LED Indicator switch
+        if "indicatorLightMode" in self.device.attributes:
+            switches.append(
+                {
+                    "key": "indicator_light",
+                    "translation_key": "indicator_light",
+                    "name": "Indication LED",
+                    "icon": "mdi:led-on",
+                    "value_fn": lambda: self.device.attributes.get("indicatorLightMode") == "STANDARD",
+                    "api_key": "indicatorLightMode",
+                    "api_value_on": "STANDARD",
+                    "api_value_off": "DONT_BLINK_ON_ALARM",
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Night Mode switch
+        switches.append(
+            {
+                "key": "night_mode",
+                "translation_key": "night_mode",
+                "name": "Armé en mode nuit",
+                "icon": "mdi:weather-night",
+                "value_fn": lambda: self.device.attributes.get("night_mode_arm", False),
+                "api_key": "nightModeArm",
+                "enabled_by_default": True,
+            }
+        )
+
+        return switches

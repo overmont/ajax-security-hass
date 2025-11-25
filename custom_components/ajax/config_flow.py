@@ -220,12 +220,29 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
         """Initialize options flow."""
         self.config_entry = config_entry
 
+    def _mask_credential(self, value: str | None) -> str:
+        """Mask a credential for display (show first 4 and last 4 chars)."""
+        if not value or len(value) < 10:
+            return "Non configuré"
+        return f"{value[:4]}****{value[-4:]}"
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Manage the options."""
+        """Manage the options - main menu."""
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["notifications", "aws_credentials"],
+        )
+
+    async def async_step_notifications(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage notification options."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            # Merge with existing options
+            new_options = {**self.config_entry.options, **user_input}
+            return self.async_create_entry(title="", data=new_options)
 
         # Get current options
         current_filter = self.config_entry.options.get(
@@ -287,6 +304,67 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
             )
 
         return self.async_show_form(
-            step_id="init",
+            step_id="notifications",
             data_schema=vol.Schema(schema_dict),
+        )
+
+    async def async_step_aws_credentials(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage AWS SQS credentials."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            # Update config entry data with new AWS credentials
+            new_data = {**self.config_entry.data}
+
+            # Only update if user provided new values (not empty)
+            if user_input.get(CONF_AWS_ACCESS_KEY_ID):
+                new_data[CONF_AWS_ACCESS_KEY_ID] = user_input[CONF_AWS_ACCESS_KEY_ID]
+            if user_input.get(CONF_AWS_SECRET_ACCESS_KEY):
+                new_data[CONF_AWS_SECRET_ACCESS_KEY] = user_input[CONF_AWS_SECRET_ACCESS_KEY]
+            if user_input.get(CONF_QUEUE_NAME):
+                new_data[CONF_QUEUE_NAME] = user_input[CONF_QUEUE_NAME]
+
+            # Update the config entry data
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                data=new_data,
+            )
+
+            return self.async_create_entry(title="", data=self.config_entry.options)
+
+        # Get current AWS credentials from config entry data
+        current_access_key = self.config_entry.data.get(CONF_AWS_ACCESS_KEY_ID, "")
+        current_secret_key = self.config_entry.data.get(CONF_AWS_SECRET_ACCESS_KEY, "")
+        current_queue = self.config_entry.data.get(CONF_QUEUE_NAME, "")
+
+        # Build schema - show current values masked
+        data_schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_AWS_ACCESS_KEY_ID,
+                    description={"suggested_value": current_access_key},
+                ): str,
+                vol.Optional(
+                    CONF_AWS_SECRET_ACCESS_KEY,
+                    description={"suggested_value": ""},  # Don't show secret, let user re-enter
+                ): str,
+                vol.Optional(
+                    CONF_QUEUE_NAME,
+                    description={"suggested_value": current_queue},
+                ): str,
+            }
+        )
+
+        # Show current configuration in description
+        return self.async_show_form(
+            step_id="aws_credentials",
+            data_schema=data_schema,
+            errors=errors,
+            description_placeholders={
+                "current_access_key": self._mask_credential(current_access_key),
+                "current_secret_key": self._mask_credential(current_secret_key),
+                "current_queue": current_queue or "Non configuré",
+            },
         )

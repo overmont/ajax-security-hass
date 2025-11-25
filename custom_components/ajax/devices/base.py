@@ -31,6 +31,27 @@ class AjaxDeviceHandler(ABC):
         """
         self.device = device
 
+    def get_common_sensors(self) -> list[dict]:
+        """Return common sensor entities for all devices.
+
+        These sensors are available on most/all device types.
+        """
+        sensors = []
+
+        # Room sensor - shows which room the device is in
+        if self.device.room_name:
+            sensors.append(
+                {
+                    "key": "room",
+                    "translation_key": "room",
+                    "icon": "mdi:door",
+                    "value_fn": lambda: self.device.room_name,
+                    "enabled_by_default": True,
+                }
+            )
+
+        return sensors
+
     @abstractmethod
     def get_binary_sensors(self) -> list[dict]:
         """Return binary sensor entity descriptions for this device.

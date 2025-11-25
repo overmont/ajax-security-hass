@@ -26,7 +26,7 @@ except ImportError:
 
 _LOGGER = logging.getLogger(__name__)
 
-# AWS Region for Ajax (Ireland)
+# AWS Region for Ajax (Ireland - eu-west-1)
 AWS_REGION = "eu-west-1"
 
 # SQS Configuration
@@ -56,6 +56,7 @@ class AjaxSQSClient:
         aws_secret_access_key: str,
         queue_name: str,
         event_callback: Callable[[dict[str, Any]], None] | None = None,
+        hass_loop: asyncio.AbstractEventLoop | None = None,
     ) -> None:
         """Initialize SQS client.
 
@@ -64,6 +65,7 @@ class AjaxSQSClient:
             aws_secret_access_key: AWS secret access key
             queue_name: SQS queue name (e.g., ajax-events-V6WHbk3e-prod.fifo)
             event_callback: Async callback function for received events
+            hass_loop: Home Assistant's main event loop (for thread-safe callbacks)
         """
         if not AIOBOTOCORE_AVAILABLE:
             raise ImportError(
@@ -75,11 +77,12 @@ class AjaxSQSClient:
         self.aws_secret_access_key = aws_secret_access_key
         self.queue_name = queue_name
         self.event_callback = event_callback
+        self._hass_loop = hass_loop
 
         self._session = get_session()
         self._queue_url: str | None = None
         self._running = False
-        self._receive_task: asyncio.Task | None = None
+        self._receive_task: asyncio.Future | None = None
 
         # Security: Log with masked credentials
         _LOGGER.debug(
@@ -97,6 +100,25 @@ class AjaxSQSClient:
             aws_secret_access_key=self.aws_secret_access_key,
         )
 
+    def _sync_connect(self) -> str:
+        """Synchronous connection to SQS (runs in executor).
+
+        Returns:
+            Queue URL string
+
+        Raises:
+            Exception on connection failure
+        """
+        import asyncio
+
+        async def _do_connect():
+            async with self._create_client() as client:
+                response = await client.get_queue_url(QueueName=self.queue_name)
+                return response["QueueUrl"]
+
+        # Run in a new event loop (this runs in a thread)
+        return asyncio.run(_do_connect())
+
     async def connect(self) -> bool:
         """Connect to SQS and get queue URL.
 
@@ -104,10 +126,10 @@ class AjaxSQSClient:
             True if connection successful, False otherwise
         """
         try:
-            # Get queue URL using a fresh client
-            async with self._create_client() as client:
-                response = await client.get_queue_url(QueueName=self.queue_name)
-                self._queue_url = response["QueueUrl"]
+            # Run botocore initialization in executor to avoid blocking event loop
+            # botocore does blocking I/O when loading service definitions
+            loop = asyncio.get_event_loop()
+            self._queue_url = await loop.run_in_executor(None, self._sync_connect)
 
             _LOGGER.info(
                 "Successfully connected to SQS queue: %s",
@@ -143,7 +165,10 @@ class AjaxSQSClient:
             return
 
         self._running = True
-        self._receive_task = asyncio.create_task(self._receive_loop())
+        # Run the entire receive loop in an executor thread to avoid
+        # blocking the main event loop with aiobotocore's SSL operations
+        loop = asyncio.get_event_loop()
+        self._receive_task = loop.run_in_executor(None, self._sync_receive_loop)
         _LOGGER.info("Started SQS message receiver")
 
     async def stop_receiving(self) -> None:
@@ -151,14 +176,36 @@ class AjaxSQSClient:
         self._running = False
 
         if self._receive_task:
-            self._receive_task.cancel()
+            # Wait for the executor task to finish (it checks self._running)
             try:
-                await self._receive_task
-            except asyncio.CancelledError:
+                # Give it a few seconds to finish current poll
+                await asyncio.wait_for(asyncio.shield(self._receive_task), timeout=5.0)
+            except (asyncio.TimeoutError, asyncio.CancelledError):
                 pass
             self._receive_task = None
 
         _LOGGER.info("Stopped SQS message receiver")
+
+    def _sync_receive_loop(self) -> None:
+        """Synchronous receive loop (runs in executor thread)."""
+        _LOGGER.debug("SQS receive loop started (in executor)")
+
+        # Create a new event loop for this thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        try:
+            while self._running:
+                try:
+                    loop.run_until_complete(self._receive_messages())
+                except Exception as err:
+                    _LOGGER.error("Error in SQS receive loop: %s", err)
+                    # Wait before retry
+                    import time
+                    time.sleep(5)
+        finally:
+            loop.close()
+            _LOGGER.debug("SQS receive loop stopped")
 
     async def _receive_loop(self) -> None:
         """Main loop for receiving messages from SQS."""
@@ -189,13 +236,14 @@ class AjaxSQSClient:
                     MaxNumberOfMessages=SQS_MAX_MESSAGES,
                     WaitTimeSeconds=SQS_WAIT_TIME_SECONDS,
                     VisibilityTimeout=SQS_VISIBILITY_TIMEOUT,
+                    AttributeNames=["All"],
+                    MessageAttributeNames=["All"],
                 )
 
                 messages = response.get("Messages", [])
+
                 if not messages:
                     return
-
-                _LOGGER.debug("Received %d messages from SQS", len(messages))
 
                 for message in messages:
                     await self._process_message(client, message)
@@ -221,13 +269,21 @@ class AjaxSQSClient:
             body = message.get("Body", "{}")
             event_data = json.loads(body)
 
-            _LOGGER.info(
-                "SQS RAW EVENT: %s",
-                json.dumps(event_data, default=str),
-            )
+            # Handle SNS wrapper if present (SNS wraps messages with "Message" key)
+            if "Message" in event_data and isinstance(event_data.get("Message"), str):
+                event_data = json.loads(event_data["Message"])
 
-            # Call event callback
-            if self.event_callback:
+            _LOGGER.debug("SQS event received: %s", event_data.get("eventType", "unknown"))
+
+            # Call event callback in the main Home Assistant event loop
+            if self.event_callback and self._hass_loop:
+                # Schedule callback in HA's event loop (thread-safe)
+                asyncio.run_coroutine_threadsafe(
+                    self.event_callback(event_data),
+                    self._hass_loop
+                )
+            elif self.event_callback:
+                # Fallback: run in current loop
                 await self.event_callback(event_data)
 
             # Delete message from queue (acknowledge)
@@ -263,7 +319,6 @@ class AjaxSQSClient:
                 QueueUrl=self._queue_url,
                 ReceiptHandle=receipt_handle,
             )
-            _LOGGER.debug("Deleted message from SQS queue")
         except Exception as err:
             _LOGGER.error("Failed to delete SQS message: %s", err)
 

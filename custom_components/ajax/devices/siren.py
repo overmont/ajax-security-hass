@@ -124,17 +124,7 @@ class SirenHandler(AjaxDeviceHandler):
                 }
             )
 
-        # LED indication
-        if "led_indication" in self.device.attributes:
-            sensors.append(
-                {
-                    "key": "led_indication",
-                    "translation_key": "led_indication",
-                    "icon": "mdi:led-on",
-                    "value_fn": lambda: self._format_led(self.device.attributes.get("led_indication")),
-                    "enabled_by_default": True,
-                }
-            )
+        # Note: LED indication is now a switch (switch.sirene_clignoter_quand_arme)
 
         return sensors
 
@@ -173,21 +163,86 @@ class SirenHandler(AjaxDeviceHandler):
         }
         return duration_map.get(str(duration), str(duration))
 
-    def _format_led(self, led: bool | str | None) -> str | None:
-        """Format LED indication to French."""
-        if led is None:
-            return None
+    def get_switches(self) -> list[dict]:
+        """Return switch entities for sirens."""
+        switches = []
+
+        # Night Mode switch
+        switches.append(
+            {
+                "key": "night_mode",
+                "translation_key": "night_mode",
+                "name": "Armé en mode nuit",
+                "icon": "mdi:weather-night",
+                "value_fn": lambda: self.device.attributes.get("night_mode_arm", False),
+                "api_key": "nightModeArm",
+                "enabled_by_default": True,
+            }
+        )
+
+        # Beep on arm/disarm
+        switches.append(
+            {
+                "key": "beep_on_arm",
+                "translation_key": "beep_on_arm",
+                "name": "Bip lors armement/désarmement",
+                "icon": "mdi:volume-high",
+                "value_fn": lambda: self.device.attributes.get("beep_on_arm_disarm", False),
+                "api_key": "beepOnArmDisarm",
+                "enabled_by_default": True,
+            }
+        )
+
+        # Beep on delay
+        switches.append(
+            {
+                "key": "beep_on_delay",
+                "translation_key": "beep_on_delay",
+                "name": "Bip pendant délai",
+                "icon": "mdi:timer-sand",
+                "value_fn": lambda: self.device.attributes.get("beep_on_delay", False),
+                "api_key": "beepOnDelay",
+                "enabled_by_default": True,
+            }
+        )
+
+        # Blink while armed (LED)
+        switches.append(
+            {
+                "key": "blink_while_armed",
+                "translation_key": "blink_while_armed",
+                "name": "Clignoter quand armé",
+                "icon": "mdi:led-on",
+                "value_fn": lambda: self._get_blink_state(),
+                "api_key": "v2sirenIndicatorLightMode",
+                "api_value_on": "BLINK_WHILE_ARMED",
+                "api_value_off": "DISABLED",
+                "api_extra": {"blinkWhileArmed": True},
+                "api_extra_off": {"blinkWhileArmed": False},
+                "enabled_by_default": True,
+            }
+        )
+
+        # Chimes enabled
+        switches.append(
+            {
+                "key": "chimes",
+                "translation_key": "chimes",
+                "name": "Carillons",
+                "icon": "mdi:bell-ring",
+                "value_fn": lambda: self.device.attributes.get("chimes_enabled", False),
+                "api_key": "chimesEnabled",
+                "enabled_by_default": True,
+            }
+        )
+
+        return switches
+
+    def _get_blink_state(self) -> bool:
+        """Get the blink while armed state."""
+        led = self.device.attributes.get("led_indication")
         if isinstance(led, bool):
-            return "Activé" if led else "Désactivé"
-        led_map = {
-            "ON": "Activé",
-            "OFF": "Désactivé",
-            "ENABLED": "Activé",
-            "DISABLED": "Désactivé",
-            "TRUE": "Activé",
-            "FALSE": "Désactivé",
-            "BLINK_WHILE_ARMED": "Clignote en armé",
-            "ALWAYS_ON": "Toujours allumé",
-            "ALWAYS_OFF": "Toujours éteint",
-        }
-        return led_map.get(str(led).upper(), str(led))
+            return led
+        if isinstance(led, str):
+            return led == "BLINK_WHILE_ARMED"
+        return self.device.attributes.get("blink_while_armed", False)

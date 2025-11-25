@@ -27,13 +27,15 @@ class GlassBreakHandler(AjaxDeviceHandler):
         sensors = []
 
         # Main glass break sensor
+        # Note: Ajax API doesn't provide real-time glass break detection when disarmed.
+        # The 'state' field only shows ALARM when armed and glass break triggers alarm.
         sensors.append(
             {
                 "key": "glass_break",
                 "translation_key": "glass_break",
                 "device_class": BinarySensorDeviceClass.SAFETY,
                 "icon": "mdi:glass-fragile",
-                "value_fn": lambda: self.device.attributes.get("glass_break_detected", False),
+                "value_fn": lambda: self.device.attributes.get("state") == "ALARM",
                 "enabled_by_default": True,
             }
         )
@@ -111,16 +113,94 @@ class GlassBreakHandler(AjaxDeviceHandler):
                 }
             )
 
-        # Sensitivity
+        # Sensitivity (0=Low, 1=Normal, 2=High)
         if "sensitivity" in self.device.attributes:
             sensors.append(
                 {
                     "key": "sensitivity",
                     "translation_key": "sensitivity",
                     "icon": "mdi:tune",
-                    "value_fn": lambda: self.device.attributes.get("sensitivity"),
+                    "value_fn": lambda: {0: "Faible", 1: "Normal", 2: "Élevé"}.get(
+                        self.device.attributes.get("sensitivity"),
+                        self.device.attributes.get("sensitivity")
+                    ),
                     "enabled_by_default": True,
                 }
             )
 
         return sensors
+
+    def get_switches(self) -> list[dict]:
+        """Return switch entities for glass break detectors."""
+        switches = []
+
+        # Always Active switch
+        switches.append(
+            {
+                "key": "always_active",
+                "translation_key": "always_active",
+                "name": "Toujours actif",
+                "icon": "mdi:shield-alert",
+                "value_fn": lambda: self.device.attributes.get("always_active", False),
+                "api_key": "alwaysActive",
+                "enabled_by_default": True,
+            }
+        )
+
+        # LED Indicator switch
+        if "indicatorLightMode" in self.device.attributes:
+            switches.append(
+                {
+                    "key": "indicator_light",
+                    "translation_key": "indicator_light",
+                    "name": "Indication LED",
+                    "icon": "mdi:led-on",
+                    "value_fn": lambda: self.device.attributes.get("indicatorLightMode") == "STANDARD",
+                    "api_key": "indicatorLightMode",
+                    "api_value_on": "STANDARD",
+                    "api_value_off": "DONT_BLINK_ON_ALARM",
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Night Mode switch
+        switches.append(
+            {
+                "key": "night_mode",
+                "translation_key": "night_mode",
+                "name": "Armé en mode nuit",
+                "icon": "mdi:weather-night",
+                "value_fn": lambda: self.device.attributes.get("night_mode_arm", False),
+                "api_key": "nightModeArm",
+                "enabled_by_default": True,
+            }
+        )
+
+        # External contact switch (enable/disable the feature)
+        switches.append(
+            {
+                "key": "external_contact_enabled",
+                "translation_key": "external_contact_enabled",
+                "name": "Contact externe",
+                "icon": "mdi:electric-switch",
+                "value_fn": lambda: self.device.attributes.get("extra_contact_aware", False),
+                "api_key": "extraContactAware",
+                "enabled_by_default": True,
+            }
+        )
+
+        # Siren trigger for glass break
+        switches.append(
+            {
+                "key": "siren_trigger_glass",
+                "translation_key": "siren_trigger_glass",
+                "name": "Sirène si bris de verre",
+                "icon": "mdi:glass-fragile",
+                "value_fn": lambda: "GLASS" in self.device.attributes.get("siren_triggers", []),
+                "api_key": "sirenTriggers",
+                "trigger_key": "GLASS",
+                "enabled_by_default": True,
+            }
+        )
+
+        return switches

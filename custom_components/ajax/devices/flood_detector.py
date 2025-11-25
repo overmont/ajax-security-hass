@@ -14,7 +14,6 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
-    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     UnitOfTemperature,
 )
 
@@ -31,15 +30,17 @@ class FloodDetectorHandler(AjaxDeviceHandler):
                 "key": "moisture",
                 "translation_key": "moisture",
                 "device_class": BinarySensorDeviceClass.MOISTURE,
-                "value_fn": lambda: self.device.attributes.get("leak_detected", False),
+                # Note: Ajax API uses 'state' field - ALARM when leak detected
+                "value_fn": lambda: self.device.attributes.get("state") == "ALARM",
                 "enabled_by_default": True,
             },
             # Note: "armed_in_night_mode" is now a switch, not a binary sensor
             {
-                "key": "problem",
-                "translation_key": "problem",
-                "device_class": BinarySensorDeviceClass.PROBLEM,
-                "value_fn": lambda: bool(self.device.malfunctions),
+                "key": "tamper",
+                "translation_key": "tamper",
+                "device_class": BinarySensorDeviceClass.TAMPER,
+                "icon": "mdi:lock-open-alert",
+                "value_fn": lambda: self.device.attributes.get("tampered", False),
                 "enabled_by_default": True,
             },
         ]
@@ -48,33 +49,31 @@ class FloodDetectorHandler(AjaxDeviceHandler):
         """Return sensor entities for flood detectors."""
         sensors = []
 
-        # Battery level
-        if "battery_level" in self.device.attributes:
-            sensors.append(
-                {
-                    "key": "battery",
-                    "translation_key": "battery",
-                    "device_class": SensorDeviceClass.BATTERY,
-                    "native_unit_of_measurement": PERCENTAGE,
-                    "state_class": SensorStateClass.MEASUREMENT,
-                    "value_fn": lambda: self.device.attributes.get("battery_level"),
-                    "enabled_by_default": True,
-                }
-            )
+        # Battery level - always create (all LeaksProtect are battery powered)
+        sensors.append(
+            {
+                "key": "battery",
+                "translation_key": "battery",
+                "device_class": SensorDeviceClass.BATTERY,
+                "native_unit_of_measurement": PERCENTAGE,
+                "state_class": SensorStateClass.MEASUREMENT,
+                "value_fn": lambda: self.device.battery_level if self.device.battery_level is not None else None,
+                "enabled_by_default": True,
+            }
+        )
 
-        # Signal strength
-        if "signal_strength" in self.device.attributes:
-            sensors.append(
-                {
-                    "key": "signal_strength",
-                    "translation_key": "signal_strength",
-                    "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
-                    "native_unit_of_measurement": SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-                    "state_class": SensorStateClass.MEASUREMENT,
-                    "value_fn": lambda: self.device.attributes.get("signal_strength"),
-                    "enabled_by_default": True,
-                }
-            )
+        # Signal strength - always create
+        sensors.append(
+            {
+                "key": "signal_strength",
+                "translation_key": "signal_strength",
+                "icon": "mdi:signal",
+                "native_unit_of_measurement": PERCENTAGE,
+                "state_class": SensorStateClass.MEASUREMENT,
+                "value_fn": lambda: self.device.signal_strength if self.device.signal_strength is not None else None,
+                "enabled_by_default": True,
+            }
+        )
 
         # Temperature (some LeaksProtect models have temperature sensor)
         if "temperature" in self.device.attributes:
@@ -115,3 +114,38 @@ class FloodDetectorHandler(AjaxDeviceHandler):
             )
 
         return sensors
+
+    def get_switches(self) -> list[dict]:
+        """Return switch entities for flood detectors."""
+        switches = []
+
+        # LED Indicator switch
+        if "indicatorLightMode" in self.device.attributes:
+            switches.append(
+                {
+                    "key": "indicator_light",
+                    "translation_key": "indicator_light",
+                    "name": "Indication LED",
+                    "icon": "mdi:led-on",
+                    "value_fn": lambda: self.device.attributes.get("indicatorLightMode") == "STANDARD",
+                    "api_key": "indicatorLightMode",
+                    "api_value_on": "STANDARD",
+                    "api_value_off": "DONT_BLINK_ON_ALARM",
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Night Mode switch
+        switches.append(
+            {
+                "key": "night_mode",
+                "translation_key": "night_mode",
+                "name": "Armé en mode nuit",
+                "icon": "mdi:weather-night",
+                "value_fn": lambda: self.device.attributes.get("night_mode_arm", False),
+                "api_key": "nightModeArm",
+                "enabled_by_default": True,
+            }
+        )
+
+        return switches

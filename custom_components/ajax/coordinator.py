@@ -122,10 +122,6 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             if self.account is None:
                 await self._async_init_account()
 
-            # Initialize SQS real-time events (if credentials provided)
-            if not self._sqs_initialized and self._aws_access_key_id:
-                await self._async_init_sqs()
-
             # Only do full data load on first run or manual reload
             if not self._initial_load_done:
                 # Update spaces - use hubs endpoint directly to get hubId
@@ -143,6 +139,11 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 # Mark initial load as complete
                 self._initial_load_done = True
                 _LOGGER.info("Initial data load complete")
+
+                # Initialize SQS real-time events in background (if credentials provided)
+                # This is done after initial load to not block startup with botocore's blocking I/O
+                if not self._sqs_initialized and self._aws_access_key_id:
+                    asyncio.create_task(self._async_init_sqs())
             else:
                 # Periodic update - refresh hub state and devices
                 await self._async_update_spaces_from_hubs()
@@ -313,11 +314,12 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         try:
             _LOGGER.info("Initializing AWS SQS for real-time events...")
 
-            # Create SQS client
+            # Create SQS client with HA's event loop for thread-safe callbacks
             sqs_client = AjaxSQSClient(
                 aws_access_key_id=self._aws_access_key_id,
                 aws_secret_access_key=self._aws_secret_access_key,
                 queue_name=self._queue_name,
+                hass_loop=self.hass.loop,
             )
 
             # Create SQS manager
@@ -394,7 +396,6 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
     async def _async_update_spaces_from_hubs(self) -> None:
         """Update spaces by fetching hubs directly (use hub_id as space_id)."""
         hubs_data = await self.api.async_get_hubs()
-        _LOGGER.debug("Hubs list from API: %s", hubs_data)
 
         for hub_data in hubs_data:
             hub_id = hub_data.get("hubId")
@@ -407,7 +408,6 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 # Get rooms for this hub
                 try:
                     rooms_data = await self.api.async_get_rooms(hub_id)
-                    _LOGGER.debug("Rooms for hub %s: %s", hub_id, rooms_data)
                     # Build room_id -> room_name mapping
                     rooms_map = {room.get("id"): room.get("roomName") for room in rooms_data if room.get("id")}
                 except Exception as room_err:
@@ -423,8 +423,6 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 # Parse security state from hub details - use 'state' field, not 'securityMode'
                 hub_state = hub_details.get("state", "DISARMED")
                 security_state = self._parse_security_state(hub_state)
-                _LOGGER.debug("Hub %s (name: %s) state from API: '%s' -> %s", hub_id, hub_name, hub_state, security_state)
-                _LOGGER.debug("Hub details for %s: %s", hub_name, hub_details)
             except Exception as err:
                 _LOGGER.warning("Failed to get hub details for %s: %s", hub_id, err)
                 hub_name = f"Hub {hub_id}"
@@ -460,9 +458,7 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             try:
                 users_data = await self.api.async_get_users(hub_id)
                 space._users = users_data  # type: ignore
-                _LOGGER.debug("Fetched %d users for hub %s", len(users_data), hub_id)
-            except Exception as user_err:
-                _LOGGER.debug("Could not get users: %s", user_err)
+            except Exception:
                 space._users = []  # type: ignore
 
             # Update state from API unless SQS has recent activity (< 5 min)
@@ -470,21 +466,14 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             if self.sqs_manager and self.sqs_manager.is_enabled:
                 import time
                 time_since_last_sqs = time.time() - self.sqs_manager.last_event_time
-                _LOGGER.debug("Hub %s: time_since_last_sqs=%.0fs, should_update=%s",
-                             hub_id, time_since_last_sqs, time_since_last_sqs >= 300)
                 if time_since_last_sqs < 300:  # 5 minutes
                     should_update_from_api = False
-                    _LOGGER.debug("Skipping API state update for hub %s (SQS active, last event %.0fs ago)",
-                                 hub_id, time_since_last_sqs)
 
             if should_update_from_api:
                 old_state = space.security_state
-                _LOGGER.debug("Updating state from API: old=%s, new=%s", old_state, security_state)
                 space.security_state = security_state
                 if old_state != security_state:
-                    _LOGGER.info("Hub %s state updated from API: %s -> %s", hub_id, old_state, security_state)
-                else:
-                    _LOGGER.debug("Hub %s state unchanged: %s", hub_id, security_state)
+                    _LOGGER.info("Hub %s state updated: %s -> %s", hub_id, old_state, security_state)
 
     async def _async_update_devices(self, space_id: str) -> None:
         """Update devices for a specific space."""
@@ -552,11 +541,6 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             try:
                 device_details = await self.api.async_get_device(space_id, device_id)
                 if device_details:
-                    _LOGGER.debug(
-                        "Device details for %s: %s",
-                        device.name,
-                        device_details,
-                    )
                     # malfunctions can be a list or an int - normalize to int (count)
                     malfunctions_data = device_details.get("malfunctions", 0)
                     if isinstance(malfunctions_data, list):
@@ -613,6 +597,14 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                     if "sirenTriggers" in device_details:
                         device.attributes["siren_triggers"] = device_details.get("sirenTriggers", [])
 
+                    # Door contact state (reedClosed -> door_opened)
+                    if "reedClosed" in device_details:
+                        # reedClosed=True means door is closed, so door_opened=False
+                        device.attributes["door_opened"] = not device_details.get("reedClosed", True)
+                    # External contact state (extraContactClosed -> external_contact_opened)
+                    if "extraContactClosed" in device_details:
+                        device.attributes["external_contact_opened"] = not device_details.get("extraContactClosed", True)
+
                     # Sensitivity (GlassProtect, MotionProtect, etc.)
                     if "sensitivity" in device_details:
                         device.attributes["sensitivity"] = device_details.get("sensitivity")
@@ -632,6 +624,15 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                         device.attributes["led_indication"] = device_details.get("v2sirenIndicatorLightMode")
                     elif "blinkWhileArmed" in device_details:
                         device.attributes["led_indication"] = device_details.get("blinkWhileArmed")
+                    # Siren beep/chime settings
+                    if "beepOnArmDisarm" in device_details:
+                        device.attributes["beep_on_arm_disarm"] = device_details.get("beepOnArmDisarm")
+                    if "beepOnDelay" in device_details:
+                        device.attributes["beep_on_delay"] = device_details.get("beepOnDelay")
+                    if "chimesEnabled" in device_details:
+                        device.attributes["chimes_enabled"] = device_details.get("chimesEnabled")
+                    if "buzzerState" in device_details:
+                        device.attributes["buzzer_state"] = device_details.get("buzzerState")
 
                     # LED indicator mode (all devices)
                     if "indicatorLightMode" in device_details:
@@ -646,8 +647,8 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                         device.attributes["imageResolution"] = device_details.get("imageResolution")
                     if "photosPerAlarm" in device_details:
                         device.attributes["photosPerAlarm"] = device_details.get("photosPerAlarm")
-            except Exception as err:
-                _LOGGER.debug("Could not fetch device details for %s: %s", device.name, err)
+            except Exception:
+                pass  # Device details are optional
 
             # Update device metadata (API uses "color" not "device_color")
             device.device_color = device_data.get("color") or device_details.get("color")
@@ -687,14 +688,6 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             Normalized attributes dict
         """
         normalized = dict(api_attributes)  # Start with original attributes
-
-        # Log API attributes for debugging (only for door contacts initially)
-        if device_type in [DeviceType.DOOR_CONTACT, DeviceType.WIRE_INPUT]:
-            _LOGGER.debug(
-                "Normalizing %s attributes: %s",
-                device_type.value,
-                list(api_attributes.keys())
-            )
 
         # Door contacts: Support both API formats
         if device_type in [DeviceType.DOOR_CONTACT, DeviceType.WIRE_INPUT]:
