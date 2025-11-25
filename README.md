@@ -1,6 +1,5 @@
 # Ajax Security System Integration for Home Assistant
 
-![Header](ajax-header-400x400.png)
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -16,9 +15,6 @@
 > **I DO NOT manage API key requests.** Please do not open issues asking for API access - I have no control over this process.
 >
 > To request API access, contact Ajax Systems directly:
-> - 📧 Email: **api@ajax.systems**
-> - 📝 [Ajax API Documentation](https://ajax.systems/api/)
->
 > This is entirely handled by Ajax Systems, not by the developer of this integration.
 
 ---
@@ -137,7 +133,6 @@ Issues, pull requests, and feedback are welcome!
    - **Email**: Your Ajax account email
    - **Password**: Your Ajax account password
 
-![Configuration](config.png)
 
 ### Optional: Real-Time Events (AWS SQS)
 
@@ -167,7 +162,6 @@ Go to the integration options to configure:
 1. **Password hashing**: Your password is hashed using SHA-256 before transmission
 2. **Secure communication**: All API communication uses HTTPS (TLS/SSL)
 3. **Session tokens**: Tokens are stored locally and refreshed automatically
-4. **2FA Support**: Two-factor authentication is fully supported
 
 ### What the Developer Cannot Access
 - ❌ I (the developer) **cannot access your credentials**
