@@ -1,0 +1,19 @@
+force_arm:
+  name: Force Arm
+  description: Force arm the security system, ignoring open sensors and problems.
+  target:
+    entity:
+      integration: ajax
+      domain: alarm_control_panel
+
+force_arm_night:
+  name: Force Arm Night Mode
+  description: Force arm the security system in night mode, ignoring open sensors and problems.
+  target:
+    entity:
+      integration: ajax
+      domain: alarm_control_panel
+
+generate_device_info:
+  name: Generate Device Info
+  description: Generate a JSON file with anonymized device information for debugging and support.
