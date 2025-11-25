@@ -95,6 +95,7 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         self._fast_poll_tasks: dict[str, asyncio.Task] = {}  # device_id -> fast polling task for door sensors
         self._wire_input_polling_tasks: dict[str, asyncio.Task] = {}  # space_id -> wire_input polling task
         self._initial_load_done: bool = False  # Track if initial data load is complete
+        self._pending_ha_actions: dict[str, float] = {}  # hub_id -> timestamp of HA action
 
         # SQS real-time events (optional)
         self.sqs_manager: SQSManager | None = None
@@ -459,19 +460,22 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             except Exception:
                 space._users = []  # type: ignore
 
-            # Update state from API unless SQS has recent activity (< 5 min)
-            should_update_from_api = True
-            if self.sqs_manager and self.sqs_manager.is_enabled:
-                import time
-                time_since_last_sqs = time.time() - self.sqs_manager.last_event_time
-                if time_since_last_sqs < 300:  # 5 minutes
-                    should_update_from_api = False
+            # Check if SQS recently updated this hub's state
+            # If so, don't overwrite with potentially stale REST data
+            old_state = space.security_state
+            if old_state != security_state:
+                # Check SQS protection (don't overwrite recent SQS updates)
+                if self.sqs_manager and self.sqs_manager.is_state_protected(hub_id):
+                    _LOGGER.debug(
+                        "Hub %s: REST has %s but SQS recently set %s (protected)",
+                        hub_id, security_state.value, old_state.value
+                    )
+                else:
+                    space.security_state = security_state
+                    _LOGGER.info("Hub %s: %s -> %s", hub_id, old_state.value, security_state.value)
 
-            if should_update_from_api:
-                old_state = space.security_state
-                space.security_state = security_state
-                if old_state != security_state:
-                    _LOGGER.info("Hub %s state updated: %s -> %s", hub_id, old_state, security_state)
+                    # Create event from state change
+                    self._create_event_from_state_change(space, old_state, security_state)
 
     async def _async_update_devices(self, space_id: str) -> None:
         """Update devices for a specific space."""
@@ -1019,6 +1023,100 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         # Fire the event
         self.hass.bus.async_fire(event_name, event_data)
 
+    def _create_event_from_state_change(
+        self,
+        space: AjaxSpace,
+        old_state: SecurityState,
+        new_state: SecurityState,
+    ) -> None:
+        """Create an event when security state changes.
+
+        REST API is the single source of truth. When state changes,
+        we always create an event here. SQS is only used to trigger
+        faster polling, not to create events directly.
+
+        Args:
+            space: The AjaxSpace object
+            old_state: Previous security state
+            new_state: New security state
+        """
+        # Map state to action key (same keys as SQS events)
+        # format_event_text() will translate to French
+        action_map = {
+            SecurityState.ARMED: "armed",
+            SecurityState.DISARMED: "disarmed",
+            SecurityState.NIGHT_MODE: "nightmodeon",
+            SecurityState.PARTIALLY_ARMED: "partiallyarmed",
+        }
+
+        action = action_map.get(new_state, new_state.value.lower())
+
+        # Create event
+        # Note: source_name/user_name not included because REST API
+        # doesn't tell us WHO triggered the action
+        event = {
+            "action": action,
+            "hub_id": space.hub_id or space.id,
+            "space_id": space.id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "event_time": datetime.now(timezone.utc),
+        }
+
+        # Store in recent_events (keep last 10)
+        space.recent_events.insert(0, event)
+        space.recent_events = space.recent_events[:10]
+
+        _LOGGER.debug("Event stored: %s (total: %d)", action, len(space.recent_events))
+
+        # Fire Home Assistant event for automations
+        self._fire_security_state_event(space, old_state, new_state)
+
+    def _create_event_from_sqs(
+        self,
+        space: AjaxSpace,
+        old_state: SecurityState,
+        new_state: SecurityState,
+        source_name: str = "",
+    ) -> None:
+        """Create an event from SQS data (includes user who triggered).
+
+        Args:
+            space: The AjaxSpace object
+            old_state: Previous security state
+            new_state: New security state
+            source_name: Name of user/device who triggered the action
+        """
+        action_map = {
+            SecurityState.ARMED: "armed",
+            SecurityState.DISARMED: "disarmed",
+            SecurityState.NIGHT_MODE: "nightmodeon",
+            SecurityState.PARTIALLY_ARMED: "partiallyarmed",
+        }
+
+        action = action_map.get(new_state, new_state.value.lower())
+
+        # Create event with source info from SQS
+        event = {
+            "action": action,
+            "hub_id": space.hub_id or space.id,
+            "space_id": space.id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "event_time": datetime.now(timezone.utc),
+        }
+
+        # Add source/user info if available
+        if source_name:
+            event["source_name"] = source_name
+
+        # Store in recent_events (keep last 10)
+        space.recent_events.insert(0, event)
+        space.recent_events = space.recent_events[:10]
+
+        _LOGGER.debug("Event stored: %s by %s (total: %d)", action, source_name or "?", len(space.recent_events))
+
+        # Fire Home Assistant event for automations
+        self._fire_security_state_event(space, old_state, new_state)
+
     def _update_device_from_notification(self, space: AjaxSpace, notification: AjaxNotification) -> None:
         """Update device state based on notification event."""
 
@@ -1365,6 +1463,24 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
     # Control methods
     # ============================================================================
 
+    def _register_ha_action(self, hub_id: str) -> None:
+        """Register that Home Assistant triggered an action on this hub."""
+        import time
+        self._pending_ha_actions[hub_id] = time.time()
+
+    def get_pending_ha_action(self, hub_id: str) -> bool:
+        """Check if Home Assistant triggered an action on this hub recently.
+
+        Returns True if HA action was within the last 10 seconds.
+        """
+        import time
+        timestamp = self._pending_ha_actions.get(hub_id, 0)
+        if time.time() - timestamp < 10:
+            # Clear the pending action
+            del self._pending_ha_actions[hub_id]
+            return True
+        return False
+
     async def async_arm_space(self, space_id: str, force: bool = True) -> None:
         """Arm a space.
 
@@ -1375,8 +1491,9 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         _LOGGER.info("Arming space %s (force=%s)", space_id, force)
 
         try:
+            self._register_ha_action(space_id)
             await self.api.async_arm(space_id, ignore_problems=force)
-            # State will be updated via real-time stream to avoid race conditions
+            # State will be updated via SQS with "Home Assistant" as source
 
         except AjaxRestApiError as err:
             _LOGGER.error("Failed to arm space %s: %s", space_id, err)
@@ -1387,8 +1504,9 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         _LOGGER.info("Disarming space %s", space_id)
 
         try:
+            self._register_ha_action(space_id)
             await self.api.async_disarm(space_id)
-            # State will be updated via real-time stream to avoid race conditions
+            # State will be updated via SQS with "Home Assistant" as source
 
         except AjaxRestApiError as err:
             _LOGGER.error("Failed to disarm space %s: %s", space_id, err)
@@ -1404,8 +1522,9 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         _LOGGER.info("Activating night mode for space %s (force=%s)", space_id, force)
 
         try:
+            self._register_ha_action(space_id)
             await self.api.async_night_mode(space_id, enabled=True)
-            # State will be updated via real-time stream to avoid race conditions
+            # State will be updated via SQS with "Home Assistant" as source
 
         except AjaxRestApiError as err:
             _LOGGER.error("Failed to activate night mode for space %s: %s", space_id, err)
