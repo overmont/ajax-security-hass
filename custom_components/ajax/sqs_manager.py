@@ -156,6 +156,8 @@ class SQSManager:
         Args:
             event: Parsed alarm event
         """
+        from .models import AjaxNotification, NotificationType
+
         action = event["action"]
         source_name = event["source_name"]
         is_active = event["is_active"]
@@ -167,21 +169,25 @@ class SQSManager:
             "TRIGGERED" if is_active else "CLEARED",
         )
 
-        # Create Home Assistant persistent notification if configured
-        if hasattr(self.coordinator, "hass"):
-            from homeassistant.components.persistent_notification import async_create
+        # Create notification using coordinator method (respects user filter)
+        message = f"🚨 {action.replace('_', ' ').title()}\n"
+        message += f"Device: {source_name}\n"
+        message += f"Status: {'TRIGGERED' if is_active else 'CLEARED'}\n"
+        message += f"Time: {event['event_time']}"
 
-            message = f"Ajax Alarm: {action.replace('_', ' ').title()}\n"
-            message += f"Device: {source_name}\n"
-            message += f"Status: {'TRIGGERED' if is_active else 'CLEARED'}\n"
-            message += f"Time: {event['event_time']}"
+        notification = AjaxNotification(
+            id=event.get("event_id", ""),
+            space_id=event.get("hub_id", ""),
+            type=NotificationType.ALARM,
+            title="Ajax Security Alert",
+            message=message,
+            timestamp=event.get("event_time"),
+            device_name=source_name,
+        )
 
-            async_create(
-                self.coordinator.hass,
-                message=message,
-                title="Ajax Security Alert",
-                notification_id=f"ajax_alarm_{event['event_id']}",
-            )
+        await self.coordinator._create_persistent_notification(
+            notification, message, NotificationType.ALARM
+        )
 
     async def _handle_arming_event(self, event: dict[str, Any]) -> None:
         """Handle arming/disarming event.
@@ -189,10 +195,11 @@ class SQSManager:
         Args:
             event: Parsed arming event
         """
-        from .models import SecurityState
+        from .models import AjaxNotification, NotificationType, SecurityState
 
         action = event["action"]
         hub_id = event.get("hub_id")
+        user_name = event.get("user_name", "")
 
         _LOGGER.info("Hub arming state changed: %s (hub: %s)", action, hub_id)
 
@@ -219,6 +226,27 @@ class SQSManager:
 
                 # Notify Home Assistant of the state change immediately
                 self.coordinator.async_set_updated_data(self.coordinator.account)
+
+                # Create notification for arming event (respects user filter)
+                action_display = action.replace("_", " ").title()
+                message = f"🔐 {action_display}"
+                if user_name:
+                    message += f"\nBy: {user_name}"
+                message += f"\nTime: {event.get('event_time', '')}"
+
+                notification = AjaxNotification(
+                    id=event.get("event_id", ""),
+                    space_id=hub_id,
+                    type=NotificationType.SECURITY_EVENT,
+                    title="Ajax Security",
+                    message=message,
+                    timestamp=event.get("event_time"),
+                    user_name=user_name,
+                )
+
+                await self.coordinator._create_persistent_notification(
+                    notification, message, NotificationType.SECURITY_EVENT
+                )
 
     async def _handle_malfunction_event(self, event: dict[str, Any]) -> None:
         """Handle malfunction event.
