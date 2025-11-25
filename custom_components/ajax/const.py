@@ -28,7 +28,8 @@ AJAX_REST_API_BASE_URL = "https://api.ajax.systems/api"
 AJAX_REST_API_TIMEOUT = 30  # seconds
 
 # Update intervals (seconds)
-UPDATE_INTERVAL = 15  # Poll every 15 seconds
+UPDATE_INTERVAL = 30  # Default poll interval when disarmed
+UPDATE_INTERVAL_ARMED = 10  # Faster poll interval when armed/night mode
 
 
 # ==============================================================================

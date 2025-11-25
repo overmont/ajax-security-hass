@@ -32,6 +32,7 @@ from .const import (
     NOTIFICATION_FILTER_NONE,
     NOTIFICATION_FILTER_SECURITY_EVENTS,
     UPDATE_INTERVAL,
+    UPDATE_INTERVAL_ARMED,
 )
 from .models import (
     AjaxAccount,
@@ -111,6 +112,29 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             name=DOMAIN,
             update_interval=timedelta(seconds=UPDATE_INTERVAL),
         )
+
+    def _update_polling_interval(self, security_state: SecurityState) -> None:
+        """Update polling interval based on security state.
+
+        When armed or in night mode, poll faster (10s) to detect door sensor
+        changes quickly. When disarmed, poll slower (30s) to reduce API calls.
+
+        Args:
+            security_state: Current security state of the space
+        """
+        if security_state in (SecurityState.ARMED, SecurityState.NIGHT_MODE, SecurityState.PARTIALLY_ARMED):
+            new_interval = UPDATE_INTERVAL_ARMED
+        else:
+            new_interval = UPDATE_INTERVAL
+
+        current_interval = self.update_interval.total_seconds() if self.update_interval else UPDATE_INTERVAL
+
+        if new_interval != current_interval:
+            self.update_interval = timedelta(seconds=new_interval)
+            _LOGGER.info(
+                "Polling interval changed to %ds (security state: %s)",
+                new_interval, security_state.value
+            )
 
     async def _async_update_data(self) -> AjaxAccount:
         """Fetch data from Ajax REST API.
@@ -444,6 +468,9 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 )
                 self.account.spaces[space_id] = space
                 _LOGGER.info("Added new space from hub: %s (hub_id: %s, initial state: %s)", space.name, space.hub_id, security_state)
+
+                # Set initial polling interval based on security state
+                self._update_polling_interval(security_state)
             else:
                 # Existing space - update name, hub_id, hub_details, and potentially state
                 space = self.account.spaces[space_id]
@@ -474,6 +501,9 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 else:
                     space.security_state = security_state
                     _LOGGER.info("Hub %s: %s -> %s", hub_id, old_state.value, security_state.value)
+
+                    # Update polling interval based on new state
+                    self._update_polling_interval(security_state)
 
                     # Create event from state change
                     self._create_event_from_state_change(space, old_state, security_state)
@@ -1114,6 +1144,9 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         space.recent_events = space.recent_events[:10]
 
         _LOGGER.debug("Event stored: %s by %s (total: %d)", action, source_name or "?", len(space.recent_events))
+
+        # Update polling interval based on new state
+        self._update_polling_interval(new_state)
 
         # Fire Home Assistant event for automations
         self._fire_security_state_event(space, old_state, new_state)
