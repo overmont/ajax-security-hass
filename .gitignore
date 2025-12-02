@@ -1,0 +1,38 @@
+# Documentation files (not part of integration)
+AJAX_EVENT_CODES.md
+API_IMPLEMENTATION_STATUS.md
+API_KEY_STORAGE.md
+DEVICE_HANDLERS_STATUS.md
+NEW_HANDLERS_RELAY_LIGHT.md
+SECURITY_AUDIT.md
+
+# Test files
+test_*.py
+test_*.sh
+
+# API documentation
+swagger.yaml
+
+# Local development
+Julien AJax/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

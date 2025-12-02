@@ -16,11 +16,16 @@ from homeassistant.helpers import config_validation as cv
 
 from .api import AjaxRestApi, AjaxRestApiError, AjaxRestAuthError
 from .const import (
+    AUTH_MODE_DIRECT,
+    AUTH_MODE_PROXY_HYBRID,
+    AUTH_MODE_PROXY_SECURE,
     CONF_API_KEY,
+    CONF_AUTH_MODE,
     CONF_AWS_ACCESS_KEY_ID,
     CONF_AWS_SECRET_ACCESS_KEY,
     CONF_EMAIL,
     CONF_PASSWORD,
+    CONF_PROXY_URL,
     CONF_QUEUE_NAME,
     DOMAIN,
 )
@@ -57,15 +62,41 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Ajax Security System from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    # Get API credentials
-    api_key = entry.data[CONF_API_KEY]
+    # Get authentication mode (default to direct for backwards compatibility)
+    auth_mode = entry.data.get(CONF_AUTH_MODE, AUTH_MODE_DIRECT)
+
+    # Get common credentials
     email = entry.data[CONF_EMAIL]
     password_hash = entry.data[CONF_PASSWORD]  # Already hashed in config_flow
 
-    # Get optional AWS SQS credentials (for real-time events)
-    aws_access_key_id = entry.data.get(CONF_AWS_ACCESS_KEY_ID)
-    aws_secret_access_key = entry.data.get(CONF_AWS_SECRET_ACCESS_KEY)
-    queue_name = entry.data.get(CONF_QUEUE_NAME)
+    # Variables for different modes
+    api_key = None
+    proxy_url = None
+    proxy_mode = None
+    sse_url = None
+    aws_access_key_id = None
+    aws_secret_access_key = None
+    queue_name = None
+
+    if auth_mode == AUTH_MODE_DIRECT:
+        # Direct mode: API key provided, optional SQS for real-time events
+        api_key = entry.data[CONF_API_KEY]
+        aws_access_key_id = entry.data.get(CONF_AWS_ACCESS_KEY_ID)
+        aws_secret_access_key = entry.data.get(CONF_AWS_SECRET_ACCESS_KEY)
+        queue_name = entry.data.get(CONF_QUEUE_NAME)
+        _LOGGER.info("Using direct authentication mode")
+
+    elif auth_mode == AUTH_MODE_PROXY_SECURE:
+        # Proxy Secure: All requests via proxy, SSE for real-time events
+        proxy_url = entry.data[CONF_PROXY_URL]
+        proxy_mode = "secure"
+        _LOGGER.info("Using proxy secure authentication mode")
+
+    elif auth_mode == AUTH_MODE_PROXY_HYBRID:
+        # Proxy Hybrid: Login via proxy to get API key, then direct requests, SSE for events
+        proxy_url = entry.data[CONF_PROXY_URL]
+        proxy_mode = "hybrid"
+        _LOGGER.info("Using proxy hybrid authentication mode")
 
     # Create REST API instance
     # password_is_hashed=True because we store only SHA256 hash, never plain password
@@ -74,12 +105,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         email=email,
         password=password_hash,
         password_is_hashed=True,  # Password is already SHA256 hash
+        proxy_url=proxy_url,
+        proxy_mode=proxy_mode,
     )
 
     try:
-        # Login to get temporary token
+        # Login to get temporary token (and API key + SSE URL if using proxy)
         await api.async_login()
         _LOGGER.info("Successfully logged in to Ajax REST API")
+
+        # Get SSE URL if using proxy mode
+        if auth_mode in (AUTH_MODE_PROXY_SECURE, AUTH_MODE_PROXY_HYBRID):
+            sse_url = api.sse_url
+            if sse_url:
+                _LOGGER.info("SSE URL obtained from proxy: %s", sse_url)
+            else:
+                _LOGGER.warning("No SSE URL received from proxy")
 
         # Test API connection by getting hubs
         await api.async_get_hubs()
@@ -94,13 +135,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Create coordinator
     # - REST polling: Baseline updates every 30s
-    # - AWS SQS: Optional real-time events (if credentials provided)
+    # - AWS SQS: Optional real-time events (direct mode only)
+    # - SSE: Real-time events via proxy (proxy modes only)
     coordinator = AjaxDataCoordinator(
         hass,
         api,
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
         queue_name=queue_name,
+        sse_url=sse_url,
     )
 
     # Store coordinator

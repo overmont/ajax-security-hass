@@ -10,15 +10,6 @@
 
 ---
 
-> [!CAUTION]
-> ## 🔑 API Access Requests
-> **I DO NOT manage API key requests.** Please do not open issues asking for API access - I have no control over this process.
->
-> To request API access, contact Ajax Systems directly:
-> This is entirely handled by Ajax Systems, not by the developer of this integration.
-
----
-
 > [!NOTE]
 > ## About This Integration
 > This is **NOT an official Ajax Systems addon**. It is a community-developed integration created in collaboration with Ajax Systems.
@@ -56,8 +47,11 @@ Issues, pull requests, and feedback are welcome!
 
 ### 🔄 Real-Time Synchronization (Optional)
 - **Instant bidirectional sync** - Changes in Ajax app appear immediately in Home Assistant and vice versa
-- **Sub-second updates** - State changes reflected in < 1 second (requires AWS SQS configuration)
-- **Polling fallback** - Works without SQS with 30-second polling interval
+- **Sub-second updates** - State changes reflected in < 1 second
+- **Multiple connection modes**:
+  - **Direct mode** - Direct API connection with optional AWS SQS for real-time events
+  - **Proxy mode** - Connection via proxy server with SSE (Server-Sent Events) for real-time events
+- **Polling fallback** - Works without real-time events with 30-second polling interval
 
 ### 🛡️ Complete Security Control
 - ✅ **Arm** (Away mode)
@@ -128,20 +122,42 @@ Issues, pull requests, and feedback are welcome!
 1. Go to **Settings** → **Devices & Services**
 2. Click **"+ Add Integration"**
 3. Search for **"Ajax Security System"**
-4. Enter your Ajax credentials:
-   - **API Key**: Your API key from Ajax Systems
-   - **Email**: Your Ajax account email
-   - **Password**: Your Ajax account password
+4. Choose your connection mode:
 
+#### Direct Mode (Recommended)
+Direct connection to the Ajax API with optional AWS SQS for real-time events.
 
-### Optional: Real-Time Events (AWS SQS)
+- **API Key**: Your API key from Ajax Systems
+- **Email**: Your Ajax account email
+- **Password**: Your Ajax account password
+- **AWS Credentials** (optional): For real-time event notifications
 
-For instant updates (<1 second), you can configure AWS SQS credentials:
+#### Proxy Secure Mode
+All requests go through a proxy server. Real-time events are received via SSE.
+
+- **Proxy URL**: URL of the Ajax proxy server
+- **Email**: Your Ajax account email
+- **Password**: Your Ajax account password
+
+#### Proxy Hybrid Mode
+Login via proxy to obtain API key, then direct API requests. Real-time events via SSE.
+
+- **Proxy URL**: URL of the Ajax proxy server
+- **Email**: Your Ajax account email
+- **Password**: Your Ajax account password
+
+### Optional: Real-Time Events
+
+#### AWS SQS (Direct Mode)
+For instant updates (<1 second) in direct mode, configure AWS SQS credentials:
 - **AWS Access Key ID**
 - **AWS Secret Access Key**
 - **Queue Name**
 
 These credentials are provided by Ajax Systems when you request API access.
+
+#### SSE (Proxy Modes)
+In proxy modes, real-time events are automatically received via Server-Sent Events (SSE). No additional configuration required.
 
 ### Options (after setup)
 

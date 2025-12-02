@@ -12,6 +12,8 @@ import aiohttp
 from .const import (
     AJAX_REST_API_BASE_URL,
     AJAX_REST_API_TIMEOUT,
+    AUTH_MODE_DIRECT,
+    AUTH_MODE_PROXY_SECURE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,6 +43,11 @@ class AjaxRestApi:
     - First login via Credentials: E-mail + SHA256(password)
     - Generate a temporary token
     - Use this token for subsequent API calls
+
+    Supports three authentication modes:
+    - Direct: Connect directly to Ajax API with API key
+    - Proxy Secure: All requests go through proxy (proxy adds API key)
+    - Proxy Hybrid: Login via proxy to get API key, then direct API calls
     """
 
     def __init__(
@@ -49,17 +56,24 @@ class AjaxRestApi:
         email: str,
         password: str,
         password_is_hashed: bool = False,
+        proxy_url: str | None = None,
+        proxy_mode: str | None = None,
     ):
         """Initialize the API client.
 
         Args:
-            api_key: API Key provided by Ajax Systems
+            api_key: API Key provided by Ajax Systems (can be empty for proxy modes)
             email: User email address
             password: User password (plain or SHA256 hashed)
             password_is_hashed: True if password is already SHA256 hashed
+            proxy_url: URL of proxy server (for proxy modes)
+            proxy_mode: Authentication mode (direct, proxy_secure, proxy_hybrid)
         """
         self.api_key = api_key
         self.email = email
+        self.proxy_url = proxy_url.rstrip("/") if proxy_url else None
+        self.proxy_mode = proxy_mode or AUTH_MODE_DIRECT
+        self.sse_url: str | None = None  # SSE endpoint URL (set by proxy on login)
 
         # Hash password if not already hashed
         if password_is_hashed:
@@ -72,11 +86,31 @@ class AjaxRestApi:
         self.refresh_token: str | None = None  # Refresh token (7 days TTL)
         self.user_id: str | None = None  # User ID from login
 
-        # Base headers with API key
+        # Base headers with API key (may be empty for proxy modes initially)
         self._base_headers = {
-            "X-Api-Key": api_key,
             "Content-Type": "application/json",
         }
+        if api_key:
+            self._base_headers["X-Api-Key"] = api_key
+
+    def _get_base_url(self, for_login: bool = False) -> str:
+        """Get the base URL based on auth mode.
+
+        Args:
+            for_login: True if this is for login request
+
+        Returns:
+            Base URL to use for API requests
+        """
+        if self.proxy_mode == AUTH_MODE_PROXY_SECURE:
+            # Secure mode: ALL requests go through proxy
+            return f"{self.proxy_url}/api" if self.proxy_url else AJAX_REST_API_BASE_URL
+        elif self.proxy_mode and self.proxy_url and for_login:
+            # Hybrid mode: only login goes through proxy
+            return f"{self.proxy_url}/api"
+        else:
+            # Direct mode or hybrid mode after login
+            return AJAX_REST_API_BASE_URL
 
     async def _get_session(self) -> aiohttp.ClientSession:
         """Get or create aiohttp session."""
@@ -97,6 +131,10 @@ class AjaxRestApi:
         - Returns sessionToken (15 min TTL), refreshToken (7 days TTL), and userId
         - POST body: {"login": email, "passwordHash": hash}
 
+        For proxy modes, the proxy may also return:
+        - apiKey: API key to use for direct requests (hybrid mode)
+        - sseUrl: URL for SSE event stream
+
         Returns:
             Session token string
 
@@ -105,10 +143,13 @@ class AjaxRestApi:
             AjaxRestAuthError: If authentication fails
             AjaxRestApiError: For other API errors
         """
-        _LOGGER.debug("Logging in with email: %s", self.email)
+        _LOGGER.debug(
+            "Logging in with email: %s (mode: %s)", self.email, self.proxy_mode
+        )
 
         session = await self._get_session()
-        url = f"{AJAX_REST_API_BASE_URL}/login"
+        base_url = self._get_base_url(for_login=True)
+        url = f"{base_url}/login"
 
         # Login request body according to Swagger
         payload = {
@@ -141,6 +182,20 @@ class AjaxRestApi:
                 self.session_token = result.get("sessionToken")
                 self.refresh_token = result.get("refreshToken")
                 self.user_id = result.get("userId")
+
+                # For proxy modes, extract additional info
+                if self.proxy_url:
+                    # API key provided by proxy (for hybrid mode)
+                    proxy_api_key = result.get("apiKey")
+                    if proxy_api_key:
+                        self.api_key = proxy_api_key
+                        self._base_headers["X-Api-Key"] = proxy_api_key
+                        _LOGGER.info("Received API key from proxy")
+
+                    # SSE URL for real-time events
+                    self.sse_url = result.get("sseUrl")
+                    if self.sse_url:
+                        _LOGGER.info("SSE endpoint: %s", self.sse_url)
 
                 if not self.session_token:
                     raise AjaxRestApiError("No sessionToken in login response")
@@ -175,7 +230,8 @@ class AjaxRestApi:
         _LOGGER.debug("Verifying 2FA code")
 
         session = await self._get_session()
-        url = f"{AJAX_REST_API_BASE_URL}/login/2fa"
+        base_url = self._get_base_url(for_login=True)
+        url = f"{base_url}/login/2fa"
 
         headers = {
             **self._base_headers,
@@ -233,7 +289,7 @@ class AjaxRestApi:
         _LOGGER.debug("Refreshing session token for user: %s", self.user_id)
 
         session = await self._get_session()
-        url = f"{AJAX_REST_API_BASE_URL}/refresh"
+        url = f"{self._get_base_url()}/refresh"
 
         # Refresh request body according to Swagger
         payload = {
@@ -303,7 +359,7 @@ class AjaxRestApi:
         if not self.session_token:
             raise AjaxRestApiError("Not logged in. Call async_login() first.")
 
-        url = f"{AJAX_REST_API_BASE_URL}/{endpoint}"
+        url = f"{self._get_base_url()}/{endpoint}"
         session = await self._get_session()
 
         # Headers with session token (Swagger spec)
@@ -572,7 +628,7 @@ class AjaxRestApi:
         Returns:
             Snapshot image data as bytes
         """
-        url = f"{AJAX_REST_API_BASE_URL}/cameras/{camera_id}/snapshot"
+        url = f"{self._get_base_url()}/cameras/{camera_id}/snapshot"
         session = await self._get_session()
 
         headers = {
@@ -752,7 +808,7 @@ class AjaxRestApi:
         if not self.session_token:
             raise AjaxRestApiError("Not logged in. Call async_login() first.")
 
-        url = f"{AJAX_REST_API_BASE_URL}/{endpoint}"
+        url = f"{self._get_base_url()}/{endpoint}"
         session = await self._get_session()
 
         headers = {

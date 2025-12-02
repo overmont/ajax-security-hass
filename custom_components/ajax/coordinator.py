@@ -58,6 +58,17 @@ except ImportError:
     SQSManager = None
     AjaxSQSClient = None
 
+# Optional SSE support (for proxy mode)
+try:
+    from .sse_client import AjaxSSEClient
+    from .sse_manager import SSEManager
+
+    SSE_AVAILABLE = True
+except ImportError:
+    SSE_AVAILABLE = False
+    SSEManager = None
+    AjaxSSEClient = None
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -84,15 +95,17 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None,
         queue_name: str | None = None,
+        sse_url: str | None = None,
     ) -> None:
         """Initialize the coordinator.
 
         Args:
             hass: Home Assistant instance
             api: Ajax REST API instance
-            aws_access_key_id: AWS access key ID (optional, for SQS)
-            aws_secret_access_key: AWS secret access key (optional, for SQS)
-            queue_name: SQS queue name (optional, for SQS)
+            aws_access_key_id: AWS access key ID (optional, for SQS in direct mode)
+            aws_secret_access_key: AWS secret access key (optional, for SQS in direct mode)
+            queue_name: SQS queue name (optional, for SQS in direct mode)
+            sse_url: SSE endpoint URL (optional, for proxy mode)
         """
         self.api = api
         self.account: AjaxAccount | None = None
@@ -104,12 +117,17 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             str, float
         ] = {}  # hub_id -> timestamp of HA action
 
-        # SQS real-time events (optional)
+        # SQS real-time events (optional, for direct mode)
         self.sqs_manager: SQSManager | None = None
         self._aws_access_key_id = aws_access_key_id
         self._aws_secret_access_key = aws_secret_access_key
         self._queue_name = queue_name
         self._sqs_initialized = False
+
+        # SSE real-time events (optional, for proxy mode)
+        self.sse_manager: SSEManager | None = None
+        self._sse_url = sse_url or (api.sse_url if hasattr(api, "sse_url") else None)
+        self._sse_initialized = False
 
         super().__init__(
             hass,
@@ -178,9 +196,13 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 self._initial_load_done = True
                 _LOGGER.info("Initial data load complete")
 
-                # Initialize SQS real-time events in background (if credentials provided)
-                # This is done after initial load to not block startup with botocore's blocking I/O
-                if not self._sqs_initialized and self._aws_access_key_id:
+                # Initialize real-time events in background
+                # Priority: SSE (proxy mode) > SQS (direct mode)
+                if not self._sse_initialized and self._sse_url:
+                    # Proxy mode: use SSE for real-time events
+                    asyncio.create_task(self._async_init_sse())
+                elif not self._sqs_initialized and self._aws_access_key_id:
+                    # Direct mode: use SQS for real-time events
                     asyncio.create_task(self._async_init_sqs())
             else:
                 # Periodic update - refresh hub state and devices
@@ -353,6 +375,84 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         finally:
             self._sqs_initialized = True
 
+    async def _async_init_sse(self) -> None:
+        """Initialize SSE for real-time events (proxy mode).
+
+        SSE provides real-time event notifications via the proxy server.
+        This is used when connecting through a proxy instead of direct SQS.
+
+        Note:
+            Requires proxy mode and SSE URL from login response.
+            If SSE fails to initialize, integration falls back to REST-only mode.
+        """
+        # Check if SSE is available
+        if not SSE_AVAILABLE:
+            _LOGGER.info(
+                "SSE not available (module not loaded). " "Using REST API polling only."
+            )
+            self._sse_initialized = True
+            return
+
+        # Check if SSE URL is provided
+        if not self._sse_url:
+            _LOGGER.debug("SSE URL not configured. Using REST API polling only.")
+            self._sse_initialized = True
+            return
+
+        # Check if we have a session token
+        if not self.api.session_token:
+            _LOGGER.warning(
+                "No session token available for SSE. Using REST API polling only."
+            )
+            self._sse_initialized = True
+            return
+
+        try:
+            _LOGGER.info("Initializing SSE for real-time events...")
+
+            # Create SSE client
+            sse_client = AjaxSSEClient(
+                sse_url=self._sse_url,
+                session_token=self.api.session_token,
+                callback=lambda event: None,  # Will be set by manager
+                hass_loop=self.hass.loop,
+            )
+
+            # Create SSE manager
+            self.sse_manager = SSEManager(
+                coordinator=self,
+                sse_client=sse_client,
+            )
+
+            # Set language from Home Assistant settings
+            ha_language = self.hass.config.language or "en"
+            lang_map = {"fr": "fr", "es": "es", "en": "en"}
+            sse_language = lang_map.get(ha_language[:2], "en")
+            self.sse_manager.set_language(sse_language)
+
+            # Start receiving events
+            success = await self.sse_manager.start()
+
+            if success:
+                _LOGGER.info(
+                    "✓ SSE initialized successfully - Real-time events enabled!"
+                )
+            else:
+                _LOGGER.warning(
+                    "Failed to start SSE - Falling back to REST API polling only"
+                )
+                self.sse_manager = None
+
+        except Exception as err:
+            _LOGGER.warning(
+                "Failed to initialize SSE: %s - Using REST API polling only",
+                err,
+            )
+            self.sse_manager = None
+
+        finally:
+            self._sse_initialized = True
+
     async def _async_update_spaces_from_hubs(self) -> None:
         """Update spaces by fetching hubs directly (use hub_id as space_id)."""
         hubs_data = await self.api.async_get_hubs()
@@ -433,14 +533,20 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             except Exception:
                 space._users = []  # type: ignore
 
-            # Check if SQS recently updated this hub's state
+            # Check if SQS/SSE recently updated this hub's state
             # If so, don't overwrite with potentially stale REST data
             old_state = space.security_state
             if old_state != security_state:
-                # Check SQS protection (don't overwrite recent SQS updates)
-                if self.sqs_manager and self.sqs_manager.is_state_protected(hub_id):
+                # Check real-time event protection (don't overwrite recent updates)
+                sqs_protected = (
+                    self.sqs_manager and self.sqs_manager.is_state_protected(hub_id)
+                )
+                sse_protected = (
+                    self.sse_manager and self.sse_manager.is_state_protected(hub_id)
+                )
+                if sqs_protected or sse_protected:
                     _LOGGER.debug(
-                        "Hub %s: REST has %s but SQS recently set %s (protected)",
+                        "Hub %s: REST has %s but real-time event recently set %s (protected)",
                         hub_id,
                         security_state.value,
                         old_state.value,
@@ -1446,13 +1552,21 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         """Shutdown the coordinator and cleanup resources."""
         _LOGGER.info("Shutting down Ajax coordinator")
 
-        # Stop SQS Manager (real-time events)
+        # Stop SQS Manager (real-time events - direct mode)
         if self.sqs_manager:
             try:
                 _LOGGER.debug("Stopping AWS SQS Manager...")
                 await self.sqs_manager.stop()
             except Exception as err:
                 _LOGGER.error("Error stopping SQS Manager: %s", err)
+
+        # Stop SSE Manager (real-time events - proxy mode)
+        if self.sse_manager:
+            try:
+                _LOGGER.debug("Stopping SSE Manager...")
+                await self.sse_manager.stop()
+            except Exception as err:
+                _LOGGER.error("Error stopping SSE Manager: %s", err)
 
         # Stop all fast poll tasks
         for task in self._fast_poll_tasks.values():

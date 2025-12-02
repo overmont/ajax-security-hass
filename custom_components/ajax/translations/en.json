@@ -2,8 +2,18 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect to Ajax",
-        "description": "Enter your Ajax API credentials. You can request them from Ajax Systems at https://ajax.systems/api-request/\n\nOptional: Add AWS credentials for real-time event notifications (faster than polling).",
+        "title": "Connection Mode",
+        "description": "Choose how to connect to Ajax Systems.",
+        "data": {
+          "auth_mode": "Authentication Mode"
+        },
+        "data_description": {
+          "auth_mode": "Direct: connect directly to Ajax API. Proxy: connect via a proxy server."
+        }
+      },
+      "direct": {
+        "title": "Direct Connection",
+        "description": "Enter your Ajax API credentials.\n\nOptional: Add AWS credentials for real-time event notifications.",
         "data": {
           "api_key": "API Key",
           "email": "Email Address",
@@ -16,9 +26,27 @@
           "api_key": "Your API Key provided by Ajax Systems",
           "email": "Your Ajax account email address",
           "password": "Your Ajax account password",
-          "aws_access_key_id": "AWS Access Key ID for real-time SQS events (optional)",
-          "aws_secret_access_key": "AWS Secret Access Key for real-time SQS events (optional)",
+          "aws_access_key_id": "AWS Access Key ID for real-time SQS events",
+          "aws_secret_access_key": "AWS Secret Access Key for real-time SQS events",
           "queue_name": "SQS Queue name (e.g., ajax-events-xxxxx-prod.fifo)"
+        }
+      },
+      "proxy_dev": {
+        "title": "Mode in Development",
+        "description": "⚠️ **This mode is under development.**\n\nProxy Hybrid mode is not yet available. Please use Direct or Proxy Secure mode.\n\nClick Submit to return to mode selection."
+      },
+      "proxy": {
+        "title": "Proxy Connection",
+        "description": "Connect via an Ajax proxy server. Events will be received in real-time via SSE.",
+        "data": {
+          "proxy_url": "Proxy URL",
+          "email": "Email Address",
+          "password": "Password"
+        },
+        "data_description": {
+          "proxy_url": "Ajax proxy server URL",
+          "email": "Your Ajax account email address",
+          "password": "Your Ajax account password"
         }
       },
       "2fa": {

@@ -23,7 +23,11 @@ from .api import (
     AjaxRestAuthError,
 )
 from .const import (
+    AUTH_MODE_DIRECT,
+    AUTH_MODE_PROXY_HYBRID,
+    AUTH_MODE_PROXY_SECURE,
     CONF_API_KEY,
+    CONF_AUTH_MODE,
     CONF_AWS_ACCESS_KEY_ID,
     CONF_AWS_SECRET_ACCESS_KEY,
     CONF_EMAIL,
@@ -31,6 +35,7 @@ from .const import (
     CONF_NOTIFICATION_FILTER,
     CONF_PASSWORD,
     CONF_PERSISTENT_NOTIFICATION,
+    CONF_PROXY_URL,
     CONF_QUEUE_NAME,
     DOMAIN,
     NOTIFICATION_FILTER_ALARMS_ONLY,
@@ -60,16 +65,63 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._api: AjaxRestApi | None = None
         self._user_input: dict[str, Any] = {}
         self._request_id: str | None = None
+        self._auth_mode: str = AUTH_MODE_DIRECT
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle the initial step - API credentials."""
+        """Handle the initial step - choose authentication mode."""
+        if user_input is not None:
+            self._auth_mode = user_input[CONF_AUTH_MODE]
+
+            if self._auth_mode == AUTH_MODE_DIRECT:
+                return await self.async_step_direct()
+            elif self._auth_mode == AUTH_MODE_PROXY_HYBRID:
+                # Hybrid mode is in development
+                return await self.async_step_proxy_dev()
+            else:
+                return await self.async_step_proxy()
+
+        # Show auth mode selection
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_AUTH_MODE, default=AUTH_MODE_DIRECT): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[
+                            {
+                                "value": AUTH_MODE_DIRECT,
+                                "label": "Direct (API key + SQS)",
+                            },
+                            {
+                                "value": AUTH_MODE_PROXY_SECURE,
+                                "label": "Proxy Sécurisé (tout via proxy)",
+                            },
+                            {
+                                "value": AUTH_MODE_PROXY_HYBRID,
+                                "label": "Proxy Hybride (API directe + SSE events)",
+                            },
+                        ],
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=data_schema,
+        )
+
+    async def async_step_direct(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle direct mode - API key + credentials."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
             # Store user input for potential 2FA step
             self._user_input = user_input
+            self._user_input[CONF_AUTH_MODE] = AUTH_MODE_DIRECT
 
             # Validate API credentials
             try:
@@ -93,6 +145,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 # Prepare entry data
                 entry_data = {
+                    CONF_AUTH_MODE: AUTH_MODE_DIRECT,
                     CONF_API_KEY: user_input[CONF_API_KEY],
                     CONF_EMAIL: user_input[CONF_EMAIL],
                     CONF_PASSWORD: password_hash,  # Store ONLY the hash
@@ -132,7 +185,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception: %s", err)
                 errors["base"] = "unknown"
 
-        # Show configuration form
+        # Show configuration form for direct mode
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_API_KEY): str,
@@ -146,7 +199,104 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         return self.async_show_form(
-            step_id="user",
+            step_id="direct",
+            data_schema=data_schema,
+            errors=errors,
+        )
+
+    async def async_step_proxy_dev(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle proxy hybrid mode - in development."""
+        if user_input is not None:
+            # Go back to mode selection
+            return await self.async_step_user()
+
+        return self.async_show_form(
+            step_id="proxy_dev",
+            data_schema=vol.Schema({}),
+        )
+
+    async def async_step_proxy(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle proxy mode - proxy URL + credentials."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            # Store user input for potential 2FA step
+            self._user_input = user_input
+            self._user_input[CONF_AUTH_MODE] = self._auth_mode
+
+            proxy_url = user_input[CONF_PROXY_URL].rstrip("/")
+
+            try:
+                # For proxy mode, we authenticate via the proxy
+                # The proxy will provide API key (hybrid) or handle all requests (secure)
+                self._api = AjaxRestApi(
+                    api_key="",  # Will be provided by proxy
+                    email=user_input[CONF_EMAIL],
+                    password=user_input[CONF_PASSWORD],
+                    proxy_url=proxy_url,
+                    proxy_mode=self._auth_mode,
+                )
+
+                # Test connection by logging in via proxy
+                await self._api.async_login()
+
+                # Verify access
+                await self._api.async_get_hubs()
+                await self._api.close()
+
+                # Hash password for secure storage
+                password_hash = hashlib.sha256(
+                    user_input[CONF_PASSWORD].encode()
+                ).hexdigest()
+
+                # Prepare entry data
+                entry_data = {
+                    CONF_AUTH_MODE: self._auth_mode,
+                    CONF_PROXY_URL: proxy_url,
+                    CONF_EMAIL: user_input[CONF_EMAIL],
+                    CONF_PASSWORD: password_hash,
+                }
+
+                # If proxy returned an API key (hybrid mode), store it
+                if self._api.api_key:
+                    entry_data[CONF_API_KEY] = self._api.api_key
+
+                # Create entry
+                return self.async_create_entry(
+                    title=f"Ajax - {user_input[CONF_EMAIL]}",
+                    data=entry_data,
+                )
+
+            except AjaxRest2FARequiredError as err:
+                _LOGGER.info("2FA required for proxy login")
+                self._request_id = err.request_id
+                return await self.async_step_2fa()
+
+            except AjaxRestAuthError:
+                _LOGGER.error("Invalid credentials for proxy")
+                errors["base"] = "invalid_auth"
+            except AjaxRestApiError as err:
+                _LOGGER.error("Cannot connect to proxy: %s", err)
+                errors["base"] = "cannot_connect"
+            except Exception as err:
+                _LOGGER.exception("Unexpected exception: %s", err)
+                errors["base"] = "unknown"
+
+        # Show configuration form for proxy mode
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_PROXY_URL): str,
+                vol.Required(CONF_EMAIL): str,
+                vol.Required(CONF_PASSWORD): str,
+            }
+        )
+
+        return self.async_show_form(
+            step_id="proxy",
             data_schema=data_schema,
             errors=errors,
         )
@@ -173,24 +323,35 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self._user_input[CONF_PASSWORD].encode()
                 ).hexdigest()
 
-                # Prepare entry data
+                # Get auth mode from stored input
+                auth_mode = self._user_input.get(CONF_AUTH_MODE, AUTH_MODE_DIRECT)
+
+                # Prepare entry data based on auth mode
                 entry_data = {
-                    CONF_API_KEY: self._user_input[CONF_API_KEY],
+                    CONF_AUTH_MODE: auth_mode,
                     CONF_EMAIL: self._user_input[CONF_EMAIL],
-                    CONF_PASSWORD: password_hash,  # Store ONLY the hash
+                    CONF_PASSWORD: password_hash,
                 }
 
-                # Add optional AWS SQS credentials if provided
-                if self._user_input.get(CONF_AWS_ACCESS_KEY_ID):
-                    entry_data[CONF_AWS_ACCESS_KEY_ID] = self._user_input[
-                        CONF_AWS_ACCESS_KEY_ID
-                    ]
-                if self._user_input.get(CONF_AWS_SECRET_ACCESS_KEY):
-                    entry_data[CONF_AWS_SECRET_ACCESS_KEY] = self._user_input[
-                        CONF_AWS_SECRET_ACCESS_KEY
-                    ]
-                if self._user_input.get(CONF_QUEUE_NAME):
-                    entry_data[CONF_QUEUE_NAME] = self._user_input[CONF_QUEUE_NAME]
+                if auth_mode == AUTH_MODE_DIRECT:
+                    # Direct mode: include API key and optional AWS credentials
+                    entry_data[CONF_API_KEY] = self._user_input[CONF_API_KEY]
+
+                    if self._user_input.get(CONF_AWS_ACCESS_KEY_ID):
+                        entry_data[CONF_AWS_ACCESS_KEY_ID] = self._user_input[
+                            CONF_AWS_ACCESS_KEY_ID
+                        ]
+                    if self._user_input.get(CONF_AWS_SECRET_ACCESS_KEY):
+                        entry_data[CONF_AWS_SECRET_ACCESS_KEY] = self._user_input[
+                            CONF_AWS_SECRET_ACCESS_KEY
+                        ]
+                    if self._user_input.get(CONF_QUEUE_NAME):
+                        entry_data[CONF_QUEUE_NAME] = self._user_input[CONF_QUEUE_NAME]
+                else:
+                    # Proxy mode: include proxy URL and optionally API key
+                    entry_data[CONF_PROXY_URL] = self._user_input[CONF_PROXY_URL]
+                    if self._api.api_key:
+                        entry_data[CONF_API_KEY] = self._api.api_key
 
                 # Create entry
                 return self.async_create_entry(

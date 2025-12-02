@@ -2,8 +2,18 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connexion à Ajax",
-        "description": "Entrez vos identifiants API Ajax. Vous pouvez les demander à Ajax Systems sur https://ajax.systems/fr/api-request/\n\nOptionnel : Ajoutez les identifiants AWS pour recevoir les événements en temps réel (plus rapide que le polling).",
+        "title": "Mode de connexion",
+        "description": "Choisissez le mode de connexion à Ajax Systems.",
+        "data": {
+          "auth_mode": "Mode d'authentification"
+        },
+        "data_description": {
+          "auth_mode": "Direct: connexion directe à l'API Ajax. Proxy: connexion via un serveur proxy."
+        }
+      },
+      "direct": {
+        "title": "Connexion directe",
+        "description": "Entrez vos identifiants API Ajax.\n\nOptionnel : Ajoutez les identifiants AWS pour recevoir les événements en temps réel.",
         "data": {
           "api_key": "Clé API",
           "email": "Adresse email",
@@ -16,9 +26,27 @@
           "api_key": "Votre clé API fournie par Ajax Systems",
           "email": "Votre adresse email de compte Ajax",
           "password": "Votre mot de passe de compte Ajax",
-          "aws_access_key_id": "Clé d'accès AWS pour les événements SQS en temps réel (optionnel)",
-          "aws_secret_access_key": "Clé secrète AWS pour les événements SQS en temps réel (optionnel)",
+          "aws_access_key_id": "Clé d'accès AWS pour les événements SQS en temps réel",
+          "aws_secret_access_key": "Clé secrète AWS pour les événements SQS en temps réel",
           "queue_name": "Nom de la file SQS (ex: ajax-events-xxxxx-prod.fifo)"
+        }
+      },
+      "proxy_dev": {
+        "title": "Mode en développement",
+        "description": "⚠️ **Ce mode est en cours de développement.**\n\nLe mode Proxy Hybride n'est pas encore disponible. Veuillez utiliser le mode Direct ou Proxy Sécurisé.\n\nCliquez sur Soumettre pour revenir à la sélection du mode."
+      },
+      "proxy": {
+        "title": "Connexion via proxy",
+        "description": "Connectez-vous via un serveur proxy Ajax. Les événements seront reçus en temps réel via SSE.",
+        "data": {
+          "proxy_url": "URL du proxy",
+          "email": "Adresse email",
+          "password": "Mot de passe"
+        },
+        "data_description": {
+          "proxy_url": "URL du serveur proxy Ajax",
+          "email": "Votre adresse email de compte Ajax",
+          "password": "Votre mot de passe de compte Ajax"
         }
       },
       "2fa": {
