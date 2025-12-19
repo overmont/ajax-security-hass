@@ -603,8 +603,8 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             # Skip duplicate device IDs in the same API response
             # (MultiTransmitter can appear twice with different names)
             if device_id in processed_ids:
-                _LOGGER.debug(
-                    "Skipping duplicate device ID %s (%s)",
+                _LOGGER.warning(
+                    "Skipping duplicate device ID %s (%s) - already processed",
                     device_id,
                     device_data.get("deviceName", "unknown"),
                 )
