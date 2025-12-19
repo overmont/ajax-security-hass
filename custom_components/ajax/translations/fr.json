@@ -54,6 +54,13 @@
         "data_description": {
           "code": "Code à 6 chiffres de votre application d'authentification ou SMS"
         }
+      },
+      "reauth_confirm": {
+        "title": "Ré-authentification",
+        "description": "Votre session a expiré. Veuillez entrer à nouveau votre mot de passe pour {email}.",
+        "data": {
+          "password": "Mot de passe"
+        }
       }
     },
     "error": {
@@ -63,7 +70,9 @@
       "unknown": "Erreur inattendue. Consultez les journaux pour plus de détails."
     },
     "abort": {
-      "already_configured": "Cette intégration Ajax est déjà configurée."
+      "already_configured": "Cette intégration Ajax est déjà configurée.",
+      "reauth_successful": "Ré-authentification réussie.",
+      "reauth_failed": "Échec de la ré-authentification. Veuillez reconfigurer l'intégration."
     }
   },
   "options": {

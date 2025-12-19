@@ -361,6 +361,91 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
 
+    async def async_step_reauth(
+        self, entry_data: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle re-authentication when token expires."""
+        self._user_input = dict(entry_data) if entry_data else {}
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle re-authentication confirmation."""
+        errors: dict[str, str] = {}
+
+        # Get config entry being re-authenticated
+        reauth_entry = self.hass.config_entries.async_get_entry(
+            self.context.get("entry_id", "")
+        )
+        if not reauth_entry:
+            return self.async_abort(reason="reauth_failed")
+
+        if user_input is not None:
+            auth_mode = reauth_entry.data.get(CONF_AUTH_MODE, AUTH_MODE_DIRECT)
+            proxy_url = reauth_entry.data.get(CONF_PROXY_URL)
+
+            try:
+                # Create API client based on auth mode
+                if auth_mode == AUTH_MODE_DIRECT:
+                    self._api = AjaxRestApi(
+                        api_key=reauth_entry.data.get(CONF_API_KEY, ""),
+                        email=reauth_entry.data.get(CONF_EMAIL, ""),
+                        password=user_input[CONF_PASSWORD],
+                    )
+                else:
+                    self._api = AjaxRestApi(
+                        api_key="",
+                        email=reauth_entry.data.get(CONF_EMAIL, ""),
+                        password=user_input[CONF_PASSWORD],
+                        proxy_url=proxy_url,
+                        proxy_mode=auth_mode,
+                    )
+
+                # Test login
+                await self._api.async_login()
+                await self._api.close()
+
+                # Hash new password
+                password_hash = hashlib.sha256(
+                    user_input[CONF_PASSWORD].encode()
+                ).hexdigest()
+
+                # Update config entry with new password
+                new_data = {**reauth_entry.data, CONF_PASSWORD: password_hash}
+                self.hass.config_entries.async_update_entry(reauth_entry, data=new_data)
+
+                await self.hass.config_entries.async_reload(reauth_entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
+
+            except AjaxRest2FARequiredError as err:
+                # Store info for 2FA
+                self._user_input = {
+                    **reauth_entry.data,
+                    CONF_PASSWORD: user_input[CONF_PASSWORD],
+                }
+                self._request_id = err.request_id
+                return await self.async_step_2fa()
+
+            except AjaxRestAuthError:
+                errors["base"] = "invalid_auth"
+            except AjaxRestApiError as err:
+                _LOGGER.error("Reauth failed: %s", err)
+                errors["base"] = "cannot_connect"
+            except Exception as err:
+                _LOGGER.exception("Unexpected error during reauth: %s", err)
+                errors["base"] = "unknown"
+
+        # Show password re-entry form
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema({vol.Required(CONF_PASSWORD): str}),
+            errors=errors,
+            description_placeholders={
+                "email": reauth_entry.data.get(CONF_EMAIL, ""),
+            },
+        )
+
 
 class AjaxOptionsFlow(config_entries.OptionsFlow):
     """Handle Ajax options."""
