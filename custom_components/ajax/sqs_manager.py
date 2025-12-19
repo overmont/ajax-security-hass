@@ -50,6 +50,8 @@ EVENT_TAG_TO_STATE = {
 DOOR_EVENTS = {
     "dooropened": ("door_opened", True),
     "doorclosed": ("door_closed", False),
+    "doorrestored": ("door_closed", False),  # Alternative tag for door closed
+    "doornormal": ("door_closed", False),  # Alternative tag for door closed
     "extcontactopened": ("ext_contact_opened", True),
     "extcontactclosed": ("ext_contact_closed", False),
 }
@@ -415,7 +417,7 @@ class SQSManager:
         # Find and update the device
         device = self._find_device(space, source_name, source_id)
         if device:
-            device.attributes["opened"] = is_open
+            device.attributes["door_opened"] = is_open
             device.last_trigger_time = datetime.now(timezone.utc) if is_open else None
             message = get_event_message(action, self._language)
             _LOGGER.info("SQS instant: %s -> %s", source_name, message)

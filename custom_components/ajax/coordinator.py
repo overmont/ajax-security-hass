@@ -637,24 +637,17 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 continue
             processed_ids.add(device_id)
 
-            # Get full device details (battery, signal) only every 10 minutes
-            # or for new devices (first time setup)
-            is_new_device = device_id not in space.devices
-            if need_details_refresh or is_new_device:
-                try:
-                    device_data = await self.api.async_get_device(
-                        space.hub_id, device_id
-                    )
-                except Exception as err:
-                    _LOGGER.warning(
-                        "Failed to get device %s details: %s",
-                        device_id,
-                        err,
-                    )
-                    device_data = device_summary  # Fall back to summary
-            else:
-                # Use summary data only (no battery/signal update)
-                device_data = device_summary
+            # Get full device details - needed for state attributes (reedClosed, etc.)
+            # The summary doesn't include critical state info, only the details endpoint does
+            try:
+                device_data = await self.api.async_get_device(space.hub_id, device_id)
+            except Exception as err:
+                _LOGGER.warning(
+                    "Failed to get device %s details: %s",
+                    device_id,
+                    err,
+                )
+                device_data = device_summary  # Fall back to summary
 
             # Parse device type - API uses camelCase (deviceType, deviceName)
             raw_device_type = device_data.get(
