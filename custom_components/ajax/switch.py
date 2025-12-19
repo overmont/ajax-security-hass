@@ -170,6 +170,24 @@ class AjaxSwitch(CoordinatorEntity[AjaxDataCoordinator], SwitchEntity):
             _LOGGER.error("Space or device not found for switch %s", self._switch_key)
             return
 
+        # Handle Socket/Relay/WallSwitch with dedicated API methods
+        if device.type in (DeviceType.SOCKET, DeviceType.RELAY, DeviceType.WALLSWITCH):
+            try:
+                await self.coordinator.api.async_set_relay_state(self._device_id, value)
+                _LOGGER.info(
+                    "Set relay/socket state=%s for device %s",
+                    value,
+                    self._device_id,
+                )
+                await self.coordinator.async_request_refresh()
+            except Exception as err:
+                _LOGGER.error(
+                    "Failed to set relay/socket state for device %s: %s",
+                    self._device_id,
+                    err,
+                )
+            return
+
         api_key = self._switch_desc.get("api_key")
         if not api_key:
             _LOGGER.error("No api_key defined for switch %s", self._switch_key)

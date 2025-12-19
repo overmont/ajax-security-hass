@@ -942,6 +942,18 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         ):
             normalized["glass_break_detected"] = api_attributes["glassBreakDetected"]
 
+        # Socket/Relay/WallSwitch: Parse switchState to is_on
+        if (
+            device_type in (DeviceType.SOCKET, DeviceType.RELAY, DeviceType.WALLSWITCH)
+            and "switchState" in api_attributes
+        ):
+            switch_state = api_attributes["switchState"]
+            # switchState is a list like ["SWITCHED_ON"] or ["SWITCHED_OFF"]
+            if isinstance(switch_state, list) and len(switch_state) > 0:
+                normalized["is_on"] = switch_state[0] == "SWITCHED_ON"
+            else:
+                normalized["is_on"] = False
+
         return normalized
 
     def _reset_expired_motion_detections(self, space: AjaxSpace) -> None:
@@ -1344,6 +1356,16 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             "motion": DeviceType.MOTION_DETECTOR,
             "pir": DeviceType.MOTION_DETECTOR,
             "motionprotect": DeviceType.MOTION_DETECTOR,
+            "motioncam": DeviceType.MOTION_DETECTOR,
+            "motion_cam": DeviceType.MOTION_DETECTOR,
+            "motioncamoutdoor": DeviceType.MOTION_DETECTOR,
+            "motion_cam_outdoor": DeviceType.MOTION_DETECTOR,
+            "motioncamoutdoorphod": DeviceType.MOTION_DETECTOR,
+            "motion_cam_outdoor_phod": DeviceType.MOTION_DETECTOR,
+            "motionprotectcurtain": DeviceType.MOTION_DETECTOR,
+            "motion_protect_curtain": DeviceType.MOTION_DETECTOR,
+            "motionprotectoutdoor": DeviceType.MOTION_DETECTOR,
+            "motion_protect_outdoor": DeviceType.MOTION_DETECTOR,
             # Combi detectors (motion + glass break)
             "combi_protect": DeviceType.COMBI_PROTECT,
             "combiprotect": DeviceType.COMBI_PROTECT,
@@ -1351,6 +1373,8 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             # Door/Window contacts
             "door_protect": DeviceType.DOOR_CONTACT,
             "doorprotect": DeviceType.DOOR_CONTACT,
+            "doorprotectplus": DeviceType.DOOR_CONTACT,
+            "door_protect_plus": DeviceType.DOOR_CONTACT,
             "door": DeviceType.DOOR_CONTACT,
             "window": DeviceType.DOOR_CONTACT,
             "opening": DeviceType.DOOR_CONTACT,
@@ -1362,6 +1386,10 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             # Smoke detectors
             "fire_protect": DeviceType.SMOKE_DETECTOR,
             "fireprotect": DeviceType.SMOKE_DETECTOR,
+            "fireprotectplus": DeviceType.SMOKE_DETECTOR,
+            "fire_protect_plus": DeviceType.SMOKE_DETECTOR,
+            "fireprotect2plus": DeviceType.SMOKE_DETECTOR,
+            "fire_protect_2_plus": DeviceType.SMOKE_DETECTOR,
             "smoke": DeviceType.SMOKE_DETECTOR,
             "fire": DeviceType.SMOKE_DETECTOR,
             # Flood detectors
@@ -1413,6 +1441,12 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             # Sirens
             "siren": DeviceType.SIREN,
             "alarm": DeviceType.SIREN,
+            "homesiren": DeviceType.SIREN,
+            "home_siren": DeviceType.SIREN,
+            "streetsiren": DeviceType.SIREN,
+            "street_siren": DeviceType.SIREN,
+            "streetsirendoubledeck": DeviceType.SIREN,
+            "street_siren_double_deck": DeviceType.SIREN,
             # SpeakerPhone
             "speakerphone": DeviceType.SPEAKERPHONE,
             # Transmitter
