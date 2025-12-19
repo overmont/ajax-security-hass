@@ -93,6 +93,11 @@ class AjaxRestApi:
         if api_key:
             self._base_headers["X-Api-Key"] = api_key
 
+    @property
+    def is_proxy_mode(self) -> bool:
+        """Check if using proxy mode (vs direct API)."""
+        return self.proxy_mode != AUTH_MODE_DIRECT or self.proxy_url is not None
+
     def _get_base_url(self, for_login: bool = False) -> str:
         """Get the base URL based on auth mode.
 
@@ -546,58 +551,25 @@ class AjaxRestApi:
         """
         return await self._request("GET", f"devices/{device_id}/state")
 
-    # Relay methods
-    async def async_set_relay_state(
-        self, device_id: str, state: bool
+    # Device control methods (direct API mode)
+    async def async_control_device(
+        self, device_id: str, command: dict[str, Any]
     ) -> dict[str, Any]:
-        """Set relay state (on/off).
+        """Send control command to device (direct API mode only).
+
+        This endpoint is used for Socket/Relay/WallSwitch control in direct mode.
+        For proxy mode, use async_update_device with switchState instead.
 
         Args:
-            device_id: Relay device ID
-            state: True for on, False for off
+            device_id: Device ID
+            command: Command dictionary (e.g., {"state": "on"} or {"action": "pulse"})
 
         Returns:
-            Updated relay state
+            Device response
         """
-        return await self._request(
-            "POST", f"devices/{device_id}/control", {"state": "on" if state else "off"}
-        )
-
-    async def async_pulse_relay(
-        self, device_id: str, duration: int = 1
-    ) -> dict[str, Any]:
-        """Trigger relay pulse (for gates, doors, etc.).
-
-        Args:
-            device_id: Relay device ID
-            duration: Pulse duration in seconds
-
-        Returns:
-            Relay response
-        """
-        return await self._request(
-            "POST",
-            f"devices/{device_id}/control",
-            {"action": "pulse", "duration": duration},
-        )
+        return await self._request("POST", f"devices/{device_id}/control", command)
 
     # Socket methods
-    async def async_set_socket_state(
-        self, device_id: str, state: bool
-    ) -> dict[str, Any]:
-        """Set socket state (on/off).
-
-        Args:
-            device_id: Socket device ID
-            state: True for on, False for off
-
-        Returns:
-            Updated socket state
-        """
-        return await self._request(
-            "POST", f"devices/{device_id}/control", {"state": "on" if state else "off"}
-        )
-
     async def async_get_socket_power(self, device_id: str) -> dict[str, Any]:
         """Get socket power consumption.
 

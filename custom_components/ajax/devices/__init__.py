@@ -24,7 +24,6 @@ from .glass_break import GlassBreakHandler
 from .hub import HubHandler
 from .light import LightHandler
 from .motion_detector import MotionDetectorHandler
-from .relay import RelayHandler
 from .siren import SirenHandler
 from .smoke_detector import SmokeDetectorHandler
 from .socket import SocketHandler
@@ -37,7 +36,6 @@ __all__ = [
     "HubHandler",
     "LightHandler",
     "MotionDetectorHandler",
-    "RelayHandler",
     "SirenHandler",
     "SmokeDetectorHandler",
     "SocketHandler",
