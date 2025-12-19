@@ -875,11 +875,12 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             # Socket/Relay/WallSwitch: Parse switchState to is_on (direct from enriched data)
             if "switchState" in device_data:
                 switch_state = device_data["switchState"]
-                # switchState is a list like ["SWITCHED_ON"] or ["SWITCHED_OFF"]
-                if isinstance(switch_state, list) and len(switch_state) > 0:
-                    device.attributes["is_on"] = switch_state[0] == "SWITCHED_ON"
+                # switchState is a list: [] = on, ["SWITCHED_OFF"] = off
+                # Device is OFF only if SWITCHED_OFF is explicitly in the list
+                if isinstance(switch_state, list):
+                    device.attributes["is_on"] = "SWITCHED_OFF" not in switch_state
                 else:
-                    device.attributes["is_on"] = False
+                    device.attributes["is_on"] = True
 
             # Update device metadata (API uses "color" not "device_color")
             device.device_color = device_data.get("color")
@@ -994,11 +995,12 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             and "switchState" in api_attributes
         ):
             switch_state = api_attributes["switchState"]
-            # switchState is a list like ["SWITCHED_ON"] or ["SWITCHED_OFF"]
-            if isinstance(switch_state, list) and len(switch_state) > 0:
-                normalized["is_on"] = switch_state[0] == "SWITCHED_ON"
+            # switchState is a list: [] = on, ["SWITCHED_OFF"] = off
+            # Device is OFF only if SWITCHED_OFF is explicitly in the list
+            if isinstance(switch_state, list):
+                normalized["is_on"] = "SWITCHED_OFF" not in switch_state
             else:
-                normalized["is_on"] = False
+                normalized["is_on"] = True
 
         return normalized
 
