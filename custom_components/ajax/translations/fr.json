@@ -13,7 +13,7 @@
       },
       "direct": {
         "title": "Connexion directe",
-        "description": "Entrez vos identifiants API Ajax.\n\nOptionnel : Ajoutez les identifiants AWS pour recevoir les événements en temps réel.",
+        "description": "Entrez vos identifiants API Ajax.\n\n⚠️ **Compte utilisateur uniquement** (pas de compte PRO/Entreprise).\n\nOptionnel : Ajoutez les identifiants AWS pour recevoir les événements en temps réel.",
         "data": {
           "api_key": "Clé API",
           "email": "Adresse email",
@@ -33,7 +33,7 @@
       },
       "proxy": {
         "title": "Connexion via proxy",
-        "description": "Connectez-vous via un serveur proxy Ajax. Les événements seront reçus en temps réel via SSE.",
+        "description": "Connectez-vous via un serveur proxy Ajax.\n\n⚠️ **Compte utilisateur uniquement** (pas de compte PRO/Entreprise).\n\nLes événements seront reçus en temps réel via SSE.",
         "data": {
           "proxy_url": "URL du proxy",
           "email": "Adresse email",
@@ -66,6 +66,9 @@
     "error": {
       "cannot_connect": "Échec de la connexion à l'API Ajax. Vérifiez votre connexion Internet.",
       "invalid_auth": "Identifiants API invalides. Vérifiez votre clé API, email et mot de passe.",
+      "invalid_api_key": "Clé API invalide ou manquante. Vérifiez votre clé API entreprise.",
+      "invalid_password": "Email ou mot de passe incorrect. Vérifiez vos identifiants de compte Ajax.",
+      "invalid_account_type": "Type de compte non supporté. Utilisez un compte utilisateur (pas un compte PRO/Entreprise).",
       "invalid_2fa": "Code de vérification invalide. Veuillez réessayer.",
       "unknown": "Erreur inattendue. Consultez les journaux pour plus de détails."
     },

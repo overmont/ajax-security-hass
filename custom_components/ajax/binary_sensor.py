@@ -13,7 +13,7 @@ from typing import Any
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -62,7 +62,6 @@ async def async_setup_entry(
     coordinator: AjaxDataCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities = []
-    entity_registry = er.async_get(hass)
     seen_unique_ids: set[str] = set()
 
     # Create binary sensors for all devices using handlers
@@ -85,17 +84,6 @@ async def async_setup_entry(
                         )
                         continue
                     seen_unique_ids.add(unique_id)
-
-                    # Skip if entity already exists in registry (from another config entry)
-                    existing = entity_registry.async_get_entity_id(
-                        "binary_sensor", DOMAIN, unique_id
-                    )
-                    if existing:
-                        _LOGGER.debug(
-                            "Entity %s already exists in registry, skipping",
-                            unique_id,
-                        )
-                        continue
 
                     entities.append(
                         AjaxBinarySensor(
@@ -310,7 +298,7 @@ class AjaxBinarySensor(CoordinatorEntity[AjaxDataCoordinator], BinarySensorEntit
 
     def _get_device(self) -> AjaxDevice | None:
         """Get the device from coordinator data."""
-        space = self.coordinator.account.spaces.get(self._space_id)
+        space = self.coordinator.get_space(self._space_id)
         if not space:
             return None
         return space.devices.get(self._device_id)

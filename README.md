@@ -133,6 +133,8 @@ Connect via the Ajax community proxy server. Real-time events via SSE (Server-Se
 
 > **Note**: This is the recommended mode for most users. No API key required.
 
+> ⚠️ **User accounts only**: This integration only supports **user accounts**. PRO/Enterprise accounts are not supported.
+
 #### Direct Mode (Enterprise API key only)
 Direct connection to the Ajax API. Requires an enterprise API key from Ajax Systems.
 
@@ -155,6 +157,19 @@ For instant updates (<1 second) in direct mode, configure AWS SQS credentials:
 - **Queue Name**
 
 These credentials are provided by Ajax Systems with your enterprise API key.
+
+#### Real-Time Event Limitations
+
+Due to Ajax Systems architecture, **motion and door/window events are only sent in real-time when**:
+- The system is **armed** (Away, Night, or Partial mode)
+- OR the sensor has **"Always Active"** mode enabled
+
+When the system is **disarmed** and sensors are not in "Always Active" mode:
+- Motion and door events are **not** sent to SQS/SSE
+- The integration falls back to polling (30 seconds)
+- State changes are still detected, but with a delay
+
+> 💡 **Tip**: Enable "Always Active" on motion sensors if you need real-time motion detection while disarmed (e.g., for automation). Note: This will use more battery and may trigger alarms if not configured properly (set siren to "sound only when armed").
 
 ### Options (after setup)
 
@@ -243,10 +258,21 @@ This creates an anonymized JSON file with device information (no sensitive data 
 
 ## 🔧 Troubleshooting
 
+### Authentication Errors
+
+The integration provides specific error messages to help diagnose login issues:
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| **Invalid API key** | API key is missing or incorrect | Check your enterprise API key |
+| **Invalid email or password** | Wrong credentials | Verify your Ajax account email and password |
+| **Account type not supported** | Using a PRO/Enterprise account | Use a standard user account instead |
+
 ### Integration not loading
 1. Check Home Assistant logs for errors
 2. Verify your Ajax credentials are correct
 3. Ensure you have an active internet connection
+4. Make sure you're using a **user account** (not PRO/Enterprise)
 
 ### Real-time updates not working
 1. Verify AWS SQS credentials are configured correctly

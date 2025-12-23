@@ -344,7 +344,7 @@ class AjaxSwitch(CoordinatorEntity[AjaxDataCoordinator], SwitchEntity):
 
     def _get_device(self) -> AjaxDevice | None:
         """Get the device from coordinator data."""
-        space = self.coordinator.account.spaces.get(self._space_id)
+        space = self.coordinator.get_space(self._space_id)
         if not space:
             return None
         return space.devices.get(self._device_id)

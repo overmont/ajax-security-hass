@@ -170,9 +170,18 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._request_id = err.request_id
                 return await self.async_step_2fa()
 
-            except AjaxRestAuthError:
-                _LOGGER.error("Invalid API credentials")
-                errors["base"] = "invalid_auth"
+            except AjaxRestAuthError as err:
+                _LOGGER.error(
+                    "Authentication failed: %s (type: %s)", err, err.error_type
+                )
+                # Map error type to translation key
+                error_map = {
+                    "invalid_api_key": "invalid_api_key",
+                    "invalid_password": "invalid_password",
+                    "invalid_account_type": "invalid_account_type",
+                    "generic": "invalid_auth",
+                }
+                errors["base"] = error_map.get(err.error_type, "invalid_auth")
             except AjaxRestApiError as err:
                 _LOGGER.error("Cannot connect to Ajax API: %s", err)
                 errors["base"] = "cannot_connect"
@@ -254,9 +263,18 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._request_id = err.request_id
                 return await self.async_step_2fa()
 
-            except AjaxRestAuthError:
-                _LOGGER.error("Invalid credentials for proxy")
-                errors["base"] = "invalid_auth"
+            except AjaxRestAuthError as err:
+                _LOGGER.error(
+                    "Authentication failed: %s (type: %s)", err, err.error_type
+                )
+                # Map error type to translation key
+                error_map = {
+                    "invalid_api_key": "invalid_api_key",
+                    "invalid_password": "invalid_password",
+                    "invalid_account_type": "invalid_account_type",
+                    "generic": "invalid_auth",
+                }
+                errors["base"] = error_map.get(err.error_type, "invalid_auth")
             except AjaxRestApiError as err:
                 _LOGGER.error("Cannot connect to proxy: %s", err)
                 errors["base"] = "cannot_connect"
@@ -427,8 +445,15 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._request_id = err.request_id
                 return await self.async_step_2fa()
 
-            except AjaxRestAuthError:
-                errors["base"] = "invalid_auth"
+            except AjaxRestAuthError as err:
+                _LOGGER.error("Reauth failed: %s (type: %s)", err, err.error_type)
+                error_map = {
+                    "invalid_api_key": "invalid_api_key",
+                    "invalid_password": "invalid_password",
+                    "invalid_account_type": "invalid_account_type",
+                    "generic": "invalid_auth",
+                }
+                errors["base"] = error_map.get(err.error_type, "invalid_auth")
             except AjaxRestApiError as err:
                 _LOGGER.error("Reauth failed: %s", err)
                 errors["base"] = "cannot_connect"

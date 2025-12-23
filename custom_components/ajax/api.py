@@ -26,6 +26,18 @@ class AjaxRestApiError(Exception):
 class AjaxRestAuthError(AjaxRestApiError):
     """Authentication error."""
 
+    def __init__(
+        self, message: str = "Authentication failed", error_type: str = "generic"
+    ):
+        """Initialize auth error with type.
+
+        Args:
+            message: Error message
+            error_type: Type of error (generic, invalid_password, invalid_api_key, invalid_account_type)
+        """
+        super().__init__(message)
+        self.error_type = error_type
+
 
 class AjaxRest2FARequiredError(AjaxRestApiError):
     """2FA is required."""
@@ -172,7 +184,49 @@ class AjaxRestApi:
                 _LOGGER.debug("Login response status: %s", response.status)
 
                 if response.status == 401:
-                    raise AjaxRestAuthError("Invalid email or password")
+                    # Try to get error message from response body
+                    try:
+                        result = await response.json()
+                        error_msg = result.get("message", "")
+                        _LOGGER.debug("Login 401 error message: %s", error_msg)
+
+                        if "not authorized" in error_msg.lower():
+                            # "User is not authorized" = missing or invalid API key
+                            raise AjaxRestAuthError(
+                                "Invalid API key", error_type="invalid_api_key"
+                            )
+                        elif "wrong login or password" in error_msg.lower():
+                            # "Wrong login or password" = bad credentials
+                            raise AjaxRestAuthError(
+                                "Invalid email or password",
+                                error_type="invalid_password",
+                            )
+                        elif (
+                            "pro" in error_msg.lower()
+                            or "enterprise" in error_msg.lower()
+                        ):
+                            # Account type mismatch
+                            raise AjaxRestAuthError(
+                                "Account type not supported (PRO account detected)",
+                                error_type="invalid_account_type",
+                            )
+                        else:
+                            raise AjaxRestAuthError(
+                                error_msg or "Authentication failed",
+                                error_type="generic",
+                            )
+                    except AjaxRestAuthError:
+                        raise
+                    except Exception:
+                        raise AjaxRestAuthError(
+                            "Invalid email or password", error_type="invalid_password"
+                        ) from None
+                elif response.status == 500:
+                    # 500 often means invalid API key
+                    _LOGGER.debug("Login 500 error - likely invalid API key")
+                    raise AjaxRestAuthError(
+                        "Invalid API key or server error", error_type="invalid_api_key"
+                    )
                 elif response.status == 403:
                     # 2FA required
                     result = await response.json()
