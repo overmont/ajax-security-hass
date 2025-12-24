@@ -102,7 +102,7 @@ Issues, pull requests, and feedback are welcome!
 2. Go to "Integrations"
 3. Click the 3 dots in the top right corner
 4. Select "Custom repositories"
-5. Add this repository URL: `https://github.com/foXaCe/ajax-hass`
+5. Add this repository URL: `https://github.com/foXaCe/ajax-security-hass`
 6. Category: "Integration"
 7. Click "Add"
 8. Search for "Ajax Security System"
