@@ -26,15 +26,15 @@ DEVICES_WITH_DOOR_PLUS_SELECTS = [
     "DoorProtectPlusFibra",
 ]
 
-# Shock sensitivity options mapping (value -> label)
-# Based on Ajax app: 0=Faible, 1=Normal, 2=Élevé
+# Shock sensitivity options mapping (value -> translation key)
+# Based on Ajax app: 0=low, 1=normal, 2=high
 SHOCK_SENSITIVITY_OPTIONS = {
-    0: "Faible",
-    1: "Normal",
-    2: "Élevé",
+    0: "low",
+    1: "normal",
+    2: "high",
 }
 
-# Reverse mapping (label -> value)
+# Reverse mapping (key -> value)
 SHOCK_SENSITIVITY_VALUES = {v: k for k, v in SHOCK_SENSITIVITY_OPTIONS.items()}
 
 
@@ -116,7 +116,7 @@ class AjaxShockSensitivitySelect(AjaxDoorPlusBaseSelect):
         if not device:
             return None
         value = device.attributes.get("shock_sensor_sensitivity", 0)
-        return SHOCK_SENSITIVITY_OPTIONS.get(value, "Faible")
+        return SHOCK_SENSITIVITY_OPTIONS.get(value, "low")
 
     async def async_select_option(self, option: str) -> None:
         """Change the shock sensor sensitivity."""
