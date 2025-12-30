@@ -79,6 +79,50 @@
     }
   },
   "entity": {
+    "alarm_control_panel": {
+      "ajax": {
+        "name": "Ajax",
+        "state": {
+          "armed": "Armed",
+          "arming": "Arming",
+          "disarmed": "Disarmed",
+          "disarming": "Disarming",
+          "pending": "Pending",
+          "triggered": "Triggered"
+        },
+        "state_attributes": {
+          "hub_connection_status": {
+            "name": "Hub connection status",
+            "state": {
+              "offline": "Offline",
+              "online": "Online",
+              "unknown": "Unknown"
+            }
+          },
+          "malfunctions_count": {
+            "name": "Malfunctions"
+          },
+          "new_notifications_count": {
+            "name": "New notifications"
+          },
+          "security_state": {
+            "name": "Security state",
+            "state": {
+              "none": "None",
+              "armed": "Armed",
+              "disarmed": "Disarmed",
+              "night_mode": "Night Mode",
+              "partially_armed": "Part Armed",
+              "arming_incomplete": "Arming Incomplete",
+              "awaiting_exit_timer": "Awaiting exit timer",
+              "awaiting_confirmation": "Awaiting confirmation",
+              "awaiting_vds_arming_completion": "Awaiting VDS arming completion",
+              "two_stage_arming_incomplete": "Two-stage arming incomplete"
+            }
+          }
+        }
+      }
+    },
     "binary_sensor": {
       "motion": {
         "name": "Motion detector"
@@ -104,6 +148,12 @@
       "glass_break": {
         "name": "Glass break detector"
       },
+      "tilt": {
+        "name": "Tilt"
+      },
+      "shock": {
+        "name": "Shock"
+      },
       "connection": {
         "name": "Hub connection",
         "state": {
@@ -128,171 +178,12 @@
             "name": "Device list"
           }
         }
-      }
-    },
-    "sensor": {
-      "total_devices": {
-        "name": "Total devices"
-      },
-      "online_devices": {
-        "name": "Online devices"
-      },
-      "devices_with_malfunctions": {
-        "name": "Devices with malfunctions"
-      },
-      "unread_notifications": {
-        "name": "Unread notifications"
-      },
-      "bypassed_devices": {
-        "name": "Bypassed devices"
-      },
-      "last_alert": {
-        "name": "Last alert",
-        "state_attributes": {
-          "event_type": {
-            "name": "Event type"
-          },
-          "device_name": {
-            "name": "Device"
-          },
-          "room_name": {
-            "name": "Room"
-          },
-          "notification_type": {
-            "name": "Notification type"
-          }
-        }
-      },
-      "battery": {
-        "name": "Battery"
-      },
-      "signal_strength": {
-        "name": "Signal strength"
-      },
-      "temperature": {
-        "name": "Temperature"
-      },
-      "humidity": {
-        "name": "Humidity"
-      },
-      "co2": {
-        "name": "CO2"
-      },
-      "malfunctions": {
-        "name": "Malfunctions"
-      },
-      "firmware_version": {
-        "name": "Firmware version"
-      },
-      "hardware_version": {
-        "name": "Hardware version"
-      },
-      "sim_status": {
-        "name": "SIM cards status",
-        "state_attributes": {
-          "sim_slots_total": {
-            "name": "Total SIM slots"
-          },
-          "sim_slots_used": {
-            "name": "Used SIM slots"
-          },
-          "sim_cards": {
-            "name": "SIM cards details"
-          }
-        }
-      },
-      "gsm_signal_level": {
-        "name": "GSM signal level"
-      },
-      "wifi_signal_level": {
-        "name": "Wi-Fi signal level"
-      },
-      "active_connection": {
-        "name": "Active connection"
-      },
-      "network_status": {
-        "name": "Network status"
-      },
-      "gsm_type": {
-        "name": "GSM type",
-        "state": {
-          "UNKNOWN": "Unknown",
-          "2G": "2G",
-          "3G": "3G",
-          "4G": "4G",
-          "5G": "5G"
-        }
-      },
-      "gsm_connection_status": {
-        "name": "GSM connection status",
-        "state": {
-          "DISCONNECTED": "Disconnected",
-          "CONNECTING": "Connecting",
-          "CONNECTED": "Connected",
-          "ERROR": "Error"
-        }
-      },
-      "battery_state": {
-        "name": "Battery state"
-      },
-      "device_color": {
-        "name": "Device color",
-        "state": {
-          "White": "White",
-          "Black": "Black"
-        }
-      },
-      "device_label": {
-        "name": "Device label"
-      },
-      "device_marketing_id": {
-        "name": "Device marketing ID"
-      },
-      "device_state": {
-        "name": "Device state"
-      },
-      "gsm_signal_level": {
-        "name": "Cellular signal (GSM)"
-      },
-      "wifi_signal_level": {
-        "name": "Wi-Fi signal"
-      },
-      "active_connection": {
-        "name": "Active connection"
-      },
-      "network_status": {
-        "name": "Mobile network"
-      },
-      "noise_level_avg": {
-        "name": "Average noise level",
-        "state_attributes": {
-          "channel1": {
-            "name": "Channel 1"
-          },
-          "channel2": {
-            "name": "Channel 2"
-          },
-          "high": {
-            "name": "High noise"
-          },
-          "always_active": {
-            "name": "Always active"
-          },
-          "armed_in_night_mode": {
-            "name": "Armed in night mode"
-          }
-        }
-      }
-    },
-    "binary_sensor": {
-      "system_problems": {
-        "name": "System problems"
       },
       "tamper": {
         "name": "Tamper",
         "state": {
-          "on": "Closed",
-          "off": "Open"
+          "on": "Open",
+          "off": "Secure"
         }
       },
       "moisture": {
@@ -330,9 +221,6 @@
       "battery_connected": {
         "name": "Hub battery"
       },
-      "external_power": {
-        "name": "External power"
-      },
       "cellular_signal": {
         "name": "Cellular signal"
       },
@@ -352,12 +240,524 @@
         "name": "CMS connection"
       }
     },
+    "sensor": {
+      "total_devices": {
+        "name": "Total devices"
+      },
+      "online_devices": {
+        "name": "Online devices"
+      },
+      "devices_with_malfunctions": {
+        "name": "Devices with malfunctions"
+      },
+      "unread_notifications": {
+        "name": "Unread notifications"
+      },
+      "bypassed_devices": {
+        "name": "Bypassed devices"
+      },
+      "recent_events": {
+        "name": "Recent events",
+        "state_attributes": {
+          "event_count": {
+            "name": "Event count"
+          },
+          "events": {
+            "name": "Recent events"
+          },
+          "events_raw": {
+            "name": "Raw data"
+          }
+        }
+      },
+      "last_alert": {
+        "name": "Last alert",
+        "state_attributes": {
+          "event_type": {
+            "name": "Event type"
+          },
+          "device_name": {
+            "name": "Device"
+          },
+          "room_name": {
+            "name": "Room"
+          },
+          "notification_type": {
+            "name": "Notification type"
+          }
+        }
+      },
+      "room": {
+        "name": "Room"
+      },
+      "battery": {
+        "name": "Battery"
+      },
+      "signal_strength": {
+        "name": "Signal strength"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "humidity": {
+        "name": "Humidity"
+      },
+      "co2": {
+        "name": "CO2"
+      },
+      "sensitivity": {
+        "name": "Sensitivity"
+      },
+      "malfunctions": {
+        "name": "Malfunctions"
+      },
+      "firmware_version": {
+        "name": "Firmware version"
+      },
+      "hardware_version": {
+        "name": "Hardware version"
+      },
+      "sim_status": {
+        "name": "SIM cards status",
+        "state_attributes": {
+          "sim_slots_total": {
+            "name": "Total SIM slots"
+          },
+          "sim_slots_used": {
+            "name": "Used SIM slots"
+          },
+          "sim_cards": {
+            "name": "SIM cards details"
+          }
+        }
+      },
+      "gsm_signal_level": {
+        "name": "Cellular signal (GSM)"
+      },
+      "wifi_signal_level": {
+        "name": "Wi-Fi signal"
+      },
+      "active_connection": {
+        "name": "Active connection"
+      },
+      "network_status": {
+        "name": "Mobile network"
+      },
+      "gsm_type": {
+        "name": "GSM type",
+        "state": {
+          "UNKNOWN": "Unknown",
+          "2G": "2G",
+          "3G": "3G",
+          "4G": "4G",
+          "5G": "5G"
+        }
+      },
+      "gsm_connection_status": {
+        "name": "GSM connection status",
+        "state": {
+          "DISCONNECTED": "Disconnected",
+          "CONNECTING": "Connecting",
+          "CONNECTED": "Connected",
+          "ERROR": "Error"
+        }
+      },
+      "battery_state": {
+        "name": "Battery state"
+      },
+      "device_color": {
+        "name": "Device color",
+        "state": {
+          "White": "White",
+          "Black": "Black",
+          "WHITE": "White",
+          "BLACK": "Black"
+        }
+      },
+      "device_label": {
+        "name": "Device label"
+      },
+      "device_marketing_id": {
+        "name": "Device marketing ID"
+      },
+      "device_state": {
+        "name": "Device state"
+      },
+      "hub_battery": {
+        "name": "Hub battery"
+      },
+      "hub_tamper": {
+        "name": "Hub tamper"
+      },
+      "hub_external_power": {
+        "name": "Hub external power"
+      },
+      "hub_ethernet_ip": {
+        "name": "Internal IP Address"
+      },
+      "hub_wifi": {
+        "name": "Hub Wi-Fi",
+        "state_attributes": {
+          "ssid": {
+            "name": "Network"
+          },
+          "ip": {
+            "name": "IP Address"
+          },
+          "signal_level": {
+            "name": "Signal level"
+          },
+          "security": {
+            "name": "Security"
+          },
+          "channel": {
+            "name": "Channel"
+          }
+        }
+      },
+      "hub_gsm": {
+        "name": "Hub GSM / SIM",
+        "state_attributes": {
+          "network_status": {
+            "name": "Network status"
+          },
+          "signal_level": {
+            "name": "Signal level"
+          },
+          "modem_imei": {
+            "name": "Modem IMEI"
+          },
+          "active_sim": {
+            "name": "Active SIM"
+          },
+          "total_sims": {
+            "name": "Total SIMs"
+          },
+          "sim1_apn": {
+            "name": "SIM 1 APN"
+          },
+          "sim1_active": {
+            "name": "SIM 1 active"
+          },
+          "sim1_traffic_tx_kb": {
+            "name": "SIM 1 sent (KB)"
+          },
+          "sim1_traffic_rx_kb": {
+            "name": "SIM 1 received (KB)"
+          },
+          "sim2_apn": {
+            "name": "SIM 2 APN"
+          },
+          "sim2_active": {
+            "name": "SIM 2 active"
+          },
+          "sim2_traffic_tx_kb": {
+            "name": "SIM 2 sent (KB)"
+          },
+          "sim2_traffic_rx_kb": {
+            "name": "SIM 2 received (KB)"
+          }
+        }
+      },
+      "hub_led_brightness": {
+        "name": "Hub LED brightness"
+      },
+      "hub_timezone": {
+        "name": "Hub timezone"
+      },
+      "hub_rooms": {
+        "name": "Rooms",
+        "state_attributes": {
+          "room_names": {
+            "name": "Room list"
+          },
+          "rooms": {
+            "name": "Room details"
+          }
+        }
+      },
+      "hub_users": {
+        "name": "Users",
+        "state_attributes": {
+          "user_names": {
+            "name": "User names"
+          },
+          "users": {
+            "name": "User details"
+          }
+        }
+      },
+      "beep_volume_level": {
+        "name": "Beep Volume"
+      },
+      "alarm_volume_level": {
+        "name": "Alarm Volume"
+      },
+      "alarm_duration": {
+        "name": "Alarm Duration"
+      },
+      "hub_grade_mode": {
+        "name": "Security grade"
+      },
+      "hub_active_channels": {
+        "name": "Active channels",
+        "state_attributes": {
+          "channels": {
+            "name": "Channel list"
+          },
+          "ethernet": {
+            "name": "Ethernet"
+          },
+          "wifi": {
+            "name": "WiFi"
+          },
+          "gsm": {
+            "name": "GSM"
+          }
+        }
+      },
+      "hub_ping_period": {
+        "name": "Ping period"
+      },
+      "hub_offline_delay": {
+        "name": "Offline alarm delay"
+      },
+      "hub_noise_level": {
+        "name": "Radio noise level",
+        "state_attributes": {
+          "channel_1_dbm": {
+            "name": "Channel 1 (dBm)"
+          },
+          "channel_2_dbm": {
+            "name": "Channel 2 (dBm)"
+          },
+          "data_channel_dbm": {
+            "name": "Data channel (dBm)"
+          },
+          "high": {
+            "name": "High noise"
+          }
+        }
+      },
+      "hub_geofence": {
+        "name": "GPS Location",
+        "state_attributes": {
+          "latitude": {
+            "name": "Latitude"
+          },
+          "longitude": {
+            "name": "Longitude"
+          },
+          "radius_meters": {
+            "name": "Radius (meters)"
+          }
+        }
+      },
+      "hub_hardware_version": {
+        "name": "Hardware version",
+        "state_attributes": {
+          "cpu": {
+            "name": "CPU"
+          },
+          "wifi": {
+            "name": "WiFi"
+          },
+          "ethernet": {
+            "name": "Ethernet"
+          },
+          "flash": {
+            "name": "Flash"
+          },
+          "pcb": {
+            "name": "PCB"
+          },
+          "rfm": {
+            "name": "RFM"
+          },
+          "modem": {
+            "name": "Modem"
+          }
+        }
+      },
+      "indicator_light_mode": {
+        "name": "LED mode"
+      },
+      "image_resolution": {
+        "name": "Image resolution"
+      },
+      "photos_per_alarm": {
+        "name": "Photos per alarm"
+      },
+      "led_indication": {
+        "name": "LED indication"
+      },
+      "hub_limits": {
+        "name": "Hub Limits",
+        "state_attributes": {
+          "max_rooms": {
+            "name": "Max Rooms"
+          },
+          "max_groups": {
+            "name": "Max Groups"
+          },
+          "max_cameras": {
+            "name": "Max Cameras"
+          },
+          "max_sensors": {
+            "name": "Max Devices"
+          },
+          "max_users": {
+            "name": "Max Users"
+          }
+        }
+      },
+      "noise_level_avg": {
+        "name": "Average noise level",
+        "state_attributes": {
+          "channel1": {
+            "name": "Channel 1"
+          },
+          "channel2": {
+            "name": "Channel 2"
+          },
+          "high": {
+            "name": "High noise"
+          },
+          "always_active": {
+            "name": "Always active"
+          },
+          "armed_in_night_mode": {
+            "name": "Armed in night mode"
+          }
+        }
+      }
+    },
+    "number": {
+      "tilt_degrees": {
+        "name": "Tilt threshold"
+      }
+    },
+    "select": {
+      "shock_sensitivity": {
+        "name": "Shock sensitivity",
+        "state": {
+          "low": "Low",
+          "normal": "Normal",
+          "high": "High"
+        }
+      }
+    },
     "button": {
       "panic": {
         "name": "Panic Button"
       }
     },
     "switch": {
+      "always_active": {
+        "name": "Always active",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "night_mode": {
+        "name": "Active in night mode",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "chimes_enabled": {
+        "name": "Chime",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "external_contact_enabled": {
+        "name": "External contact",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "shock_sensor": {
+        "name": "Shock sensor",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "tilt_sensor": {
+        "name": "Tilt sensor",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "ignore_impact": {
+        "name": "Ignore simple impact",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "beep_on_arm_disarm": {
+        "name": "Beep on arming/disarming",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "beep_on_delay": {
+        "name": "Beep on entry/exit delay",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "blink_while_armed": {
+        "name": "Blink while armed",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "indicator_light": {
+        "name": "Indicator light",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "alerts_by_sirens": {
+        "name": "Alerts by sirens",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "siren_trigger_reed": {
+        "name": "Siren on door open",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "siren_trigger_shock": {
+        "name": "Siren on shock",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
+      "siren_trigger_tilt": {
+        "name": "Siren on tilt",
+        "state": {
+          "on": "Enabled",
+          "off": "Disabled"
+        }
+      },
       "socket": {
         "name": "Socket",
         "state_attributes": {

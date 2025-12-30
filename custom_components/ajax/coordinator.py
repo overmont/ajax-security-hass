@@ -35,10 +35,12 @@ from .const import (
     NOTIFICATION_FILTER_NONE,
     UPDATE_INTERVAL,
     UPDATE_INTERVAL_ARMED,
+    UPDATE_INTERVAL_DOOR_SENSORS,
 )
 from .models import (
     AjaxAccount,
     AjaxDevice,
+    AjaxGroup,
     AjaxRoom,
     AjaxSpace,
     DeviceType,
@@ -112,6 +114,9 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         self._fast_poll_tasks: dict[
             str, asyncio.Task
         ] = {}  # device_id -> fast polling task for door sensors
+        self._door_sensor_poll_task: asyncio.Task | None = (
+            None  # Continuous door sensor polling when disarmed
+        )
         self._initial_load_done: bool = False  # Track if initial data load is complete
         self._pending_ha_actions: dict[
             str, float
@@ -146,10 +151,13 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
 
         When armed or in night mode, poll faster (10s) to detect door sensor
         changes quickly. When disarmed, poll slower (30s) to reduce API calls.
+        Also manages door sensor fast polling (only when disarmed).
 
         Args:
             security_state: Current security state of the space
         """
+        is_disarmed = security_state == SecurityState.DISARMED
+
         if security_state in (
             SecurityState.ARMED,
             SecurityState.NIGHT_MODE,
@@ -172,6 +180,126 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 new_interval,
                 security_state.value,
             )
+
+        # Manage door sensor fast polling based on security state
+        self._manage_door_sensor_polling(is_disarmed)
+
+    def _manage_door_sensor_polling(self, should_poll: bool) -> None:
+        """Start or stop door sensor fast polling.
+
+        Args:
+            should_poll: True to start polling, False to stop
+        """
+        if should_poll and self._door_sensor_poll_task is None:
+            # Start door sensor polling when disarmed
+            self._door_sensor_poll_task = asyncio.create_task(
+                self._async_poll_door_sensors_loop()
+            )
+            _LOGGER.info(
+                "Started door sensor fast polling (every %ds)",
+                UPDATE_INTERVAL_DOOR_SENSORS,
+            )
+        elif not should_poll and self._door_sensor_poll_task is not None:
+            # Stop door sensor polling when armed
+            self._door_sensor_poll_task.cancel()
+            self._door_sensor_poll_task = None
+            _LOGGER.info("Stopped door sensor fast polling (system armed)")
+
+    async def _async_poll_door_sensors_loop(self) -> None:
+        """Continuous polling loop for door sensors when disarmed."""
+        try:
+            while True:
+                await asyncio.sleep(UPDATE_INTERVAL_DOOR_SENSORS)
+
+                if not self.account:
+                    continue
+
+                # Poll door sensors for each space
+                for space_id, space in self.account.spaces.items():
+                    # Skip if system is not disarmed
+                    if space.security_state != SecurityState.DISARMED:
+                        continue
+
+                    # Find all door contact devices
+                    door_sensors = [
+                        device
+                        for device in space.devices.values()
+                        if device.type == DeviceType.DOOR_CONTACT
+                    ]
+
+                    if not door_sensors:
+                        continue
+
+                    try:
+                        # Get all devices with enriched data (includes reedClosed)
+                        devices_data = await self.api.async_get_devices(
+                            space.hub_id, enrich=True
+                        )
+                        updated = False
+
+                        for device_summary in devices_data:
+                            device_id = device_summary.get("id")
+                            if device_id and device_id in space.devices:
+                                device = space.devices[device_id]
+                                if device.type == DeviceType.DOOR_CONTACT:
+                                    # With enrich=True, detailed data is in "model" sub-object
+                                    device_data = dict(device_summary)
+                                    if "model" in device_summary:
+                                        device_data.update(device_summary["model"])
+
+                                    # Get current state
+                                    old_door_state = device.attributes.get(
+                                        "door_opened"
+                                    )
+
+                                    # Check reedClosed directly from device_data
+                                    reed_closed = device_data.get("reedClosed")
+                                    external_state = device_data.get(
+                                        "externalContactState"
+                                    )
+
+                                    # Calculate new door state
+                                    if reed_closed is not None:
+                                        new_door_state = not reed_closed
+                                    elif external_state is not None:
+                                        new_door_state = external_state != "OK"
+                                    else:
+                                        # Try attributes as fallback
+                                        api_attrs = device_data.get("attributes", {})
+                                        normalized_attrs = (
+                                            self._normalize_device_attributes(
+                                                api_attrs, device.type
+                                            )
+                                        )
+                                        new_door_state = normalized_attrs.get(
+                                            "door_opened", old_door_state
+                                        )
+
+                                    if old_door_state != new_door_state:
+                                        device.attributes["door_opened"] = (
+                                            new_door_state
+                                        )
+                                        _LOGGER.debug(
+                                            "Door sensor %s state changed: %s -> %s",
+                                            device.name,
+                                            old_door_state,
+                                            new_door_state,
+                                        )
+                                        updated = True
+
+                        if updated:
+                            self.async_set_updated_data(self.account)
+
+                    except Exception as err:
+                        _LOGGER.debug(
+                            "Error polling door sensors for space %s: %s",
+                            space_id,
+                            err,
+                        )
+
+        except asyncio.CancelledError:
+            _LOGGER.debug("Door sensor polling loop cancelled")
+            raise
 
     async def _async_update_data(self) -> AjaxAccount:
         """Fetch data from Ajax REST API.
@@ -200,6 +328,12 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 # Mark initial load as complete
                 self._initial_load_done = True
                 _LOGGER.info("Initial data load complete")
+
+                # Start door sensor polling if any space is disarmed
+                for space in self.account.spaces.values():
+                    if space.security_state == SecurityState.DISARMED:
+                        self._manage_door_sensor_polling(True)
+                        break
 
                 # Initialize real-time events in background
                 # Priority: SSE (proxy mode) > SQS (direct mode)
@@ -470,6 +604,21 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             # Get hub details to get the name and state
             try:
                 hub_details = await self.api.async_get_hub(hub_id)
+
+                # Get space details to get the actual space name (e.g., "Maison")
+                space_name = None
+                try:
+                    space_binding = await self.api.async_get_space_by_hub(hub_id)
+                    if space_binding:
+                        space_name = space_binding.get("name")
+                        _LOGGER.debug(
+                            "Found space name '%s' for hub %s", space_name, hub_id
+                        )
+                except Exception as space_err:
+                    _LOGGER.debug(
+                        "Could not get space name for %s: %s", hub_id, space_err
+                    )
+
                 # Get rooms for this hub
                 rooms_data: list[dict] = []
                 try:
@@ -491,9 +640,10 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                         "Could not get rooms for hub %s: %s", hub_id, room_err
                     )
                     rooms_map = {}
-                # Try to get hub name from multiple possible fields
+                # Try to get name: prefer space name, fallback to hub details
                 hub_name = (
-                    hub_details.get("name")
+                    space_name  # Space name from /spaces endpoint (e.g., "Maison")
+                    or hub_details.get("name")
                     or hub_details.get("hubName")
                     or hub_details.get("deviceName")
                     or f"Hub {hub_id[:6]}"  # Use first 6 chars of hub_id as fallback
@@ -560,6 +710,40 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 space._users = users_data  # type: ignore
             except Exception:
                 space._users = []  # type: ignore
+
+            # Fetch groups if groups mode is enabled
+            groups_enabled = hub_details.get("groupsEnabled", False)
+            space.group_mode_enabled = groups_enabled
+            if groups_enabled:
+                try:
+                    groups_data = await self.api.async_get_groups(hub_id)
+                    for group_data in groups_data:
+                        group_id = group_data.get("id")
+                        if group_id:
+                            # Parse group state
+                            group_state_str = group_data.get("state", "DISARMED")
+                            if group_state_str == "ARMED":
+                                group_state = GroupState.ARMED
+                            elif group_state_str == "DISARMED":
+                                group_state = GroupState.DISARMED
+                            else:
+                                group_state = GroupState.NONE
+
+                            space.groups[group_id] = AjaxGroup(
+                                id=group_id,
+                                name=group_data.get("groupName", f"Group {group_id}"),
+                                space_id=space_id,
+                                state=group_state,
+                                bulk_arm_involved=group_data.get(
+                                    "bulkArmInvolved", False
+                                ),
+                                bulk_disarm_involved=group_data.get(
+                                    "bulkDisarmInvolved", False
+                                ),
+                            )
+                    _LOGGER.debug("Hub %s: Loaded %d groups", hub_id, len(space.groups))
+                except Exception as err:
+                    _LOGGER.warning("Failed to get groups for hub %s: %s", hub_id, err)
 
             # Check if SQS/SSE recently updated this hub's state
             # If so, don't overwrite with potentially stale REST data
@@ -1643,6 +1827,61 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             _LOGGER.error("Failed to trigger panic for space %s: %s", space_id, err)
             raise
 
+    async def async_arm_group(
+        self, space_id: str, group_id: str, force: bool = True
+    ) -> None:
+        """Arm a specific group.
+
+        Args:
+            space_id: The space ID (hub_id)
+            group_id: The group ID to arm
+            force: If True, ignore problems and force arm
+        """
+        _LOGGER.info(
+            "Arming group %s in space %s (force=%s)", group_id, space_id, force
+        )
+
+        try:
+            self._register_ha_action(space_id)
+            await self.api.async_arm_group(space_id, group_id, ignore_problems=force)
+            # Update local state
+            space = self.get_space(space_id)
+            if space and group_id in space.groups:
+                space.groups[group_id].state = GroupState.ARMED
+            # Trigger refresh to sync state
+            await self.async_request_refresh()
+
+        except AjaxRestApiError as err:
+            _LOGGER.error(
+                "Failed to arm group %s in space %s: %s", group_id, space_id, err
+            )
+            raise
+
+    async def async_disarm_group(self, space_id: str, group_id: str) -> None:
+        """Disarm a specific group.
+
+        Args:
+            space_id: The space ID (hub_id)
+            group_id: The group ID to disarm
+        """
+        _LOGGER.info("Disarming group %s in space %s", group_id, space_id)
+
+        try:
+            self._register_ha_action(space_id)
+            await self.api.async_disarm_group(space_id, group_id)
+            # Update local state
+            space = self.get_space(space_id)
+            if space and group_id in space.groups:
+                space.groups[group_id].state = GroupState.DISARMED
+            # Trigger refresh to sync state
+            await self.async_request_refresh()
+
+        except AjaxRestApiError as err:
+            _LOGGER.error(
+                "Failed to disarm group %s in space %s: %s", group_id, space_id, err
+            )
+            raise
+
     # ============================================================================
     # Helper methods
     # ============================================================================
@@ -1660,6 +1899,11 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         """Get a room by space and room ID."""
         space = self.get_space(space_id)
         return space.rooms.get(room_id) if space else None
+
+    def get_group(self, space_id: str, group_id: str) -> AjaxGroup | None:
+        """Get a group by space and group ID."""
+        space = self.get_space(space_id)
+        return space.groups.get(group_id) if space else None
 
     async def async_shutdown(self) -> None:
         """Shutdown the coordinator and cleanup resources."""
@@ -1689,6 +1933,13 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                     await task
 
         self._fast_poll_tasks.clear()
+
+        # Stop door sensor polling task
+        if self._door_sensor_poll_task is not None:
+            self._door_sensor_poll_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._door_sensor_poll_task
+            self._door_sensor_poll_task = None
 
         # Close API connection
         await self.api.close()

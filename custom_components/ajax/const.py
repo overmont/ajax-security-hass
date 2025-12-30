@@ -40,3 +40,4 @@ UPDATE_INTERVAL = 30  # Default poll interval (minimum 30s per Ajax API)
 UPDATE_INTERVAL_ARMED = (
     30  # Poll interval when armed/night mode (minimum 30s per Ajax API)
 )
+UPDATE_INTERVAL_DOOR_SENSORS = 5  # Fast poll interval for door sensors when disarmed

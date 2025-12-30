@@ -525,6 +525,26 @@ class AjaxRestApi:
             raise AjaxRestApiError("No user_id available. Call async_login() first.")
         return await self._request("GET", f"user/{self.user_id}/hubs/{hub_id}")
 
+    async def async_get_space_by_hub(self, hub_id: str) -> dict[str, Any] | None:
+        """Get space details by hub ID.
+
+        Args:
+            hub_id: Hub ID to find the associated space
+
+        Returns:
+            Space binding dictionary with id and name, or None if not found
+        """
+        if not self.user_id:
+            raise AjaxRestApiError("No user_id available. Call async_login() first.")
+        # Use query parameter to find space by hubId
+        spaces = await self._request(
+            "GET", f"user/{self.user_id}/spaces?hubId={hub_id}"
+        )
+        # Returns array of SpaceBinding, get first one
+        if spaces and isinstance(spaces, list) and len(spaces) > 0:
+            return spaces[0]
+        return None
+
     async def async_get_rooms(self, hub_id: str) -> list[dict[str, Any]]:
         """Get rooms for a hub.
 
@@ -989,4 +1009,60 @@ class AjaxRestApi:
             "PUT",
             f"user/{self.user_id}/hubs/{hub_id}/commands/arming",
             {"command": command, "ignoreProblems": True},
+        )
+
+    # Group commands
+    async def async_get_groups(self, hub_id: str) -> list[dict[str, Any]]:
+        """Get all groups for a hub.
+
+        Args:
+            hub_id: Hub ID
+
+        Returns:
+            List of group data dictionaries
+        """
+        if not self.user_id:
+            raise AjaxRestApiError("No user_id available. Call async_login() first.")
+
+        return await self._request(
+            "GET",
+            f"user/{self.user_id}/hubs/{hub_id}/groups",
+        )
+
+    async def async_arm_group(
+        self, hub_id: str, group_id: str, ignore_problems: bool = True
+    ) -> None:
+        """Arm a specific group.
+
+        Args:
+            hub_id: Hub ID
+            group_id: Group ID to arm
+            ignore_problems: Whether to ignore sensor problems when arming
+        """
+        if not self.user_id:
+            raise AjaxRestApiError("No user_id available. Call async_login() first.")
+
+        await self._request_no_response(
+            "PUT",
+            f"user/{self.user_id}/hubs/{hub_id}/groups/{group_id}/commands/arming",
+            {"command": "ARM", "ignoreProblems": ignore_problems},
+        )
+
+    async def async_disarm_group(
+        self, hub_id: str, group_id: str, ignore_problems: bool = True
+    ) -> None:
+        """Disarm a specific group.
+
+        Args:
+            hub_id: Hub ID
+            group_id: Group ID to disarm
+            ignore_problems: Whether to ignore sensor problems
+        """
+        if not self.user_id:
+            raise AjaxRestApiError("No user_id available. Call async_login() first.")
+
+        await self._request_no_response(
+            "PUT",
+            f"user/{self.user_id}/hubs/{hub_id}/groups/{group_id}/commands/arming",
+            {"command": "DISARM", "ignoreProblems": ignore_problems},
         )

@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AjaxDataCoordinator
-from .models import SecurityState
+from .models import GroupState, SecurityState
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,10 +34,23 @@ async def async_setup_entry(
     entities = []
 
     if coordinator.account:
-        for space_id, _space in coordinator.account.spaces.items():
+        for space_id, space in coordinator.account.spaces.items():
             # Create main alarm control panel for the space (hub)
-            # Note: Groups/zones are now handled as switches in switch.py
             entities.append(AjaxAlarmControlPanel(coordinator, entry, space_id))
+
+            # Create alarm control panel for each group if groups mode is enabled
+            if space.group_mode_enabled and space.groups:
+                for group_id, _group in space.groups.items():
+                    entities.append(
+                        AjaxGroupAlarmControlPanel(
+                            coordinator, entry, space_id, group_id
+                        )
+                    )
+                _LOGGER.info(
+                    "Added %d group alarm panels for space %s",
+                    len(space.groups),
+                    space.name,
+                )
 
     if entities:
         async_add_entities(entities)
@@ -362,3 +375,111 @@ class AjaxAlarmControlPanel(
             }
 
         return attributes
+
+
+class AjaxGroupAlarmControlPanel(
+    CoordinatorEntity[AjaxDataCoordinator], AlarmControlPanelEntity
+):
+    """Representation of an Ajax group alarm control panel.
+
+    Each group in the Ajax system gets its own alarm control panel entity,
+    allowing users to arm/disarm individual groups independently.
+    """
+
+    _attr_supported_features = AlarmControlPanelEntityFeature.ARM_AWAY
+    _attr_code_arm_required = False
+    _attr_available = True  # Always available - keep last known state on API errors
+
+    def __init__(
+        self,
+        coordinator: AjaxDataCoordinator,
+        entry: ConfigEntry,
+        space_id: str,
+        group_id: str,
+    ) -> None:
+        """Initialize the group alarm control panel."""
+        super().__init__(coordinator)
+        self._entry = entry
+        self._space_id = space_id
+        self._group_id = group_id
+
+        # Get initial group data
+        group = coordinator.get_group(space_id, group_id)
+        group_name = group.name if group else "Unknown Group"
+
+        self._attr_name = f"Ajax Group - {group_name}"
+        self._attr_unique_id = f"{entry.entry_id}_group_alarm_{group_id}"
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device information - link to the hub device."""
+        return {
+            "identifiers": {(DOMAIN, self._space_id)},
+        }
+
+    @property
+    def alarm_state(self) -> AlarmControlPanelState | None:
+        """Return the state of the group alarm."""
+        group = self.coordinator.get_group(self._space_id, self._group_id)
+        if not group:
+            return None
+
+        # Map GroupState to Home Assistant AlarmControlPanelState
+        state_map = {
+            GroupState.ARMED: AlarmControlPanelState.ARMED_AWAY,
+            GroupState.DISARMED: AlarmControlPanelState.DISARMED,
+            GroupState.NONE: AlarmControlPanelState.DISARMED,
+        }
+
+        return state_map.get(group.state, AlarmControlPanelState.DISARMED)
+
+    async def async_alarm_disarm(self, code: str | None = None) -> None:
+        """Send disarm command for this group."""
+        _LOGGER.info(
+            "Disarming Ajax group %s in space %s", self._group_id, self._space_id
+        )
+
+        # Optimistic update
+        group = self.coordinator.get_group(self._space_id, self._group_id)
+        if group:
+            group.state = GroupState.DISARMED
+            self.async_write_ha_state()
+
+        try:
+            await self.coordinator.async_disarm_group(self._space_id, self._group_id)
+        except Exception as err:
+            _LOGGER.error("Failed to disarm group: %s", err)
+            await self.coordinator.async_request_refresh()
+            raise
+
+    async def async_alarm_arm_away(self, code: str | None = None) -> None:
+        """Send arm command for this group."""
+        _LOGGER.info("Arming Ajax group %s in space %s", self._group_id, self._space_id)
+
+        # Optimistic update
+        group = self.coordinator.get_group(self._space_id, self._group_id)
+        if group:
+            group.state = GroupState.ARMED
+            self.async_write_ha_state()
+
+        try:
+            await self.coordinator.async_arm_group(self._space_id, self._group_id)
+        except Exception as err:
+            _LOGGER.error("Failed to arm group: %s", err)
+            await self.coordinator.async_request_refresh()
+            raise
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the state attributes."""
+        group = self.coordinator.get_group(self._space_id, self._group_id)
+        if not group:
+            return {}
+
+        return {
+            "group_id": group.id,
+            "group_name": group.name,
+            "space_id": self._space_id,
+            "bulk_arm_involved": group.bulk_arm_involved,
+            "bulk_disarm_involved": group.bulk_disarm_involved,
+        }
