@@ -650,19 +650,21 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 )
                 # Parse security state from hub details
                 # Check night mode first - it can be active even when groups are disarmed
+                hub_state = hub_details.get("state", "DISARMED")
+                # Night mode can be in dedicated fields OR in the state string itself
+                # e.g., state="DISARMED_NIGHT_MODE_ON" means night mode is active
                 night_mode_active = (
                     hub_details.get("nightMode")
                     or hub_details.get("nightModeEnabled")
                     or hub_details.get("nightModeActive")
                     or hub_details.get("isNightMode")
+                    or "NIGHT_MODE_ON" in hub_state.upper()
                 )
-                hub_state = hub_details.get("state", "DISARMED")
                 _LOGGER.debug(
-                    "Hub %s state parsing: state=%s, nightMode=%s, nightModeEnabled=%s",
+                    "Hub %s state parsing: state=%s, night_mode_active=%s",
                     hub_id,
                     hub_state,
-                    hub_details.get("nightMode"),
-                    hub_details.get("nightModeEnabled"),
+                    night_mode_active,
                 )
                 if night_mode_active:
                     security_state = SecurityState.NIGHT_MODE
