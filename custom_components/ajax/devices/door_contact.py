@@ -337,3 +337,69 @@ class DoorContactHandler(AjaxDeviceHandler):
             )
 
         return switches
+
+
+class WireInputHandler(DoorContactHandler):
+    """Handler for MultiTransmitter wired input devices.
+
+    These are wired devices connected to a MultiTransmitter, so they don't have:
+    - Battery (powered by wire)
+    - Signal strength (wired connection)
+    """
+
+    def get_sensors(self) -> list[dict]:
+        """Return sensor entities for wired inputs (no battery/signal)."""
+        # Wired devices don't have battery or signal - skip those sensors
+        # Only return temperature if available
+        sensors = []
+
+        if "temperature" in self.device.attributes:
+            from homeassistant.components.sensor import (
+                SensorDeviceClass,
+                SensorStateClass,
+            )
+            from homeassistant.const import UnitOfTemperature
+
+            sensors.append(
+                {
+                    "key": "temperature",
+                    "translation_key": "temperature",
+                    "device_class": SensorDeviceClass.TEMPERATURE,
+                    "native_unit_of_measurement": UnitOfTemperature.CELSIUS,
+                    "state_class": SensorStateClass.MEASUREMENT,
+                    "value_fn": lambda: self.device.attributes.get("temperature"),
+                    "enabled_by_default": True,
+                }
+            )
+
+        return sensors
+
+    def get_switches(self) -> list[dict]:
+        """Return switch entities for wired inputs."""
+        switches = []
+
+        # Always Active switch
+        switches.append(
+            {
+                "key": "always_active",
+                "translation_key": "always_active",
+                "icon": "mdi:shield-alert",
+                "value_fn": lambda: self.device.attributes.get("always_active", False),
+                "api_key": "alwaysActive",
+                "enabled_by_default": True,
+            }
+        )
+
+        # Night Mode switch
+        switches.append(
+            {
+                "key": "night_mode",
+                "translation_key": "night_mode",
+                "icon": "mdi:weather-night",
+                "value_fn": lambda: self.device.attributes.get("night_mode_arm", False),
+                "api_key": "nightModeArm",
+                "enabled_by_default": True,
+            }
+        )
+
+        return switches

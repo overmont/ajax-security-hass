@@ -37,6 +37,7 @@ from .devices import (
     SirenHandler,
     SmokeDetectorHandler,
     SocketHandler,
+    WireInputHandler,
 )
 from .models import AjaxDevice, AjaxSpace, DeviceType
 
@@ -458,7 +459,7 @@ DEVICE_HANDLERS = {
     DeviceType.MOTION_DETECTOR: MotionDetectorHandler,
     DeviceType.COMBI_PROTECT: MotionDetectorHandler,
     DeviceType.DOOR_CONTACT: DoorContactHandler,
-    DeviceType.WIRE_INPUT: DoorContactHandler,
+    DeviceType.WIRE_INPUT: WireInputHandler,
     DeviceType.SMOKE_DETECTOR: SmokeDetectorHandler,
     DeviceType.FLOOD_DETECTOR: FloodDetectorHandler,
     DeviceType.GLASS_BREAK: GlassBreakHandler,

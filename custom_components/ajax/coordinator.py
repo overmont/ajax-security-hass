@@ -953,10 +953,18 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 device.attributes["temperature"] = device_data.get("temperature")
 
             # Store other useful attributes
+            # For MultiTransmitterWireInput, settings are in wiredDeviceSettings
+            wired_settings = device_data.get("wiredDeviceSettings", {})
+
             if "alwaysActive" in device_data:
                 device.attributes["always_active"] = device_data.get(
                     "alwaysActive", False
                 )
+            elif "alwaysActive" in wired_settings:
+                device.attributes["always_active"] = wired_settings.get(
+                    "alwaysActive", False
+                )
+
             if "nightModeArm" in device_data or "armedInNightMode" in device_data:
                 night_mode_value = device_data.get(
                     "nightModeArm",
@@ -966,6 +974,11 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 device.attributes["night_mode_arm"] = (
                     night_mode_value  # Alias for handlers
                 )
+            elif "nightModeArm" in wired_settings:
+                # MultiTransmitterWireInput: nightModeArm is in wiredDeviceSettings
+                night_mode_value = wired_settings.get("nightModeArm", False)
+                device.attributes["armed_in_night_mode"] = night_mode_value
+                device.attributes["night_mode_arm"] = night_mode_value
 
             # DoorProtect Plus specific attributes
             if "extraContactAware" in device_data:

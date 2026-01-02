@@ -18,7 +18,7 @@ Structure:
 """
 
 from .base import AjaxDeviceHandler
-from .door_contact import DoorContactHandler
+from .door_contact import DoorContactHandler, WireInputHandler
 from .flood_detector import FloodDetectorHandler
 from .glass_break import GlassBreakHandler
 from .hub import HubHandler
@@ -39,4 +39,5 @@ __all__ = [
     "SirenHandler",
     "SmokeDetectorHandler",
     "SocketHandler",
+    "WireInputHandler",
 ]
