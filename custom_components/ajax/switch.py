@@ -254,13 +254,24 @@ class AjaxSwitch(CoordinatorEntity[AjaxDataCoordinator], SwitchEntity):
         self.async_write_ha_state()
 
         # Build the payload
-        payload = {api_key: api_value}
+        # Check if this setting needs to be nested (e.g., wiredDeviceSettings)
+        api_nested_key = self._switch_desc.get("api_nested_key")
+        if api_nested_key:
+            payload = {api_nested_key: {api_key: api_value}}
+        else:
+            payload = {api_key: api_value}
         payload.update(api_extra)
 
         try:
-            await self.coordinator.api.async_update_device(
-                space.hub_id, self._device_id, payload
-            )
+            # Use nested update for settings inside nested structures (e.g., wiredDeviceSettings)
+            if api_nested_key:
+                await self.coordinator.api.async_update_device_nested(
+                    space.hub_id, self._device_id, payload
+                )
+            else:
+                await self.coordinator.api.async_update_device(
+                    space.hub_id, self._device_id, payload
+                )
             _LOGGER.info(
                 "Set %s=%s for device %s",
                 api_key,

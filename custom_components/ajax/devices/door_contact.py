@@ -377,7 +377,7 @@ class WireInputHandler(DoorContactHandler):
         """Return switch entities for wired inputs."""
         switches = []
 
-        # Always Active switch
+        # Always Active switch - nested in wiredDeviceSettings for WireInput
         switches.append(
             {
                 "key": "always_active",
@@ -385,11 +385,12 @@ class WireInputHandler(DoorContactHandler):
                 "icon": "mdi:shield-alert",
                 "value_fn": lambda: self.device.attributes.get("always_active", False),
                 "api_key": "alwaysActive",
+                "api_nested_key": "wiredDeviceSettings",
                 "enabled_by_default": True,
             }
         )
 
-        # Night Mode switch
+        # Night Mode switch - nested in wiredDeviceSettings for WireInput
         switches.append(
             {
                 "key": "night_mode",
@@ -397,6 +398,7 @@ class WireInputHandler(DoorContactHandler):
                 "icon": "mdi:weather-night",
                 "value_fn": lambda: self.device.attributes.get("night_mode_arm", False),
                 "api_key": "nightModeArm",
+                "api_nested_key": "wiredDeviceSettings",
                 "enabled_by_default": True,
             }
         )

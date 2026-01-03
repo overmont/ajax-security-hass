@@ -896,6 +896,54 @@ class AjaxRestApi:
             updated_device,
         )
 
+    async def async_update_device_nested(
+        self,
+        hub_id: str,
+        device_id: str,
+        settings: dict[str, Any],
+    ) -> None:
+        """Update device settings with deep merge for nested structures.
+
+        This method properly handles nested settings like wiredDeviceSettings
+        by merging them with existing values instead of replacing.
+
+        Args:
+            hub_id: Hub ID
+            device_id: Device ID
+            settings: Dictionary of settings to update, can include nested dicts
+
+        Raises:
+            AjaxRestApiError: If the update fails
+        """
+        if not self.user_id:
+            raise AjaxRestApiError("No user_id available. Call async_login() first.")
+
+        # First get current device data
+        current_device = await self.async_get_device(hub_id, device_id)
+
+        # Deep merge settings with current device data
+        updated_device = self._deep_merge(current_device, settings)
+
+        await self._request_no_response(
+            "PUT",
+            f"user/{self.user_id}/hubs/{hub_id}/devices/{device_id}",
+            updated_device,
+        )
+
+    def _deep_merge(self, base: dict, updates: dict) -> dict:
+        """Deep merge two dictionaries, preserving nested structures."""
+        result = base.copy()
+        for key, value in updates.items():
+            if (
+                key in result
+                and isinstance(result[key], dict)
+                and isinstance(value, dict)
+            ):
+                result[key] = self._deep_merge(result[key], value)
+            else:
+                result[key] = value
+        return result
+
     async def _request_no_response(
         self,
         method: str,
