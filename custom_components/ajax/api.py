@@ -924,6 +924,12 @@ class AjaxRestApi:
         # Deep merge settings with current device data
         updated_device = self._deep_merge(current_device, settings)
 
+        # Remove wiringSchemeSpecificDetails - it causes API 422 errors
+        # when customAlarmType is null (Ajax API bug)
+        # Only wiredDeviceSettings is needed for WireInput updates
+        if "wiringSchemeSpecificDetails" in updated_device:
+            del updated_device["wiringSchemeSpecificDetails"]
+
         await self._request_no_response(
             "PUT",
             f"user/{self.user_id}/hubs/{hub_id}/devices/{device_id}",
