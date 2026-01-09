@@ -1078,7 +1078,16 @@ def parse_event_code(
         language: Language code for message translation (fr, en, es)
 
     Returns:
-        Dict with action, message, category, is_alarm, device_type or None if not found
+        Dict with action, message, category, is_alarm, device_type, transition or None if not found
+
+    Event code format: M_XX_YY
+    - M = signal type (fixed)
+    - XX = device type (hex)
+    - YY = event signal (hex)
+
+    Transition is determined by the last digit of the event signal:
+    - Even (0, 2, 4, 6, 8, A, C, E) = TRIGGERED (alarm/open state)
+    - Odd (1, 3, 5, 7, 9, B, D, F) = RECOVERED (restored/closed state)
     """
     if not event_code:
         return None
@@ -1086,9 +1095,32 @@ def parse_event_code(
     # Normalize the code (uppercase)
     code = event_code.upper()
 
+    # Determine transition from event code (M_XX_YY format)
+    # Last character of event signal determines state:
+    # Even = TRIGGERED, Odd = RECOVERED
+    transition = "TRIGGERED"
+    if code.startswith("M_") and len(code) >= 7:
+        try:
+            # Get the last character of the event signal (YY part)
+            last_char = code[-1]
+            # Convert hex digit to int and check if odd
+            if int(last_char, 16) % 2 == 1:
+                transition = "RECOVERED"
+        except ValueError:
+            pass  # Keep default TRIGGERED if parsing fails
+
     # Look up in our mapping
     if code not in EVENT_CODES:
-        return None
+        # Return basic info even if not in mapping
+        return {
+            "action": "unknown",
+            "message": event_code,
+            "category": "unknown",
+            "is_alarm": False,
+            "device_type": None,
+            "event_code": code,
+            "transition": transition,
+        }
 
     action_key, is_alarm = EVENT_CODES[code]
     category = ACTION_CATEGORIES.get(action_key, "unknown")
@@ -1102,6 +1134,7 @@ def parse_event_code(
         "is_alarm": is_alarm,
         "device_type": device_type,
         "event_code": code,
+        "transition": transition,
     }
 
 
