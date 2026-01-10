@@ -22,13 +22,12 @@ class RepeaterHandler(AjaxDeviceHandler):
 
     def get_binary_sensors(self) -> list[dict]:
         """Return binary sensor entities for repeaters."""
+        # Note: No translation_key needed - HA provides automatic translation for TAMPER device_class
         sensors = [
             # Tamper sensor
             {
                 "key": "tamper",
-                "translation_key": "tamper",
                 "device_class": BinarySensorDeviceClass.TAMPER,
-                "icon": "mdi:lock-open-alert",
                 "value_fn": lambda: self.device.attributes.get("tampered", False),
                 "enabled_by_default": True,
             },
@@ -41,10 +40,10 @@ class RepeaterHandler(AjaxDeviceHandler):
         sensors = []
 
         # Battery level
+        # Note: No translation_key needed - HA provides automatic translation for BATTERY device_class
         sensors.append(
             {
                 "key": "battery",
-                "translation_key": "battery",
                 "device_class": SensorDeviceClass.BATTERY,
                 "native_unit_of_measurement": PERCENTAGE,
                 "state_class": SensorStateClass.MEASUREMENT,

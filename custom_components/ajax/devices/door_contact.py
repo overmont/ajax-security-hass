@@ -30,10 +30,10 @@ class DoorContactHandler(AjaxDeviceHandler):
 
         # Main door sensor - always create it even if attribute doesn't exist yet
         # The attribute will be populated by SQS notifications
+        # Note: No translation_key needed - HA provides automatic translation for DOOR device_class
         sensors.append(
             {
                 "key": "door",
-                "translation_key": "door",
                 "device_class": BinarySensorDeviceClass.DOOR,
                 "value_fn": lambda: self.device.attributes.get("door_opened", False),
                 "enabled_by_default": True,
@@ -58,12 +58,11 @@ class DoorContactHandler(AjaxDeviceHandler):
         # Note: "armed_in_night_mode" is now a switch, not a binary sensor
 
         # Tamper / Couvercle - inverted: False = closed (OK), True = open (problem)
+        # Note: No translation_key needed - HA provides automatic translation for TAMPER device_class
         sensors.append(
             {
                 "key": "tamper",
-                "translation_key": "tamper",
                 "device_class": BinarySensorDeviceClass.TAMPER,
-                "icon": "mdi:lock-open-alert",
                 "value_fn": lambda: self.device.attributes.get("tampered", False),
                 "enabled_by_default": True,
             }
@@ -108,10 +107,10 @@ class DoorContactHandler(AjaxDeviceHandler):
         sensors = []
 
         # Battery level - always create even if None, will be updated by notifications
+        # Note: No translation_key needed - HA provides automatic translation for BATTERY device_class
         sensors.append(
             {
                 "key": "battery",
-                "translation_key": "battery",
                 "device_class": SensorDeviceClass.BATTERY,
                 "native_unit_of_measurement": PERCENTAGE,
                 "state_class": SensorStateClass.MEASUREMENT,
@@ -138,11 +137,11 @@ class DoorContactHandler(AjaxDeviceHandler):
         )
 
         # Temperature (DoorProtect Plus)
+        # Note: No translation_key needed - HA provides automatic translation for TEMPERATURE device_class
         if "temperature" in self.device.attributes:
             sensors.append(
                 {
                     "key": "temperature",
-                    "translation_key": "temperature",
                     "device_class": SensorDeviceClass.TEMPERATURE,
                     "native_unit_of_measurement": UnitOfTemperature.CELSIUS,
                     "state_class": SensorStateClass.MEASUREMENT,
@@ -353,10 +352,10 @@ class WireInputHandler(DoorContactHandler):
 
         TWO_EOL wiring scheme provides tamper detection via contactOneDetails.
         """
+        # Note: No translation_key needed - HA provides automatic translation for device_class
         sensors = [
             {
                 "key": "door",
-                "translation_key": "door",
                 "device_class": BinarySensorDeviceClass.DOOR,
                 "value_fn": lambda: self.device.attributes.get("door_opened", False),
                 "enabled_by_default": True,
@@ -368,9 +367,7 @@ class WireInputHandler(DoorContactHandler):
             sensors.append(
                 {
                     "key": "tamper",
-                    "translation_key": "tamper",
                     "device_class": BinarySensorDeviceClass.TAMPER,
-                    "icon": "mdi:lock-open-alert",
                     "value_fn": lambda: self.device.attributes.get("tampered", False),
                     "enabled_by_default": True,
                 }
@@ -384,6 +381,7 @@ class WireInputHandler(DoorContactHandler):
         # Only return temperature if available
         sensors = []
 
+        # Note: No translation_key needed - HA provides automatic translation for TEMPERATURE device_class
         if "temperature" in self.device.attributes:
             from homeassistant.components.sensor import (
                 SensorDeviceClass,
@@ -394,7 +392,6 @@ class WireInputHandler(DoorContactHandler):
             sensors.append(
                 {
                     "key": "temperature",
-                    "translation_key": "temperature",
                     "device_class": SensorDeviceClass.TEMPERATURE,
                     "native_unit_of_measurement": UnitOfTemperature.CELSIUS,
                     "state_class": SensorStateClass.MEASUREMENT,

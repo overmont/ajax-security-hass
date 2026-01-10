@@ -26,10 +26,10 @@ class SmokeDetectorHandler(AjaxDeviceHandler):
 
     def get_binary_sensors(self) -> list[dict]:
         """Return binary sensor entities for smoke detectors."""
+        # Note: No translation_key needed - HA provides automatic translation for device_class
         sensors = [
             {
                 "key": "smoke",
-                "translation_key": "smoke",
                 "device_class": BinarySensorDeviceClass.SMOKE,
                 # Note: Ajax API uses 'state' field - ALARM when smoke detected
                 "value_fn": lambda: self.device.attributes.get("state") == "ALARM",
@@ -38,9 +38,7 @@ class SmokeDetectorHandler(AjaxDeviceHandler):
             # Note: "armed_in_night_mode" is now a switch, not a binary sensor
             {
                 "key": "tamper",
-                "translation_key": "tamper",
                 "device_class": BinarySensorDeviceClass.TAMPER,
-                "icon": "mdi:lock-open-alert",
                 "value_fn": lambda: self.device.attributes.get("tampered", False),
                 "enabled_by_default": True,
             },
@@ -52,7 +50,6 @@ class SmokeDetectorHandler(AjaxDeviceHandler):
             sensors.append(
                 {
                     "key": "gas",
-                    "translation_key": "gas",
                     "device_class": BinarySensorDeviceClass.GAS,
                     # CO alarm indicated by specific state or attribute
                     "value_fn": lambda: self.device.attributes.get("co_alarm", False),
@@ -67,10 +64,10 @@ class SmokeDetectorHandler(AjaxDeviceHandler):
         sensors = []
 
         # Battery level - always create (all FireProtect are battery powered)
+        # Note: No translation_key needed - HA provides automatic translation for BATTERY device_class
         sensors.append(
             {
                 "key": "battery",
-                "translation_key": "battery",
                 "device_class": SensorDeviceClass.BATTERY,
                 "native_unit_of_measurement": PERCENTAGE,
                 "state_class": SensorStateClass.MEASUREMENT,
@@ -97,11 +94,11 @@ class SmokeDetectorHandler(AjaxDeviceHandler):
         )
 
         # Temperature (FireProtect Plus, FireProtect 2)
+        # Note: No translation_key needed - HA provides automatic translation for TEMPERATURE device_class
         if "temperature" in self.device.attributes:
             sensors.append(
                 {
                     "key": "temperature",
-                    "translation_key": "temperature",
                     "device_class": SensorDeviceClass.TEMPERATURE,
                     "native_unit_of_measurement": UnitOfTemperature.CELSIUS,
                     "state_class": SensorStateClass.MEASUREMENT,
@@ -111,11 +108,11 @@ class SmokeDetectorHandler(AjaxDeviceHandler):
             )
 
         # CO level (FireProtect Plus, FireProtect 2)
+        # Note: No translation_key needed - HA provides automatic translation for CO device_class
         if "co_level" in self.device.attributes:
             sensors.append(
                 {
                     "key": "co_level",
-                    "translation_key": "co_level",
                     "device_class": SensorDeviceClass.CO,
                     "native_unit_of_measurement": "ppm",
                     "state_class": SensorStateClass.MEASUREMENT,

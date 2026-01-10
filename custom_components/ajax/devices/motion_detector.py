@@ -28,10 +28,10 @@ class MotionDetectorHandler(AjaxDeviceHandler):
 
     def get_binary_sensors(self) -> list[dict]:
         """Return binary sensor entities for motion detectors."""
+        # Note: No translation_key needed - HA provides automatic translation for device_class
         sensors = [
             {
                 "key": "motion",
-                "translation_key": "motion",
                 "device_class": BinarySensorDeviceClass.MOTION,
                 # Note: Ajax API doesn't provide real-time motion detection when disarmed.
                 # The 'state' field only shows ALARM when armed and motion triggers alarm.
@@ -42,9 +42,7 @@ class MotionDetectorHandler(AjaxDeviceHandler):
             # Note: "armed_in_night_mode" is now a switch, not a binary sensor
             {
                 "key": "tamper",
-                "translation_key": "tamper",
                 "device_class": BinarySensorDeviceClass.TAMPER,
-                "icon": "mdi:lock-open-alert",
                 "value_fn": lambda: self.device.attributes.get("tampered", False),
                 "enabled_by_default": True,
             },
@@ -72,10 +70,10 @@ class MotionDetectorHandler(AjaxDeviceHandler):
         sensors = []
 
         # Battery level - always create
+        # Note: No translation_key needed - HA provides automatic translation for BATTERY device_class
         sensors.append(
             {
                 "key": "battery",
-                "translation_key": "battery",
                 "device_class": SensorDeviceClass.BATTERY,
                 "native_unit_of_measurement": PERCENTAGE,
                 "state_class": SensorStateClass.MEASUREMENT,
@@ -102,11 +100,11 @@ class MotionDetectorHandler(AjaxDeviceHandler):
         )
 
         # Temperature
+        # Note: No translation_key needed - HA provides automatic translation for TEMPERATURE device_class
         if "temperature" in self.device.attributes:
             sensors.append(
                 {
                     "key": "temperature",
-                    "translation_key": "temperature",
                     "device_class": SensorDeviceClass.TEMPERATURE,
                     "native_unit_of_measurement": UnitOfTemperature.CELSIUS,
                     "state_class": SensorStateClass.MEASUREMENT,

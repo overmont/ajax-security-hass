@@ -656,10 +656,18 @@ class AjaxDeviceSensor(CoordinatorEntity[AjaxDataCoordinator], SensorEntity):
         self._sensor_desc = sensor_desc
 
         self._attr_unique_id = f"{device_id}_{sensor_key}"
-        self._attr_translation_key = sensor_desc.get("translation_key", sensor_key)
 
+        # Set device class if provided
         if "device_class" in sensor_desc:
             self._attr_device_class = sensor_desc["device_class"]
+
+        # Set translation key only if explicitly provided
+        # If device_class is set and no translation_key, HA will use automatic naming
+        if "translation_key" in sensor_desc:
+            self._attr_translation_key = sensor_desc["translation_key"]
+        elif "device_class" not in sensor_desc:
+            # No device_class, use sensor_key as fallback translation key
+            self._attr_translation_key = sensor_key
 
         if "native_unit_of_measurement" in sensor_desc:
             self._attr_native_unit_of_measurement = sensor_desc[

@@ -44,11 +44,10 @@ class HubHandler(AjaxDeviceHandler):
                 "value_fn": lambda: bool(self.device.malfunctions),
                 "enabled_by_default": True,
             },
+            # Note: No translation_key needed - HA provides automatic translation for TAMPER device_class
             {
                 "key": "tamper",
-                "translation_key": "tamper",
                 "device_class": BinarySensorDeviceClass.TAMPER,
-                "icon": "mdi:lock-open-alert",
                 "value_fn": lambda: self.device.attributes.get("tampered", False),
                 "enabled_by_default": True,
             },
@@ -131,11 +130,11 @@ class HubHandler(AjaxDeviceHandler):
         sensors = []
 
         # Hub battery level
+        # Note: No translation_key needed - HA provides automatic translation for BATTERY device_class
         if "battery_level" in self.device.attributes:
             sensors.append(
                 {
                     "key": "battery",
-                    "translation_key": "battery",
                     "device_class": SensorDeviceClass.BATTERY,
                     "native_unit_of_measurement": PERCENTAGE,
                     "state_class": SensorStateClass.MEASUREMENT,

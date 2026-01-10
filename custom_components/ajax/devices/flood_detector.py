@@ -25,10 +25,10 @@ class FloodDetectorHandler(AjaxDeviceHandler):
 
     def get_binary_sensors(self) -> list[dict]:
         """Return binary sensor entities for flood detectors."""
+        # Note: No translation_key needed - HA provides automatic translation for device_class
         return [
             {
                 "key": "moisture",
-                "translation_key": "moisture",
                 "device_class": BinarySensorDeviceClass.MOISTURE,
                 # Note: Ajax API uses 'state' field - ALARM when leak detected
                 "value_fn": lambda: self.device.attributes.get("state") == "ALARM",
@@ -37,9 +37,7 @@ class FloodDetectorHandler(AjaxDeviceHandler):
             # Note: "armed_in_night_mode" is now a switch, not a binary sensor
             {
                 "key": "tamper",
-                "translation_key": "tamper",
                 "device_class": BinarySensorDeviceClass.TAMPER,
-                "icon": "mdi:lock-open-alert",
                 "value_fn": lambda: self.device.attributes.get("tampered", False),
                 "enabled_by_default": True,
             },
@@ -50,10 +48,10 @@ class FloodDetectorHandler(AjaxDeviceHandler):
         sensors = []
 
         # Battery level - always create (all LeaksProtect are battery powered)
+        # Note: No translation_key needed - HA provides automatic translation for BATTERY device_class
         sensors.append(
             {
                 "key": "battery",
-                "translation_key": "battery",
                 "device_class": SensorDeviceClass.BATTERY,
                 "native_unit_of_measurement": PERCENTAGE,
                 "state_class": SensorStateClass.MEASUREMENT,
@@ -80,11 +78,11 @@ class FloodDetectorHandler(AjaxDeviceHandler):
         )
 
         # Temperature (some LeaksProtect models have temperature sensor)
+        # Note: No translation_key needed - HA provides automatic translation for TEMPERATURE device_class
         if "temperature" in self.device.attributes:
             sensors.append(
                 {
                     "key": "temperature",
-                    "translation_key": "temperature",
                     "device_class": SensorDeviceClass.TEMPERATURE,
                     "native_unit_of_measurement": UnitOfTemperature.CELSIUS,
                     "state_class": SensorStateClass.MEASUREMENT,

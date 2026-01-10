@@ -31,13 +31,12 @@ class SirenHandler(AjaxDeviceHandler):
         # Note: "armed_in_night_mode" is now a switch, not a binary sensor
 
         # Tamper / Couvercle - only if device has tamper sensor (not None)
+        # Note: No translation_key needed - HA provides automatic translation for TAMPER device_class
         if self.device.attributes.get("tampered") is not None:
             sensors.append(
                 {
                     "key": "tamper",
-                    "translation_key": "tamper",
                     "device_class": BinarySensorDeviceClass.TAMPER,
-                    "icon": "mdi:lock-open-alert",
                     "value_fn": lambda: self.device.attributes.get("tampered", False),
                     "enabled_by_default": True,
                 }
@@ -50,11 +49,11 @@ class SirenHandler(AjaxDeviceHandler):
         sensors = []
 
         # Battery level - only create if device has battery
+        # Note: No translation_key needed - HA provides automatic translation for BATTERY device_class
         if self.device.battery_level is not None:
             sensors.append(
                 {
                     "key": "battery",
-                    "translation_key": "battery",
                     "device_class": SensorDeviceClass.BATTERY,
                     "native_unit_of_measurement": PERCENTAGE,
                     "state_class": SensorStateClass.MEASUREMENT,
@@ -78,11 +77,11 @@ class SirenHandler(AjaxDeviceHandler):
             )
 
         # Temperature
+        # Note: No translation_key needed - HA provides automatic translation for TEMPERATURE device_class
         if "temperature" in self.device.attributes:
             sensors.append(
                 {
                     "key": "temperature",
-                    "translation_key": "temperature",
                     "device_class": SensorDeviceClass.TEMPERATURE,
                     "native_unit_of_measurement": UnitOfTemperature.CELSIUS,
                     "state_class": SensorStateClass.MEASUREMENT,

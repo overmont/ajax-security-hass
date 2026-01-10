@@ -171,26 +171,8 @@
       }
     },
     "binary_sensor": {
-      "motion": {
-        "name": "Détecteur de mouvement"
-      },
-      "door": {
-        "name": "Capteur de porte"
-      },
-      "window": {
-        "name": "Capteur de fenêtre"
-      },
       "external_contact": {
         "name": "Porte (contact externe)"
-      },
-      "smoke": {
-        "name": "Détecteur de fumée"
-      },
-      "gas": {
-        "name": "Détecteur de gaz"
-      },
-      "water": {
-        "name": "Détecteur d'inondation"
       },
       "glass_break": {
         "name": "Détecteur de bris de vitre"
@@ -220,27 +202,8 @@
           }
         }
       },
-      "tamper": {
-        "name": "Couvercle",
-        "state": {
-          "on": "Ouvert",
-          "off": "Fermé"
-        }
-      },
-      "moisture": {
-        "name": "Humidité"
-      },
       "external_power": {
         "name": "Alimentation externe"
-      },
-      "tampered": {
-        "name": "Sabotage"
-      },
-      "always_active": {
-        "name": "Toujours actif"
-      },
-      "armed_in_night_mode": {
-        "name": "Armé en mode nuit"
       },
       "tilt": {
         "name": "Capteur d'inclinaison"
@@ -262,14 +225,8 @@
           }
         }
       },
-      "externally_powered": {
-        "name": "Alimentation externe"
-      },
       "battery_connected": {
         "name": "Batterie Hub"
-      },
-      "cellular_signal": {
-        "name": "Signal cellulaire"
       },
       "gsm_antenna": {
         "name": "Antenne GSM"
@@ -279,12 +236,6 @@
       },
       "wings_radio": {
         "name": "Radio Wings"
-      },
-      "system_health": {
-        "name": "État du système"
-      },
-      "cms_connection": {
-        "name": "Connexion CMS"
       }
     },
     "sensor": {
@@ -319,18 +270,6 @@
             "name": "Type de notification"
           }
         }
-      },
-      "co2": {
-        "name": "CO2"
-      },
-      "temperature": {
-        "name": "Température"
-      },
-      "humidity": {
-        "name": "Humidité"
-      },
-      "battery": {
-        "name": "Batterie"
       },
       "signal_strength": {
         "name": "Force du signal"

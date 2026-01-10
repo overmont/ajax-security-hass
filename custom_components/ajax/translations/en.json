@@ -125,26 +125,8 @@
       }
     },
     "binary_sensor": {
-      "motion": {
-        "name": "Motion detector"
-      },
-      "door": {
-        "name": "Door sensor"
-      },
-      "window": {
-        "name": "Window sensor"
-      },
       "external_contact": {
         "name": "Door (external contact)"
-      },
-      "smoke": {
-        "name": "Smoke detector"
-      },
-      "gas": {
-        "name": "Gas detector"
-      },
-      "water": {
-        "name": "Flood detector"
       },
       "glass_break": {
         "name": "Glass break detector"
@@ -180,27 +162,8 @@
           }
         }
       },
-      "tamper": {
-        "name": "Tamper",
-        "state": {
-          "on": "Open",
-          "off": "Secure"
-        }
-      },
-      "moisture": {
-        "name": "Moisture"
-      },
       "external_power": {
         "name": "External power"
-      },
-      "tampered": {
-        "name": "Tampered"
-      },
-      "always_active": {
-        "name": "Always active"
-      },
-      "armed_in_night_mode": {
-        "name": "Armed in night mode"
       },
       "problem": {
         "name": "Problem detected",
@@ -216,14 +179,8 @@
           }
         }
       },
-      "externally_powered": {
-        "name": "External power supply"
-      },
       "battery_connected": {
         "name": "Hub battery"
-      },
-      "cellular_signal": {
-        "name": "Cellular signal"
       },
       "gsm_antenna": {
         "name": "GSM antenna"
@@ -233,12 +190,6 @@
       },
       "wings_radio": {
         "name": "Wings radio"
-      },
-      "system_health": {
-        "name": "System health"
-      },
-      "cms_connection": {
-        "name": "CMS connection"
       }
     },
     "sensor": {
@@ -294,20 +245,8 @@
       "room": {
         "name": "Room"
       },
-      "battery": {
-        "name": "Battery"
-      },
       "signal_strength": {
         "name": "Signal strength"
-      },
-      "temperature": {
-        "name": "Temperature"
-      },
-      "humidity": {
-        "name": "Humidity"
-      },
-      "co2": {
-        "name": "CO2"
       },
       "sensitivity": {
         "name": "Sensitivity",
