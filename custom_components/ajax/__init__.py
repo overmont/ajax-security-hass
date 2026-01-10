@@ -269,8 +269,12 @@ async def _async_setup_services(
             "devices": all_devices,
             "cameras": all_cameras,
         }
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(output_data, f, indent=2, default=str, ensure_ascii=False)
+
+        def write_json():
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(output_data, f, indent=2, default=str, ensure_ascii=False)
+
+        await hass.async_add_executor_job(write_json)
 
         _LOGGER.info(
             "Raw data written to %s (%d devices, %d cameras)",
