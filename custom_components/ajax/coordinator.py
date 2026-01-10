@@ -930,12 +930,6 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             room_id = device_data.get("roomId", device_data.get("room_id"))
             rooms_map = getattr(space, "_rooms_map", {})
             room_name = rooms_map.get(room_id) if room_id else None
-            _LOGGER.debug(
-                "Device %s: roomId=%s, room_name=%s",
-                device_data.get("deviceName", device_id),
-                room_id,
-                room_name,
-            )
 
             # Create or update device
             if device_id not in space.devices:
@@ -1144,17 +1138,6 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                         door_opened = contact_state != "OK"
 
                 device.attributes["door_opened"] = door_opened
-
-                # Debug log for WireInput door state
-                _LOGGER.debug(
-                    "WireInput %s: extState=%s, wiringType=%s, contactState=%s -> door_opened=%s",
-                    device.name if hasattr(device, "name") else device_id,
-                    ext_state,
-                    wiring_type,
-                    wiring_details.get("contactState")
-                    or wiring_details.get("contactTwoDetails", {}).get("contactState"),
-                    door_opened,
-                )
 
             # Sensitivity (GlassProtect, MotionProtect, etc.)
             if "sensitivity" in device_data:
