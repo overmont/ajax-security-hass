@@ -28,10 +28,22 @@ jobs:
             -x "ajax/**/__pycache__/*" \
             -x "ajax/**/*.pyc"
 
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          # Extract section between current version and next version header
+          NOTES=$(awk "/^## \[$VERSION\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md)
+          # Handle multi-line output
+          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
           files: ajax-hass.zip
+          body: ${{ steps.changelog.outputs.NOTES }}
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
