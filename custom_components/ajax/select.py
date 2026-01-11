@@ -12,6 +12,7 @@ from typing import Any
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -122,9 +123,16 @@ class AjaxShockSensitivitySelect(AjaxDoorPlusBaseSelect):
         """Change the shock sensor sensitivity."""
         space = self.coordinator.get_space(self._space_id)
         if not space:
-            return
+            raise HomeAssistantError("Space not found")
 
         value = SHOCK_SENSITIVITY_VALUES.get(option, 0)
+
+        _LOGGER.debug(
+            "Setting shockSensorSensitivity=%d (%s) for device %s",
+            value,
+            option,
+            self._device_id,
+        )
 
         try:
             await self.coordinator.api.async_update_device(
@@ -139,3 +147,6 @@ class AjaxShockSensitivitySelect(AjaxDoorPlusBaseSelect):
             await self.coordinator.async_request_refresh()
         except Exception as err:
             _LOGGER.error("Failed to set shockSensorSensitivity: %s", err)
+            raise HomeAssistantError(
+                f"Failed to change shock sensitivity: {err}"
+            ) from err

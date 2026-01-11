@@ -973,6 +973,39 @@ class AjaxRestApi:
             f"devices/{nvr_id}/recordings?cameraId={camera_id}&start={start}&end={end}",
         )
 
+    # Fields that should not be sent in device update requests (read-only or internal)
+    DEVICE_UPDATE_EXCLUDE_FIELDS = {
+        # Identifiers (read-only)
+        "id",
+        "hubId",
+        "spaceId",
+        "serial",
+        # Type info (read-only)
+        "type",
+        "deviceType",
+        "deviceCategory",
+        # Version info (read-only)
+        "firmwareVersion",
+        "hardwareVersion",
+        # State/status fields (computed)
+        "online",
+        "state",
+        "status",
+        "batteryLevel",
+        "batteryChargeLevelPercentage",
+        "signalLevel",
+        # Timestamps (read-only)
+        "createdAt",
+        "updatedAt",
+        "lastSeen",
+        "lastSeenAt",
+        # Computed/internal fields that cause API validation errors
+        "wiringSchemeSpecificDetails",
+        "malfunctions",
+        "alerts",
+        "problems",
+    }
+
     # Device settings methods
     async def async_update_device(
         self,
@@ -998,6 +1031,16 @@ class AjaxRestApi:
 
         # Merge settings with current device data
         updated_device = {**current_device, **settings}
+
+        # Remove read-only and problematic fields
+        for field in self.DEVICE_UPDATE_EXCLUDE_FIELDS:
+            updated_device.pop(field, None)
+
+        _LOGGER.debug(
+            "Updating device %s with fields: %s",
+            device_id,
+            list(updated_device.keys()),
+        )
 
         await self._request_no_response(
             "PUT",
@@ -1033,11 +1076,15 @@ class AjaxRestApi:
         # Deep merge settings with current device data
         updated_device = self._deep_merge(current_device, settings)
 
-        # Remove wiringSchemeSpecificDetails - it causes API 422 errors
-        # when customAlarmType is null (Ajax API bug)
-        # Only wiredDeviceSettings is needed for WireInput updates
-        if "wiringSchemeSpecificDetails" in updated_device:
-            del updated_device["wiringSchemeSpecificDetails"]
+        # Remove read-only and problematic fields
+        for field in self.DEVICE_UPDATE_EXCLUDE_FIELDS:
+            updated_device.pop(field, None)
+
+        _LOGGER.debug(
+            "Updating device %s (nested) with fields: %s",
+            device_id,
+            list(updated_device.keys()),
+        )
 
         await self._request_no_response(
             "PUT",
