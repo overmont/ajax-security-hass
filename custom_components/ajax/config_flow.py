@@ -32,6 +32,7 @@ from .const import (
     CONF_AWS_SECRET_ACCESS_KEY,
     CONF_DOOR_SENSOR_FAST_POLL,
     CONF_EMAIL,
+    CONF_ENABLED_SPACES,
     CONF_MONITORED_SPACES,
     CONF_NOTIFICATION_FILTER,
     CONF_PASSWORD,
@@ -67,6 +68,10 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._user_input: dict[str, Any] = {}
         self._request_id: str | None = None
         self._auth_mode: str = AUTH_MODE_DIRECT
+        self._spaces: list[
+            dict[str, str]
+        ] = []  # List of {id, name} for discovered spaces
+        self._entry_data: dict[str, Any] = {}  # Prepared entry data
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -126,8 +131,19 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Test API connection by logging in
                 await self._api.async_login()
 
-                # If login successful, try to get hubs to verify access
-                await self._api.async_get_hubs()
+                # If login successful, try to get hubs to verify access and discover spaces
+                hubs = await self._api.async_get_hubs()
+
+                # Build list of spaces from hubs
+                self._spaces = []
+                for hub in hubs:
+                    hub_id = hub.get("hubId")
+                    hub_name = hub.get(
+                        "hubName", f"Hub {hub_id[:6]}" if hub_id else "Unknown"
+                    )
+                    if hub_id:
+                        self._spaces.append({"id": hub_id, "name": hub_name})
+
                 await self._api.close()
 
                 # Hash password for secure storage (never store plain password!)
@@ -136,7 +152,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ).hexdigest()
 
                 # Prepare entry data
-                entry_data = {
+                self._entry_data = {
                     CONF_AUTH_MODE: AUTH_MODE_DIRECT,
                     CONF_API_KEY: user_input[CONF_API_KEY],
                     CONF_EMAIL: user_input[CONF_EMAIL],
@@ -145,20 +161,27 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 # Add optional AWS SQS credentials if provided
                 if user_input.get(CONF_AWS_ACCESS_KEY_ID):
-                    entry_data[CONF_AWS_ACCESS_KEY_ID] = user_input[
+                    self._entry_data[CONF_AWS_ACCESS_KEY_ID] = user_input[
                         CONF_AWS_ACCESS_KEY_ID
                     ]
                 if user_input.get(CONF_AWS_SECRET_ACCESS_KEY):
-                    entry_data[CONF_AWS_SECRET_ACCESS_KEY] = user_input[
+                    self._entry_data[CONF_AWS_SECRET_ACCESS_KEY] = user_input[
                         CONF_AWS_SECRET_ACCESS_KEY
                     ]
                 if user_input.get(CONF_QUEUE_NAME):
-                    entry_data[CONF_QUEUE_NAME] = user_input[CONF_QUEUE_NAME]
+                    self._entry_data[CONF_QUEUE_NAME] = user_input[CONF_QUEUE_NAME]
+
+                # If multiple spaces, let user select which to enable
+                if len(self._spaces) > 1:
+                    return await self.async_step_select_spaces()
+
+                # Single space or no spaces - enable all by default
+                self._entry_data[CONF_ENABLED_SPACES] = [s["id"] for s in self._spaces]
 
                 # Create entry
                 return self.async_create_entry(
                     title=f"Ajax - {user_input[CONF_EMAIL]}",
-                    data=entry_data,
+                    data=self._entry_data,
                 )
 
             except AjaxRest2FARequiredError as err:
@@ -232,8 +255,21 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Test connection by logging in via proxy
                 await self._api.async_login()
 
-                # Skip hub verification for proxy mode (proxy may not have all endpoints)
-                # await self._api.async_get_hubs()
+                # Get hubs to discover spaces
+                try:
+                    hubs = await self._api.async_get_hubs()
+                    self._spaces = []
+                    for hub in hubs:
+                        hub_id = hub.get("hubId")
+                        hub_name = hub.get(
+                            "hubName", f"Hub {hub_id[:6]}" if hub_id else "Unknown"
+                        )
+                        if hub_id:
+                            self._spaces.append({"id": hub_id, "name": hub_name})
+                except Exception:
+                    # Proxy may not have all endpoints - continue without space selection
+                    self._spaces = []
+
                 await self._api.close()
 
                 # Hash password for secure storage
@@ -242,17 +278,27 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ).hexdigest()
 
                 # Prepare entry data
-                entry_data = {
+                self._entry_data = {
                     CONF_AUTH_MODE: self._auth_mode,
                     CONF_PROXY_URL: proxy_url,
                     CONF_EMAIL: user_input[CONF_EMAIL],
                     CONF_PASSWORD: password_hash,
                 }
 
+                # If multiple spaces, let user select which to enable
+                if len(self._spaces) > 1:
+                    return await self.async_step_select_spaces()
+
+                # Single space or no spaces - enable all by default
+                if self._spaces:
+                    self._entry_data[CONF_ENABLED_SPACES] = [
+                        s["id"] for s in self._spaces
+                    ]
+
                 # Create entry
                 return self.async_create_entry(
                     title=f"Ajax - {user_input[CONF_EMAIL]}",
-                    data=entry_data,
+                    data=self._entry_data,
                 )
 
             except AjaxRest2FARequiredError as err:
@@ -307,8 +353,17 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Verify 2FA code
                 await self._api.async_verify_2fa(self._request_id, code)
 
-                # 2FA successful, verify access
-                await self._api.async_get_hubs()
+                # 2FA successful, discover spaces
+                hubs = await self._api.async_get_hubs()
+                self._spaces = []
+                for hub in hubs:
+                    hub_id = hub.get("hubId")
+                    hub_name = hub.get(
+                        "hubName", f"Hub {hub_id[:6]}" if hub_id else "Unknown"
+                    )
+                    if hub_id:
+                        self._spaces.append({"id": hub_id, "name": hub_name})
+
                 await self._api.close()
 
                 # Hash password for secure storage (never store plain password!)
@@ -320,7 +375,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 auth_mode = self._user_input.get(CONF_AUTH_MODE, AUTH_MODE_DIRECT)
 
                 # Prepare entry data based on auth mode
-                entry_data = {
+                self._entry_data = {
                     CONF_AUTH_MODE: auth_mode,
                     CONF_EMAIL: self._user_input[CONF_EMAIL],
                     CONF_PASSWORD: password_hash,
@@ -328,26 +383,35 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 if auth_mode == AUTH_MODE_DIRECT:
                     # Direct mode: include API key and optional AWS credentials
-                    entry_data[CONF_API_KEY] = self._user_input[CONF_API_KEY]
+                    self._entry_data[CONF_API_KEY] = self._user_input[CONF_API_KEY]
 
                     if self._user_input.get(CONF_AWS_ACCESS_KEY_ID):
-                        entry_data[CONF_AWS_ACCESS_KEY_ID] = self._user_input[
+                        self._entry_data[CONF_AWS_ACCESS_KEY_ID] = self._user_input[
                             CONF_AWS_ACCESS_KEY_ID
                         ]
                     if self._user_input.get(CONF_AWS_SECRET_ACCESS_KEY):
-                        entry_data[CONF_AWS_SECRET_ACCESS_KEY] = self._user_input[
+                        self._entry_data[CONF_AWS_SECRET_ACCESS_KEY] = self._user_input[
                             CONF_AWS_SECRET_ACCESS_KEY
                         ]
                     if self._user_input.get(CONF_QUEUE_NAME):
-                        entry_data[CONF_QUEUE_NAME] = self._user_input[CONF_QUEUE_NAME]
+                        self._entry_data[CONF_QUEUE_NAME] = self._user_input[
+                            CONF_QUEUE_NAME
+                        ]
                 else:
                     # Proxy mode: include proxy URL
-                    entry_data[CONF_PROXY_URL] = self._user_input[CONF_PROXY_URL]
+                    self._entry_data[CONF_PROXY_URL] = self._user_input[CONF_PROXY_URL]
+
+                # If multiple spaces, let user select which to enable
+                if len(self._spaces) > 1:
+                    return await self.async_step_select_spaces()
+
+                # Single space or no spaces - enable all by default
+                self._entry_data[CONF_ENABLED_SPACES] = [s["id"] for s in self._spaces]
 
                 # Create entry
                 return self.async_create_entry(
                     title=f"Ajax - {self._user_input[CONF_EMAIL]}",
-                    data=entry_data,
+                    data=self._entry_data,
                 )
 
             except AjaxRestAuthError:
@@ -373,6 +437,58 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
             description_placeholders={
                 "email": self._user_input.get(CONF_EMAIL, ""),
+            },
+        )
+
+    async def async_step_select_spaces(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle space selection when multiple spaces are found."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            selected_spaces = user_input.get(CONF_ENABLED_SPACES, [])
+
+            if not selected_spaces:
+                errors["base"] = "no_spaces_selected"
+            else:
+                # Store selected spaces and create entry
+                self._entry_data[CONF_ENABLED_SPACES] = selected_spaces
+
+                return self.async_create_entry(
+                    title=f"Ajax - {self._entry_data.get(CONF_EMAIL, 'Unknown')}",
+                    data=self._entry_data,
+                )
+
+        # Build options from discovered spaces
+        space_options = [
+            {"value": space["id"], "label": space["name"]} for space in self._spaces
+        ]
+
+        # Select all by default
+        default_spaces = [space["id"] for space in self._spaces]
+
+        data_schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_ENABLED_SPACES,
+                    default=default_spaces,
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=space_options,
+                        mode=SelectSelectorMode.LIST,
+                        multiple=True,
+                    )
+                ),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="select_spaces",
+            data_schema=data_schema,
+            errors=errors,
+            description_placeholders={
+                "space_count": str(len(self._spaces)),
             },
         )
 
@@ -483,7 +599,7 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Manage the options - main menu."""
         # Build menu options based on auth mode
-        menu_options = ["notifications", "polling_settings"]
+        menu_options = ["enabled_spaces", "notifications", "polling_settings"]
 
         auth_mode = self.config_entry.data.get(CONF_AUTH_MODE, AUTH_MODE_DIRECT)
 
@@ -498,6 +614,77 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
         return self.async_show_menu(
             step_id="init",
             menu_options=menu_options,
+        )
+
+    async def async_step_enabled_spaces(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage enabled spaces."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            selected_spaces = user_input.get(CONF_ENABLED_SPACES, [])
+
+            if not selected_spaces:
+                errors["base"] = "no_spaces_selected"
+            else:
+                # Update config entry data with new enabled spaces
+                new_data = {**self.config_entry.data}
+                new_data[CONF_ENABLED_SPACES] = selected_spaces
+
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data=new_data,
+                )
+
+                # Reload integration to apply changes
+                await self.hass.config_entries.async_reload(self.config_entry.entry_id)
+
+                return self.async_create_entry(title="", data=self.config_entry.options)
+
+        # Get all available spaces from coordinator
+        space_options = []
+        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+
+        if coordinator and hasattr(coordinator, "all_discovered_spaces"):
+            # Use all discovered spaces (not just enabled ones)
+            for space_id, space_name in coordinator.all_discovered_spaces.items():
+                space_options.append({"value": space_id, "label": space_name})
+        elif coordinator and hasattr(coordinator, "account") and coordinator.account:
+            # Fallback to currently loaded spaces
+            for space_id, space in coordinator.account.spaces.items():
+                space_options.append({"value": space_id, "label": space.name})
+
+        # Get currently enabled spaces
+        current_enabled = self.config_entry.data.get(CONF_ENABLED_SPACES, [])
+        if not current_enabled and space_options:
+            # If no spaces configured, default to all available
+            current_enabled = [opt["value"] for opt in space_options]
+
+        # Build schema
+        if space_options:
+            data_schema = vol.Schema(
+                {
+                    vol.Required(
+                        CONF_ENABLED_SPACES,
+                        default=current_enabled,
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=space_options,
+                            mode=SelectSelectorMode.LIST,
+                            multiple=True,
+                        )
+                    ),
+                }
+            )
+        else:
+            # No spaces available - show message
+            return self.async_abort(reason="no_spaces_available")
+
+        return self.async_show_form(
+            step_id="enabled_spaces",
+            data_schema=data_schema,
+            errors=errors,
         )
 
     async def async_step_notifications(

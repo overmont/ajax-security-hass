@@ -61,6 +61,13 @@
         "data": {
           "password": "Password"
         }
+      },
+      "select_spaces": {
+        "title": "Select Spaces",
+        "description": "Found {space_count} spaces. Select which spaces to enable in Home Assistant.\n\nUnselected spaces will not create any devices or entities.",
+        "data": {
+          "enabled_spaces": "Enabled Spaces"
+        }
       }
     },
     "error": {
@@ -71,12 +78,14 @@
       "invalid_account_type": "Account type not supported. Use a user account (not a PRO/Enterprise account).",
       "invalid_2fa": "Invalid verification code. Please try again.",
       "unknown": "Unexpected error. Check the logs for more details.",
-      "invalid_proxy_url": "Invalid proxy URL. URL must start with http:// or https://"
+      "invalid_proxy_url": "Invalid proxy URL. URL must start with http:// or https://",
+      "no_spaces_selected": "Please select at least one space to enable."
     },
     "abort": {
       "already_configured": "This Ajax integration is already configured.",
       "reauth_successful": "Re-authentication successful.",
-      "reauth_failed": "Re-authentication failed. Please reconfigure the integration."
+      "reauth_failed": "Re-authentication failed. Please reconfigure the integration.",
+      "no_spaces_available": "No spaces available. Please reload the integration."
     }
   },
   "entity": {
@@ -892,10 +901,18 @@
         "title": "Ajax Options",
         "description": "Choose a category to configure",
         "menu_options": {
+          "enabled_spaces": "Enabled Spaces",
           "notifications": "Notifications",
           "polling_settings": "Polling Settings",
           "proxy_settings": "Proxy Settings",
           "aws_credentials": "AWS SQS Credentials"
+        }
+      },
+      "enabled_spaces": {
+        "title": "Enabled Spaces",
+        "description": "Select which spaces to enable in Home Assistant.\n\nDisabled spaces will not create any devices or entities. Changing this will reload the integration.",
+        "data": {
+          "enabled_spaces": "Enabled Spaces"
         }
       },
       "polling_settings": {

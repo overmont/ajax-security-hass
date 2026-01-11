@@ -25,6 +25,7 @@ from .const import (
     CONF_AWS_SECRET_ACCESS_KEY,
     CONF_DOOR_SENSOR_FAST_POLL,
     CONF_EMAIL,
+    CONF_ENABLED_SPACES,
     CONF_PASSWORD,
     CONF_PROXY_URL,
     CONF_QUEUE_NAME,
@@ -143,6 +144,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # - REST polling: Baseline updates every 30s (disarmed) or 60s (armed)
     # - AWS SQS: Optional real-time events (direct mode only)
     # - SSE: Real-time events via proxy (proxy modes only)
+    enabled_spaces = entry.data.get(CONF_ENABLED_SPACES)  # None = all spaces
     coordinator = AjaxDataCoordinator(
         hass,
         api,
@@ -150,6 +152,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         aws_secret_access_key=aws_secret_access_key,
         queue_name=queue_name,
         sse_url=sse_url,
+        enabled_spaces=enabled_spaces,
     )
 
     # Store config entry reference for options access

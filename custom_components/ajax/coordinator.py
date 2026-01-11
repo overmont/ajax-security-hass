@@ -101,6 +101,7 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         aws_secret_access_key: str | None = None,
         queue_name: str | None = None,
         sse_url: str | None = None,
+        enabled_spaces: list[str] | None = None,
     ) -> None:
         """Initialize the coordinator.
 
@@ -111,9 +112,14 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
             aws_secret_access_key: AWS secret access key (optional, for SQS in direct mode)
             queue_name: SQS queue name (optional, for SQS in direct mode)
             sse_url: SSE endpoint URL (optional, for proxy mode)
+            enabled_spaces: List of space IDs to enable (None = all spaces)
         """
         self.api = api
         self.account: AjaxAccount | None = None
+        self._enabled_spaces: list[str] | None = enabled_spaces
+        self.all_discovered_spaces: dict[
+            str, str
+        ] = {}  # space_id -> name (for options flow)
         self._fast_poll_tasks: dict[
             str, asyncio.Task
         ] = {}  # device_id -> fast polling task for door sensors
@@ -704,6 +710,15 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
         for hub_data in hubs_data:
             hub_id = hub_data.get("hubId")
             if not hub_id:
+                continue
+
+            # Store all discovered spaces for options flow
+            hub_name = hub_data.get("hubName", f"Hub {hub_id[:6]}")
+            self.all_discovered_spaces[hub_id] = hub_name
+
+            # Skip spaces that are not enabled
+            if self._enabled_spaces is not None and hub_id not in self._enabled_spaces:
+                _LOGGER.debug("Skipping disabled space: %s (%s)", hub_name, hub_id)
                 continue
 
             # Get hub details to get the name and state

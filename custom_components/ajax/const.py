@@ -10,6 +10,7 @@ CONF_PASSWORD = "password"
 CONF_NOTIFICATION_FILTER = "notification_filter"
 CONF_PERSISTENT_NOTIFICATION = "persistent_notification"
 CONF_MONITORED_SPACES = "monitored_spaces"
+CONF_ENABLED_SPACES = "enabled_spaces"  # Which spaces to load (filter devices/entities)
 
 # AWS SQS configuration (optional - for real-time events in direct mode)
 CONF_AWS_ACCESS_KEY_ID = "aws_access_key_id"
