@@ -1,5 +1,9 @@
 # Ajax Security Integration - Notes for Claude
 
+## Git Commit Rules
+- **NEVER add "Co-Authored-By: Claude" or any Claude signature in commits**
+- Do not release/tag unless explicitly asked by the user
+
 ## Important API Limitations
 
 ### SSE/SQS Real-time Events
