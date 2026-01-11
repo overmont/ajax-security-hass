@@ -237,8 +237,11 @@ class VideoEdgeType(Enum):
 
     NVR = "NVR"
     TURRET = "TURRET"
+    TURRET_HL = "TURRET_HL"
     BULLET = "BULLET"
+    BULLET_HL = "BULLET_HL"
     MINIDOME = "MINIDOME"
+    MINIDOME_HL = "MINIDOME_HL"
     UNKNOWN = "UNKNOWN"
 
 
