@@ -276,16 +276,7 @@ SPACE_SENSORS: tuple[AjaxSpaceSensorDescription, ...] = (
         if space.hub_details
         else None,
     ),
-    AjaxSpaceSensorDescription(
-        key="hub_tamper",
-        translation_key="hub_tamper",
-        icon="mdi:lock-open-alert",
-        value_fn=lambda space: "open"
-        if space.hub_details.get("tampered")
-        else "closed"
-        if space.hub_details
-        else None,
-    ),
+    # Note: hub_tamper removed - use binary_sensor.tamper from hub device instead
     AjaxSpaceSensorDescription(
         key="hub_external_power",
         translation_key="hub_external_power",

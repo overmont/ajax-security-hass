@@ -477,13 +477,6 @@
       "hub_battery": {
         "name": "Batterie Hub"
       },
-      "hub_tamper": {
-        "name": "Couvercle Hub",
-        "state": {
-          "open": "Ouvert",
-          "closed": "Fermé"
-        }
-      },
       "hub_external_power": {
         "name": "Alimentation externe Hub",
         "state": {

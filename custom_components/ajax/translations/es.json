@@ -470,13 +470,6 @@
       "hub_battery": {
         "name": "Batería Hub"
       },
-      "hub_tamper": {
-        "name": "Tapa Hub",
-        "state": {
-          "open": "Abierto",
-          "closed": "Cerrado"
-        }
-      },
       "hub_external_power": {
         "name": "Alimentación externa Hub",
         "state": {
