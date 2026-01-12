@@ -42,6 +42,34 @@ class SirenHandler(AjaxDeviceHandler):
                 }
             )
 
+        # Beep on arm/disarm - read-only (Ajax API doesn't allow modification)
+        if "beep_on_arm_disarm" in self.device.attributes:
+            sensors.append(
+                {
+                    "key": "beep_on_arm",
+                    "translation_key": "beep_on_arm",
+                    "icon": "mdi:volume-high",
+                    "value_fn": lambda: self.device.attributes.get(
+                        "beep_on_arm_disarm", False
+                    ),
+                    "enabled_by_default": True,
+                }
+            )
+
+        # Beep on delay - read-only (Ajax API doesn't allow modification)
+        if "beep_on_delay" in self.device.attributes:
+            sensors.append(
+                {
+                    "key": "beep_on_delay",
+                    "translation_key": "beep_on_delay",
+                    "icon": "mdi:timer-sand",
+                    "value_fn": lambda: self.device.attributes.get(
+                        "beep_on_delay", False
+                    ),
+                    "enabled_by_default": True,
+                }
+            )
+
         return sensors
 
     def get_sensors(self) -> list[dict]:
@@ -176,35 +204,7 @@ class SirenHandler(AjaxDeviceHandler):
                 }
             )
 
-        # Beep on arm/disarm - only for sirens
-        if "beep_on_arm_disarm" in self.device.attributes:
-            switches.append(
-                {
-                    "key": "beep_on_arm",
-                    "translation_key": "beep_on_arm",
-                    "icon": "mdi:volume-high",
-                    "value_fn": lambda: self.device.attributes.get(
-                        "beep_on_arm_disarm", False
-                    ),
-                    "api_key": "beepOnArmDisarm",
-                    "enabled_by_default": True,
-                }
-            )
-
-        # Beep on delay - only for sirens
-        if "beep_on_delay" in self.device.attributes:
-            switches.append(
-                {
-                    "key": "beep_on_delay",
-                    "translation_key": "beep_on_delay",
-                    "icon": "mdi:timer-sand",
-                    "value_fn": lambda: self.device.attributes.get(
-                        "beep_on_delay", False
-                    ),
-                    "api_key": "beepOnDelay",
-                    "enabled_by_default": True,
-                }
-            )
+        # Note: beep_on_arm and beep_on_delay are now binary_sensors (read-only via Ajax API)
 
         # Blink while armed (LED) - only for sirens
         if (
