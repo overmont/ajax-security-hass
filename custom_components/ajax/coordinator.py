@@ -1285,7 +1285,12 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 device.attributes["color"] = device_data.get("color")
 
             # Siren specific attributes
-            if "sirenVolumeLevel" in device_data:
+            # Prefer v2sirenVolumeLevel (supports DISABLED), fallback to deprecated sirenVolumeLevel
+            if "v2sirenVolumeLevel" in device_data:
+                device.attributes["siren_volume_level"] = device_data.get(
+                    "v2sirenVolumeLevel"
+                )
+            elif "sirenVolumeLevel" in device_data:
                 device.attributes["siren_volume_level"] = device_data.get(
                     "sirenVolumeLevel"
                 )
