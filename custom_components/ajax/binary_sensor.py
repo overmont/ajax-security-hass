@@ -383,7 +383,9 @@ class AjaxVideoEdgeBinarySensor(
     def available(self) -> bool:
         """Return True if entity is available."""
         video_edge = self._get_video_edge()
-        return video_edge is not None
+        if video_edge is None:
+            return False
+        return video_edge.online
 
     @property
     def device_info(self) -> dict[str, Any]:

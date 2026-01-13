@@ -1650,24 +1650,31 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                 except ValueError:
                     ve_type = VideoEdgeType.UNKNOWN
 
-                # Get network info
-                network = ve_data.get("network", {})
+                # Get network info (networkInterface in API response)
+                network = ve_data.get("networkInterface", {})
                 ethernet = network.get("ethernet", {})
                 wifi = network.get("wifi", {})
 
-                # Get IP address from ethernet or wifi
+                # Get IP address from ethernet or wifi (v4.address in API)
                 ip_address = None
-                if ethernet.get("configuration", {}).get("ipv4", {}).get("ip"):
-                    ip_address = ethernet["configuration"]["ipv4"]["ip"]
-                elif wifi.get("configuration", {}).get("ipv4", {}).get("ip"):
-                    ip_address = wifi["configuration"]["ipv4"]["ip"]
+                eth_config = ethernet.get("configuration", {}) if ethernet else {}
+                wifi_config = wifi.get("configuration", {}) if wifi else {}
+                if eth_config.get("v4", {}).get("address"):
+                    ip_address = eth_config["v4"]["address"]
+                elif wifi_config.get("v4", {}).get("address"):
+                    ip_address = wifi_config["v4"]["address"]
 
                 # Get MAC address
-                mac_address = ethernet.get("mac") or wifi.get("mac")
+                mac_address = (ethernet.get("macAddress") if ethernet else None) or (
+                    wifi.get("macAddress") if wifi else None
+                )
 
-                # Get firmware version
+                # Get firmware version (currentVersion in API)
                 firmware = ve_data.get("firmware", {})
-                firmware_version = firmware.get("current")
+                firmware_version = firmware.get("currentVersion")
+
+                # Get connection state (ONLINE/OFFLINE)
+                connection_state = ve_data.get("connectionState", "UNKNOWN")
 
                 # Get room info
                 room_id = None
@@ -1702,6 +1709,7 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                         ip_address=ip_address,
                         mac_address=mac_address,
                         firmware_version=firmware_version,
+                        connection_state=connection_state,
                         channels=channels,
                         room_id=room_id,
                         room_name=room_name,
@@ -1709,9 +1717,10 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                     )
                     space.video_edges[ve_id] = video_edge
                     _LOGGER.info(
-                        "Added video edge: %s (%s)",
+                        "Added video edge: %s (%s) - %s",
                         video_edge.name,
                         video_edge.video_edge_type.value,
+                        connection_state,
                     )
                 else:
                     # Update existing video edge
@@ -1722,6 +1731,7 @@ class AjaxDataCoordinator(DataUpdateCoordinator[AjaxAccount]):
                     video_edge.ip_address = ip_address
                     video_edge.mac_address = mac_address
                     video_edge.firmware_version = firmware_version
+                    video_edge.connection_state = connection_state
                     video_edge.channels = channels
                     video_edge.room_id = room_id
                     video_edge.room_name = room_name

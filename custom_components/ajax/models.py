@@ -262,6 +262,9 @@ class AjaxVideoEdge:
     # Firmware
     firmware_version: str | None = None
 
+    # Connection state (ONLINE/OFFLINE)
+    connection_state: str = "UNKNOWN"
+
     # Channels (for NVR or multi-channel cameras)
     channels: list[dict[str, Any]] = field(default_factory=list)
 
@@ -271,6 +274,11 @@ class AjaxVideoEdge:
 
     # Raw data from API
     raw_data: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def online(self) -> bool:
+        """Return True if the video edge is online."""
+        return self.connection_state == "ONLINE"
 
     def __str__(self) -> str:
         return f"VideoEdge({self.name}, type={self.video_edge_type.value})"
