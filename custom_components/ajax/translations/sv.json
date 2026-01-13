@@ -23,29 +23,29 @@
           "code": "Verifikationskod"
         },
         "data_description": {
-          "code": "6-digit code from your authenticator app or SMS"
+          "code": "6-siffrig kod från din autentikatorapp eller SMS"
         },
-        "description": "Enter the 6-digit verification code sent to your device for {email}",
-        "title": "Två-Faktor Authentisering"
+        "description": "Ange den 6-siffriga koden som skickats till din enhet för {email}",
+        "title": "Tvåfaktorautentisering"
       },
       "direct": {
         "data": {
           "api_key": "API Nyckel",
-          "aws_access_key_id": "AWS Access Key ID (Optional)",
-          "aws_secret_access_key": "AWS Secret Access Key (Optional)",
-          "email": "Epostaddres",
+          "aws_access_key_id": "AWS Access Key ID (Ej obligatorisk)",
+          "aws_secret_access_key": "AWS Secret Access Key (Ej obligatorisk)",
+          "email": "Epostadress",
           "password": "Lösenord",
-          "queue_name": "SQS Queue Name (Optional)"
+          "queue_name": "SQS Queue Name (Ej obligatorisk)"
         },
         "data_description": {
-          "api_key": "Your API Key provided by Ajax Systems",
-          "aws_access_key_id": "AWS Access Key ID for real-time SQS events",
-          "aws_secret_access_key": "AWS Secret Access Key for real-time SQS events",
-          "email": "Your Ajax account email address",
-          "password": "Your Ajax account password",
-          "queue_name": "SQS Queue name (e.g., ajax-events-xxxxx-prod.fifo)"
+          "api_key": "Din API-nyckel som erhållits från Ajax Systems",
+          "aws_access_key_id": "AWS Access Key ID för realtids SQS-händelser",
+          "aws_secret_access_key": "AWS Secret Access Key för realtids SQS-händelser",
+          "email": "Din epostadress för Ajax-kontot",
+          "password": "Ditt lösenord till Ajax-kontot",
+          "queue_name": "Namn på SQS Queue (t ex ajax-events-xxxxx-prod.fifo)"
         },
-        "description": "Enter your Ajax API credentials.\n\n⚠️ **User account only** (not PRO/Enterprise accounts).\n\nOptional: Add AWS credentials for real-time event notifications.",
+        "description": "Ange inloggningsuppgifter till Ajax API.\n\n⚠️ **Endast konto för användare** (Ej PRO/Enterprise-konton).\n\nValfritt: Ange AWS-uppgifter för realtids-uppdateringar.",
         "title": "Direktanslutning"
       },
       "proxy": {
@@ -59,7 +59,7 @@
           "password": "Ditt lösenord för Ajax-kontot",
           "proxy_url": "Ajax proxy server URL"
         },
-        "description": "Anslut via en Ajax proxy server.\n\n⚠️ **Enbart användarkonton** (Ej PRO/Enterprise-konto).\n\nHändelser tas emot i realtid via SSE.",
+        "description": "Anslut via en Ajax proxy server.\n\n⚠️ **Endats konto för användare** (Ej PRO/Enterprise-konto).\n\nHändelser tas emot i realtid via SSE.",
         "title": "Proxy-anslutning"
       },
       "reauth_confirm": {
@@ -67,7 +67,7 @@
           "password": "Lösenord"
         },
         "description": "Din session har löpt ut. Vänligen ange lösenord för {email}.",
-        "title": "Re-authentisera"
+        "title": "Logga in igen"
       },
       "select_spaces": {
         "data": {
