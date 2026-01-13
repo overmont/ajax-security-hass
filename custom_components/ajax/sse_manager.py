@@ -188,7 +188,7 @@ class SSEManager:
             event_type_v2 = event.get("eventTypeV2", "")
 
             _LOGGER.info(
-                "SSE event: type=%s, tag=%s, code=%s, source=%s (%s), id=%s, transition=%s",
+                "SSE event: type=%s, tag=%s, code=%s, source=%s (%s), id=%s, transition=%s, typeV2=%s",
                 event_type,
                 event_tag,
                 event_code,
@@ -196,7 +196,11 @@ class SSEManager:
                 source_type,
                 source_id,
                 transition,
+                event_type_v2 or "none",
             )
+
+            # Log raw event data at DEBUG level for troubleshooting
+            _LOGGER.debug("SSE raw event data: %s", event)
 
             # Deduplication: ignore duplicate events within window
             event_key = f"{source_id}:{event_tag}:{transition}"
@@ -260,11 +264,13 @@ class SSEManager:
                 )
             else:
                 _LOGGER.warning(
-                    "SSE event not handled: tag=%s, type=%s, source=%s (id=%s)",
+                    "SSE event not handled: tag=%s, type=%s, typeV2=%s, source=%s (id=%s). Raw: %s",
                     event_tag,
                     source_type,
+                    event_type_v2 or "none",
                     source_name,
                     source_id,
+                    event,
                 )
 
             # Notify HA of update

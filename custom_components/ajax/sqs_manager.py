@@ -260,6 +260,9 @@ class SQSManager:
                 transition,
             )
 
+            # Log raw event data at DEBUG level for troubleshooting
+            _LOGGER.debug("SQS raw event data: %s", event)
+
             if not hub_id or not event_tag:
                 _LOGGER.debug("SQS event missing hubId or eventTag")
                 return
@@ -334,11 +337,12 @@ class SQSManager:
                 )
             else:
                 _LOGGER.warning(
-                    "SQS event not handled: tag=%s, type=%s, source=%s (id=%s)",
+                    "SQS event not handled: tag=%s, type=%s, source=%s (id=%s). Raw: %s",
                     event_tag,
-                    source_type,
+                    event_type,
                     source_name,
                     source_id,
+                    event,
                 )
 
             # Create notification if it's an alarm event
