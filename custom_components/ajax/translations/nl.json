@@ -1,0 +1,969 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Deze Ajax-integratie is al geconfigureerd.",
+      "no_spaces_available": "Geen ruimtes beschikbaar. Herlaad de integratie.",
+      "reauth_failed": "Herauthenticatie mislukt. Configureer de integratie opnieuw.",
+      "reauth_successful": "Herauthenticatie succesvol."
+    },
+    "error": {
+      "cannot_connect": "Kan geen verbinding maken met Ajax API. Controleer je internetverbinding.",
+      "invalid_2fa": "Ongeldige verificatiecode. Probeer opnieuw.",
+      "invalid_account_type": "Accounttype niet ondersteund. Gebruik een gebruikersaccount (geen PRO/Enterprise-account).",
+      "invalid_api_key": "Ongeldige of ontbrekende API-sleutel. Controleer je enterprise API-sleutel.",
+      "invalid_auth": "Ongeldige API-referenties. Controleer je API-sleutel, e-mail en wachtwoord.",
+      "invalid_password": "Ongeldig e-mailadres of wachtwoord. Controleer je Ajax-accountgegevens.",
+      "invalid_proxy_url": "Ongeldige proxy-URL. URL moet beginnen met http:// of https://",
+      "no_spaces_selected": "Selecteer ten minste één ruimte om in te schakelen.",
+      "unknown": "Onverwachte fout. Controleer de logs voor meer details."
+    },
+    "step": {
+      "2fa": {
+        "data": {
+          "code": "Verificatiecode"
+        },
+        "data_description": {
+          "code": "6-cijferige code van je authenticator-app of SMS"
+        },
+        "description": "Voer de 6-cijferige verificatiecode in die naar je apparaat is verzonden voor {email}",
+        "title": "Tweefactorauthenticatie"
+      },
+      "direct": {
+        "data": {
+          "api_key": "API-sleutel",
+          "aws_access_key_id": "AWS Access Key ID (Optioneel)",
+          "aws_secret_access_key": "AWS Secret Access Key (Optioneel)",
+          "email": "E-mailadres",
+          "password": "Wachtwoord",
+          "queue_name": "SQS-wachtrijnaam (Optioneel)"
+        },
+        "data_description": {
+          "api_key": "Je API-sleutel verstrekt door Ajax Systems",
+          "aws_access_key_id": "AWS Access Key ID voor real-time SQS-gebeurtenissen",
+          "aws_secret_access_key": "AWS Secret Access Key voor real-time SQS-gebeurtenissen",
+          "email": "Je Ajax-account e-mailadres",
+          "password": "Je Ajax-accountwachtwoord",
+          "queue_name": "SQS-wachtrijnaam (bijv. ajax-events-xxxxx-prod.fifo)"
+        },
+        "description": "Voer je Ajax API-referenties in.\n\n⚠️ **Alleen gebruikersaccount** (geen PRO/Enterprise-accounts).\n\nOptioneel: Voeg AWS-referenties toe voor real-time gebeurtenismeldingen.",
+        "title": "Directe verbinding"
+      },
+      "proxy": {
+        "data": {
+          "email": "E-mailadres",
+          "password": "Wachtwoord",
+          "proxy_url": "Proxy-URL"
+        },
+        "data_description": {
+          "email": "Je Ajax-account e-mailadres",
+          "password": "Je Ajax-accountwachtwoord",
+          "proxy_url": "Ajax-proxyserver URL"
+        },
+        "description": "Verbind via een Ajax-proxyserver.\n\n⚠️ **Alleen gebruikersaccount** (geen PRO/Enterprise-accounts).\n\nGebeurtenissen worden in real-time ontvangen via SSE.",
+        "title": "Proxyverbinding"
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Wachtwoord"
+        },
+        "description": "Je sessie is verlopen. Voer je wachtwoord opnieuw in voor {email}.",
+        "title": "Opnieuw authenticeren"
+      },
+      "select_spaces": {
+        "data": {
+          "enabled_spaces": "Ingeschakelde ruimtes"
+        },
+        "description": "{space_count} ruimtes gevonden. Selecteer welke ruimtes in Home Assistant moeten worden ingeschakeld.\n\nNiet-geselecteerde ruimtes maken geen apparaten of entiteiten aan.",
+        "title": "Ruimtes selecteren"
+      },
+      "user": {
+        "data": {
+          "auth_mode": "Authenticatiemodus"
+        },
+        "data_description": {
+          "auth_mode": "Proxy: verbind via Ajax-proxyserver. Direct: alleen enterprise API-sleutel."
+        },
+        "description": "Kies hoe je verbinding wilt maken met Ajax Systems.",
+        "title": "Verbindingsmodus"
+      }
+    }
+  },
+  "entity": {
+    "alarm_control_panel": {
+      "ajax": {
+        "name": "Ajax",
+        "state": {
+          "armed": "Ingeschakeld",
+          "arming": "Inschakelen",
+          "disarmed": "Uitgeschakeld",
+          "disarming": "Uitschakelen",
+          "pending": "In afwachting",
+          "triggered": "Geactiveerd"
+        },
+        "state_attributes": {
+          "hub_connection_status": {
+            "name": "Hub-verbindingsstatus",
+            "state": {
+              "offline": "Offline",
+              "online": "Online",
+              "unknown": "Onbekend"
+            }
+          },
+          "malfunctions_count": {
+            "name": "Storingen"
+          },
+          "new_notifications_count": {
+            "name": "Nieuwe meldingen"
+          },
+          "security_state": {
+            "name": "Beveiligingsstatus",
+            "state": {
+              "armed": "Ingeschakeld",
+              "arming_incomplete": "Inschakelen onvolledig",
+              "awaiting_confirmation": "Wacht op bevestiging",
+              "awaiting_exit_timer": "Wacht op uitgangstimer",
+              "awaiting_vds_arming_completion": "Wacht op VDS-inschakeling",
+              "disarmed": "Uitgeschakeld",
+              "night_mode": "Nachtmodus",
+              "none": "Geen",
+              "partially_armed": "Gedeeltelijk ingeschakeld",
+              "two_stage_arming_incomplete": "Tweefasige inschakeling onvolledig"
+            }
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "battery_connected": {
+        "name": "Hub-batterij"
+      },
+      "connection": {
+        "name": "Hub-verbinding",
+        "state": {
+          "off": "Verbroken",
+          "on": "Verbonden"
+        }
+      },
+      "doorbell_ring": {
+        "name": "Deurbel"
+      },
+      "external_contact": {
+        "name": "Deur (extern contact)"
+      },
+      "external_power": {
+        "name": "Externe voeding"
+      },
+      "glass_break": {
+        "name": "Glasbreukdetector"
+      },
+      "gsm_antenna": {
+        "name": "GSM-antenne"
+      },
+      "jeweller_radio": {
+        "name": "Jeweller-radio"
+      },
+      "problem": {
+        "name": "Probleem gedetecteerd",
+        "state_attributes": {
+          "devices_with_problems": {
+            "name": "Apparaten met problemen"
+          },
+          "problem_devices": {
+            "name": "Probleemapparatenlijst"
+          },
+          "total_malfunctions": {
+            "name": "Totaal storingen"
+          }
+        }
+      },
+      "shock": {
+        "name": "Schok"
+      },
+      "system_problems": {
+        "name": "Systeemproblemen",
+        "state": {
+          "off": "Geen problemen",
+          "on": "Problemen gedetecteerd"
+        },
+        "state_attributes": {
+          "devices_with_problems": {
+            "name": "Apparaten met problemen"
+          },
+          "problem_devices": {
+            "name": "Apparatenlijst"
+          },
+          "total_malfunctions": {
+            "name": "Totaal storingen"
+          }
+        }
+      },
+      "tilt": {
+        "name": "Kanteling"
+      },
+      "video_human": {
+        "name": "Persoon gedetecteerd"
+      },
+      "video_motion": {
+        "name": "Beweging gedetecteerd"
+      },
+      "video_pet": {
+        "name": "Huisdier gedetecteerd"
+      },
+      "video_vehicle": {
+        "name": "Voertuig gedetecteerd"
+      },
+      "wings_radio": {
+        "name": "Wings-radio"
+      }
+    },
+    "button": {
+      "panic": {
+        "name": "Panieknop"
+      }
+    },
+    "device_tracker": {
+      "position": {
+        "name": "Positie"
+      }
+    },
+    "number": {
+      "tilt_degrees": {
+        "name": "Kanteldrempel"
+      }
+    },
+    "select": {
+      "shock_sensitivity": {
+        "name": "Schokgevoeligheid",
+        "state": {
+          "high": "Hoog",
+          "low": "Laag",
+          "normal": "Normaal"
+        }
+      }
+    },
+    "sensor": {
+      "active_connection": {
+        "name": "Actieve verbinding"
+      },
+      "alarm_duration": {
+        "name": "Alarmduur",
+        "state": {
+          "10_minutes": "10 minuten",
+          "15_minutes": "15 minuten",
+          "1_minute": "1 minuut",
+          "2_minutes": "2 minuten",
+          "3_minutes": "3 minuten",
+          "5_minutes": "5 minuten",
+          "continuous": "Continu"
+        }
+      },
+      "alarm_volume_level": {
+        "name": "Alarmvolume",
+        "state": {
+          "disabled": "Uitgeschakeld",
+          "loud": "Luid",
+          "mute": "Stil",
+          "normal": "Normaal",
+          "off": "Uit",
+          "quiet": "Zacht",
+          "very_loud": "Zeer luid"
+        }
+      },
+      "battery_state": {
+        "name": "Batterijstatus"
+      },
+      "beep_volume_level": {
+        "name": "Piepvolume",
+        "state": {
+          "loud": "Luid",
+          "normal": "Normaal",
+          "off": "Uit",
+          "quiet": "Zacht",
+          "very_loud": "Zeer luid"
+        }
+      },
+      "bypassed_devices": {
+        "name": "Omzeilde apparaten"
+      },
+      "device_color": {
+        "name": "Apparaatkleur",
+        "state": {
+          "black": "Zwart",
+          "white": "Wit"
+        }
+      },
+      "device_label": {
+        "name": "Apparaatlabel"
+      },
+      "device_marketing_id": {
+        "name": "Apparaat marketing-ID"
+      },
+      "device_state": {
+        "name": "Apparaatstatus"
+      },
+      "devices_with_malfunctions": {
+        "name": "Apparaten met storingen"
+      },
+      "firmware_version": {
+        "name": "Firmwareversie"
+      },
+      "gsm_connection_status": {
+        "name": "GSM-verbindingsstatus",
+        "state": {
+          "connected": "Verbonden",
+          "connecting": "Verbinden",
+          "disconnected": "Verbroken",
+          "error": "Fout"
+        }
+      },
+      "gsm_signal_level": {
+        "name": "Mobiel signaal (GSM)"
+      },
+      "gsm_type": {
+        "name": "GSM-type",
+        "state": {
+          "2g": "2G",
+          "3g": "3G",
+          "4g": "4G",
+          "5g": "5G",
+          "unknown": "Onbekend"
+        }
+      },
+      "hardware_version": {
+        "name": "Hardwareversie"
+      },
+      "hub_active_channels": {
+        "name": "Actieve kanalen",
+        "state_attributes": {
+          "channels": {
+            "name": "Kanaallijst"
+          },
+          "ethernet": {
+            "name": "Ethernet"
+          },
+          "gsm": {
+            "name": "GSM"
+          },
+          "wifi": {
+            "name": "WiFi"
+          }
+        }
+      },
+      "hub_battery": {
+        "name": "Hub-batterij"
+      },
+      "hub_ethernet_ip": {
+        "name": "Intern IP-adres"
+      },
+      "hub_external_power": {
+        "name": "Hub externe voeding",
+        "state": {
+          "connected": "Verbonden",
+          "disconnected": "Verbroken"
+        }
+      },
+      "hub_geofence": {
+        "name": "GPS-locatie",
+        "state_attributes": {
+          "latitude": {
+            "name": "Breedtegraad"
+          },
+          "longitude": {
+            "name": "Lengtegraad"
+          },
+          "radius_meters": {
+            "name": "Straal (meters)"
+          }
+        }
+      },
+      "hub_grade_mode": {
+        "name": "Beveiligingsgraad"
+      },
+      "hub_gsm": {
+        "name": "Hub GSM / SIM",
+        "state": {
+          "good": "Goed",
+          "none": "Geen",
+          "normal": "Normaal",
+          "strong": "Sterk",
+          "weak": "Zwak"
+        },
+        "state_attributes": {
+          "active_sim": {
+            "name": "Actieve SIM"
+          },
+          "modem_imei": {
+            "name": "Modem IMEI"
+          },
+          "network_status": {
+            "name": "Netwerkstatus"
+          },
+          "signal_level": {
+            "name": "Signaalniveau"
+          },
+          "sim1_active": {
+            "name": "SIM 1 actief"
+          },
+          "sim1_apn": {
+            "name": "SIM 1 APN"
+          },
+          "sim1_traffic_rx_kb": {
+            "name": "SIM 1 ontvangen (KB)"
+          },
+          "sim1_traffic_tx_kb": {
+            "name": "SIM 1 verzonden (KB)"
+          },
+          "sim2_active": {
+            "name": "SIM 2 actief"
+          },
+          "sim2_apn": {
+            "name": "SIM 2 APN"
+          },
+          "sim2_traffic_rx_kb": {
+            "name": "SIM 2 ontvangen (KB)"
+          },
+          "sim2_traffic_tx_kb": {
+            "name": "SIM 2 verzonden (KB)"
+          },
+          "total_sims": {
+            "name": "Totaal SIMs"
+          }
+        }
+      },
+      "hub_hardware_version": {
+        "name": "Hardwareversie",
+        "state_attributes": {
+          "cpu": {
+            "name": "CPU"
+          },
+          "ethernet": {
+            "name": "Ethernet"
+          },
+          "flash": {
+            "name": "Flash"
+          },
+          "modem": {
+            "name": "Modem"
+          },
+          "pcb": {
+            "name": "PCB"
+          },
+          "rfm": {
+            "name": "RFM"
+          },
+          "wifi": {
+            "name": "WiFi"
+          }
+        }
+      },
+      "hub_led_brightness": {
+        "name": "Hub LED-helderheid"
+      },
+      "hub_limits": {
+        "name": "Hub-limieten",
+        "state_attributes": {
+          "max_cameras": {
+            "name": "Max camera's"
+          },
+          "max_groups": {
+            "name": "Max groepen"
+          },
+          "max_rooms": {
+            "name": "Max kamers"
+          },
+          "max_sensors": {
+            "name": "Max apparaten"
+          },
+          "max_users": {
+            "name": "Max gebruikers"
+          }
+        }
+      },
+      "hub_noise_level": {
+        "name": "Radioruisniveau",
+        "state": {
+          "high": "Hoog",
+          "normal": "Normaal"
+        },
+        "state_attributes": {
+          "channel_1_dbm": {
+            "name": "Kanaal 1 (dBm)"
+          },
+          "channel_2_dbm": {
+            "name": "Kanaal 2 (dBm)"
+          },
+          "data_channel_dbm": {
+            "name": "Datakanaal (dBm)"
+          },
+          "high": {
+            "name": "Hoge ruis"
+          }
+        }
+      },
+      "hub_offline_delay": {
+        "name": "Offline-alarmvertraging"
+      },
+      "hub_ping_period": {
+        "name": "Pingperiode"
+      },
+      "hub_rooms": {
+        "name": "Kamers",
+        "state_attributes": {
+          "room_names": {
+            "name": "Kamerlijst"
+          },
+          "rooms": {
+            "name": "Kamerdetails"
+          }
+        }
+      },
+      "hub_timezone": {
+        "name": "Hub-tijdzone"
+      },
+      "hub_users": {
+        "name": "Gebruikers",
+        "state_attributes": {
+          "user_names": {
+            "name": "Gebruikersnamen"
+          },
+          "users": {
+            "name": "Gebruikersdetails"
+          }
+        }
+      },
+      "hub_wifi": {
+        "name": "Hub Wi-Fi",
+        "state": {
+          "good": "Goed",
+          "none": "Geen",
+          "normal": "Normaal",
+          "strong": "Sterk",
+          "weak": "Zwak"
+        },
+        "state_attributes": {
+          "channel": {
+            "name": "Kanaal"
+          },
+          "ip": {
+            "name": "IP-adres"
+          },
+          "security": {
+            "name": "Beveiliging"
+          },
+          "signal_level": {
+            "name": "Signaalniveau"
+          },
+          "ssid": {
+            "name": "Netwerk"
+          }
+        }
+      },
+      "image_resolution": {
+        "name": "Beeldresolutie"
+      },
+      "indicator_light_mode": {
+        "name": "LED-modus"
+      },
+      "ip_address": {
+        "name": "IP-adres"
+      },
+      "last_action": {
+        "name": "Laatste actie",
+        "state": {
+          "double_press": "Dubbele druk",
+          "emergency": "Noodgeval",
+          "long_press": "Lange druk",
+          "panic": "Paniek",
+          "single_press": "Enkele druk"
+        }
+      },
+      "last_alert": {
+        "name": "Laatste waarschuwing",
+        "state_attributes": {
+          "device_name": {
+            "name": "Apparaat"
+          },
+          "event_type": {
+            "name": "Gebeurtenistype"
+          },
+          "notification_type": {
+            "name": "Meldingstype"
+          },
+          "room_name": {
+            "name": "Kamer"
+          }
+        }
+      },
+      "last_ring": {
+        "name": "Laatste bel"
+      },
+      "led_indication": {
+        "name": "LED-indicatie"
+      },
+      "mac_address": {
+        "name": "MAC-adres"
+      },
+      "malfunctions": {
+        "name": "Storingen"
+      },
+      "network_status": {
+        "name": "Mobiel netwerk"
+      },
+      "noise_level_avg": {
+        "name": "Gemiddeld ruisniveau",
+        "state_attributes": {
+          "always_active": {
+            "name": "Altijd actief"
+          },
+          "armed_in_night_mode": {
+            "name": "Ingeschakeld in nachtmodus"
+          },
+          "channel1": {
+            "name": "Kanaal 1"
+          },
+          "channel2": {
+            "name": "Kanaal 2"
+          },
+          "high": {
+            "name": "Hoge ruis"
+          }
+        }
+      },
+      "online_devices": {
+        "name": "Online apparaten"
+      },
+      "photos_per_alarm": {
+        "name": "Foto's per alarm"
+      },
+      "recent_events": {
+        "name": "Recente gebeurtenissen",
+        "state": {
+          "no_event": "Geen gebeurtenis"
+        },
+        "state_attributes": {
+          "event_count": {
+            "name": "Aantal gebeurtenissen"
+          },
+          "events": {
+            "name": "Recente gebeurtenissen"
+          },
+          "events_raw": {
+            "name": "Ruwe data"
+          }
+        }
+      },
+      "room": {
+        "name": "Kamer"
+      },
+      "sensitivity": {
+        "name": "Gevoeligheid",
+        "state": {
+          "high": "Hoog",
+          "low": "Laag",
+          "normal": "Normaal"
+        }
+      },
+      "signal_strength": {
+        "name": "Signaalsterkte"
+      },
+      "sim_status": {
+        "name": "SIM-kaartstatus",
+        "state_attributes": {
+          "sim_cards": {
+            "name": "SIM-kaartdetails"
+          },
+          "sim_slots_total": {
+            "name": "Totaal SIM-sleuven"
+          },
+          "sim_slots_used": {
+            "name": "Gebruikte SIM-sleuven"
+          }
+        }
+      },
+      "total_devices": {
+        "name": "Totaal apparaten"
+      },
+      "unread_notifications": {
+        "name": "Ongelezen meldingen"
+      },
+      "wifi_signal_level": {
+        "name": "Wi-Fi-signaal"
+      }
+    },
+    "switch": {
+      "alerts_by_sirens": {
+        "name": "Waarschuwingen door sirenes",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "always_active": {
+        "name": "Altijd actief",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "beep_on_arm": {
+        "name": "Piep bij in-/uitschakelen",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "beep_on_arm_disarm": {
+        "name": "Piep bij in-/uitschakelen",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "beep_on_delay": {
+        "name": "Piep bij ingangs-/uitgangsvertraging",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "blink_while_armed": {
+        "name": "Knipperen wanneer ingeschakeld",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "chimes": {
+        "name": "Gong",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "chimes_enabled": {
+        "name": "Gong",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "external_contact_enabled": {
+        "name": "Extern contact",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "ignore_impact": {
+        "name": "Negeer eenvoudige impact",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "indicator_light": {
+        "name": "Indicatielampje",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "night_mode": {
+        "name": "Actief in nachtmodus",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "security_group": {
+        "name": "Beveiligingsgroep",
+        "state_attributes": {
+          "bulk_arm_involved": {
+            "name": "Betrokken bij groepsinschakeling"
+          },
+          "bulk_disarm_involved": {
+            "name": "Betrokken bij groepsuitschakeling"
+          },
+          "device_count": {
+            "name": "Aantal apparaten"
+          },
+          "group_id": {
+            "name": "Groep-ID"
+          },
+          "group_name": {
+            "name": "Groepsnaam"
+          },
+          "night_mode_enabled": {
+            "name": "Nachtmodus ingeschakeld"
+          },
+          "space_id": {
+            "name": "Ruimte-ID"
+          },
+          "space_name": {
+            "name": "Ruimtenaam"
+          }
+        }
+      },
+      "shock_sensor": {
+        "name": "Schoksensor",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "siren_trigger_glass": {
+        "name": "Sirene bij glasbreuk",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "siren_trigger_reed": {
+        "name": "Sirene bij deur openen",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "siren_trigger_shock": {
+        "name": "Sirene bij schok",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "siren_trigger_tilt": {
+        "name": "Sirene bij kanteling",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      },
+      "socket": {
+        "name": "Stopcontact",
+        "state_attributes": {
+          "channel_id": {
+            "name": "Kanaal-ID"
+          },
+          "operating_mode": {
+            "name": "Bedrijfsmodus"
+          },
+          "output_mode": {
+            "name": "Uitgangsmodus"
+          }
+        }
+      },
+      "tilt_sensor": {
+        "name": "Kantelsensor",
+        "state": {
+          "off": "Uitgeschakeld",
+          "on": "Ingeschakeld"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_target": {
+      "message": "Ongeldig doel voor service."
+    }
+  },
+  "options": {
+    "step": {
+      "aws_credentials": {
+        "data": {
+          "aws_access_key_id": "AWS Access Key ID",
+          "aws_secret_access_key": "AWS Secret Access Key",
+          "queue_name": "SQS-wachtrijnaam"
+        },
+        "data_description": {
+          "aws_access_key_id": "Voorbeeld: AKIA3SFSAKBHLDDOCGFG",
+          "aws_secret_access_key": "Geheime sleutel verstrekt door Ajax (40 tekens)",
+          "queue_name": "Voorbeeld: ajax-events-V6WHbk3e-prod.fifo"
+        },
+        "description": "Configureer AWS-referenties voor real-time gebeurtenismeldingen.\n\n**Huidige configuratie:**\n- Access Key: {current_access_key}\n- Secret Key: {current_secret_key}\n- SQS-wachtrij: {current_queue}\n\nLaat een veld leeg om de huidige waarde te behouden.",
+        "title": "AWS SQS-referenties"
+      },
+      "enabled_spaces": {
+        "data": {
+          "enabled_spaces": "Ingeschakelde ruimtes"
+        },
+        "description": "Selecteer welke ruimtes in Home Assistant moeten worden ingeschakeld.\n\nUitgeschakelde ruimtes maken geen apparaten of entiteiten aan. Wijzigen hiervan herlaadt de integratie.",
+        "title": "Ingeschakelde ruimtes"
+      },
+      "init": {
+        "description": "Kies een categorie om te configureren",
+        "menu_options": {
+          "aws_credentials": "AWS SQS-referenties",
+          "enabled_spaces": "Ingeschakelde ruimtes",
+          "notifications": "Meldingen",
+          "polling_settings": "Polling-instellingen",
+          "proxy_settings": "Proxy-instellingen"
+        },
+        "title": "Ajax-opties"
+      },
+      "notifications": {
+        "data": {
+          "monitored_spaces": "Te monitoren ruimtes",
+          "notification_filter": "Meldingsfilter",
+          "persistent_notification": "Toon permanente meldingen"
+        },
+        "description": "Configureer je Ajax-integratiemeldingen",
+        "title": "Meldingsopties"
+      },
+      "polling_settings": {
+        "data": {
+          "door_sensor_fast_poll": "Snelle polling deursensoren"
+        },
+        "data_description": {
+          "door_sensor_fast_poll": "Poll deursensoren elke 5 seconden wanneer uitgeschakeld. Schakel uit om API-aanroepen te verminderen."
+        },
+        "description": "Configureer API-pollinggedrag om prestaties te optimaliseren.\n\n**Huidig gedrag:**\n- Lichte polling (hub-status + apparaten): elke 30-60s\n- Volledige metadata-verversing (kamers, gebruikers, groepen): elk uur",
+        "title": "Polling-instellingen"
+      },
+      "proxy_settings": {
+        "data": {
+          "proxy_url": "Proxy-URL"
+        },
+        "data_description": {
+          "proxy_url": "Voorbeeld: https://my-proxy.example.com"
+        },
+        "description": "Wijzig je Ajax-proxyserver-URL.",
+        "title": "Proxy-instellingen"
+      }
+    }
+  },
+  "selector": {
+    "auth_mode": {
+      "options": {
+        "direct": "Direct (alleen enterprise API-sleutel)",
+        "proxy_secure": "Ajax Proxy"
+      }
+    },
+    "notification_filter": {
+      "options": {
+        "alarms_only": "Alleen alarmen",
+        "all": "Alle meldingen",
+        "none": "Geen",
+        "security_events": "Beveiligingsgebeurtenissen (alarmen + inschakelen)"
+      }
+    }
+  },
+  "services": {
+    "force_arm": {
+      "description": "Forceer inschakelen van het beveiligingssysteem, negeer open sensoren en problemen.",
+      "name": "Forceer inschakelen"
+    },
+    "force_arm_night": {
+      "description": "Forceer activeren van nachtmodus, negeer open sensoren en problemen.",
+      "name": "Forceer nachtmodus inschakelen"
+    },
+    "get_raw_devices": {
+      "description": "Haal ruwe API JSON-data op voor alle apparaten. Slaat de volledige API-respons op in ajax_raw_devices.json.",
+      "name": "Haal ruwe apparaten op"
+    },
+    "refresh_metadata": {
+      "description": "Forceer een volledige verversing van kamers, gebruikers en groepen van Ajax.",
+      "name": "Ververs metadata"
+    }
+  }
+}
