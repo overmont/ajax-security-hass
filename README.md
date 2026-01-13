@@ -3,7 +3,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![Hassfest](https://github.com/foXaCe/ajax-security-hass/actions/workflows/lint.yml/badge.svg)](https://github.com/foXaCe/ajax-security-hass/actions/workflows/lint.yml)
-[![Downloads](https://img.shields.io/github/downloads/foXaCe/ajax-security-hass/total.svg)](https://github.com/foXaCe/ajax-security-hass/releases)
+[![Active Installations](https://img.shields.io/endpoint?url=https://vaskivskyi.github.io/ha-custom-analytics/badges/ajax/total.json)](https://analytics.home-assistant.io/custom_integrations.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Community Forum](https://img.shields.io/badge/Home_Assistant-Community-blue?logo=home-assistant)](https://community.home-assistant.io/t/custom-component-ajax-systems/948939/2)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/foXaCe66)
@@ -33,6 +33,12 @@
 > [!WARNING]
 > ## Real-Time Events Only When Armed
 > Due to Ajax Systems architecture, **real-time events (SSE/SQS) are only received when the system is armed**. When disarmed, the integration uses polling (30s for sensors, 5s for door sensors). This is an Ajax API limitation.
+
+---
+
+> [!CAUTION]
+> ## Proxy Mode Security
+> When using a proxy, the proxy administrator can see your password hash (SHA256), all API requests/responses, and your email. For security and trust considerations, contact your proxy provider. See [Security & Privacy](#-security--privacy) for details.
 
 ---
 
