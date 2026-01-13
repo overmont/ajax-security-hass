@@ -198,16 +198,25 @@ Go to the integration options to configure:
 
 ## 🔒 Security & Privacy
 
-**Your credentials are handled with the utmost care:**
-
 ### Credential Storage
 - **Local storage only**: Credentials are stored in Home Assistant's encrypted config entry system
-- **No third parties**: The integration communicates only with Ajax servers
 
 ### Authentication Process
 1. **Password hashing**: Your password is hashed using SHA-256 before transmission
 2. **Secure communication**: All API communication uses HTTPS (TLS/SSL)
 3. **Session tokens**: Tokens are stored locally and refreshed automatically
+
+### Direct Mode
+- **No third parties**: The integration communicates directly with Ajax servers
+- End-to-end encrypted communication between your Home Assistant and Ajax
+
+### Proxy Mode
+When using a proxy, the proxy administrator can see:
+- Your password hash (SHA256) - sufficient to authenticate as you
+- All API requests and responses (alarm state, arm/disarm actions, device status)
+- Your email address
+
+**Important**: This integration does not manage any proxy server. For security and trust considerations, contact the person or organization providing your proxy access.
 
 ### What the Developer Cannot Access
 - ❌ I (the developer) **cannot access your credentials**
