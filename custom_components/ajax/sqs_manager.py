@@ -955,10 +955,11 @@ class SQSManager:
         # Find target channel (first one if no channel_id specified)
         target_channel = None
         for channel in channels:
-            if isinstance(channel, dict):
-                if channel_id is None or channel.get("id") == channel_id:
-                    target_channel = channel
-                    break
+            if isinstance(channel, dict) and (
+                channel_id is None or channel.get("id") == channel_id
+            ):
+                target_channel = channel
+                break
 
         if not target_channel:
             # Create a default channel if none exists

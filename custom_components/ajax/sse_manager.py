@@ -18,13 +18,8 @@ import time
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from .event_codes import (
-    DEFAULT_LANGUAGE,
-    parse_event_code,
-)
-
-# Import event mappings from SQS manager to avoid duplication
-from .sqs_manager import (
+from .event_codes import DEFAULT_LANGUAGE, parse_event_code
+from .sqs_manager import (  # Import event mappings from SQS manager to avoid duplication
     DEVICE_STATUS_EVENTS,
     DOOR_EVENTS,
     EVENT_TAG_TO_STATE,
@@ -35,8 +30,8 @@ from .sqs_manager import (
     SCENARIO_EVENTS,
     SMOKE_EVENTS,
     TAMPER_EVENTS,
-    VIDEO_EVENTS,
     VIDEO_EVENT_TYPES,
+    VIDEO_EVENTS,
 )
 
 if TYPE_CHECKING:
@@ -670,10 +665,11 @@ class SSEManager:
         # Find target channel (first one if no channel_id specified)
         target_channel = None
         for channel in channels:
-            if isinstance(channel, dict):
-                if channel_id is None or channel.get("id") == channel_id:
-                    target_channel = channel
-                    break
+            if isinstance(channel, dict) and (
+                channel_id is None or channel.get("id") == channel_id
+            ):
+                target_channel = channel
+                break
 
         if not target_channel:
             # Create a default channel if none exists
