@@ -871,6 +871,9 @@
   "exceptions": {
     "invalid_target": {
       "message": "Invalid target for service."
+    },
+    "system_armed": {
+      "message": "System armed. Please disarm."
     }
   },
   "options": {

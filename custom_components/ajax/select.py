@@ -12,12 +12,13 @@ from typing import Any
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AjaxDataCoordinator
+from .models import SecurityState
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -126,6 +127,12 @@ class AjaxShockSensitivitySelect(AjaxDoorPlusBaseSelect):
             raise HomeAssistantError("Space not found")
 
         value = SHOCK_SENSITIVITY_VALUES.get(option, 0)
+
+        if space.security_state != SecurityState.DISARMED:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="system_armed",
+            )
 
         _LOGGER.debug(
             "Setting shockSensorSensitivity=%d (%s) for device %s",
