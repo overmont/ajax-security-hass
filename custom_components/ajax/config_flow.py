@@ -7,9 +7,13 @@ import logging
 from typing import Any
 
 import voluptuous as vol
-from homeassistant import config_entries
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
@@ -49,16 +53,17 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class AjaxConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Ajax Security Systems."""
 
     VERSION = 1
+    MINOR_VERSION = 2
 
     @staticmethod
     @callback
     def async_get_options_flow(
-        config_entry: config_entries.ConfigEntry,
-    ) -> config_entries.OptionsFlow:
+        config_entry: ConfigEntry,
+    ) -> OptionsFlow:
         """Get the options flow for this handler."""
         return AjaxOptionsFlow()
 
@@ -75,7 +80,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the initial step - choose authentication mode."""
         if user_input is not None:
             self._auth_mode = user_input[CONF_AUTH_MODE]
@@ -111,7 +116,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_direct(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle direct mode - API key + credentials."""
         errors: dict[str, str] = {}
 
@@ -120,6 +125,8 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._user_input = user_input
             self._user_input[CONF_AUTH_MODE] = AUTH_MODE_DIRECT
 
+            await self.async_set_unique_id(user_input[CONF_EMAIL].lower())
+            self._abort_if_unique_id_configured()
             # Validate API credentials
             try:
                 self._api = AjaxRestApi(
@@ -237,7 +244,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_proxy(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle proxy mode - proxy URL + credentials."""
         errors: dict[str, str] = {}
 
@@ -248,6 +255,8 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             proxy_url = user_input[CONF_PROXY_URL].rstrip("/")
 
+            await self.async_set_unique_id(user_input[CONF_EMAIL].lower())
+            self._abort_if_unique_id_configured()
             try:
                 # For proxy mode, we authenticate via the proxy
                 # The proxy will provide API key (hybrid) or handle all requests (secure)
@@ -356,7 +365,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_2fa(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle 2FA verification step."""
         errors: dict[str, str] = {}
 
@@ -463,7 +472,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_select_spaces(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle space selection when multiple spaces are found."""
         errors: dict[str, str] = {}
 
@@ -515,14 +524,14 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_reauth(
         self, entry_data: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle re-authentication when token expires."""
         self._user_input = dict(entry_data) if entry_data else {}
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle re-authentication confirmation."""
         errors: dict[str, str] = {}
 
@@ -606,7 +615,7 @@ class AjaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
 
-class AjaxOptionsFlow(config_entries.OptionsFlow):
+class AjaxOptionsFlow(OptionsFlow):
     """Handle Ajax options."""
 
     def _mask_credential(self, value: str | None) -> str:
@@ -617,7 +626,7 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage the options - main menu."""
         # Build menu options based on auth mode
         menu_options = ["enabled_spaces", "notifications", "polling_settings"]
@@ -639,7 +648,7 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_enabled_spaces(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage enabled spaces."""
         errors: dict[str, str] = {}
 
@@ -710,7 +719,7 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_notifications(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage notification options."""
         if user_input is not None:
             # Merge with existing options
@@ -786,7 +795,7 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_polling_settings(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage polling settings."""
         if user_input is not None:
             # Merge with existing options
@@ -814,7 +823,7 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_proxy_settings(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage proxy settings."""
         errors: dict[str, str] = {}
 
@@ -859,7 +868,7 @@ class AjaxOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_aws_credentials(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage AWS SQS credentials."""
         errors: dict[str, str] = {}
 
