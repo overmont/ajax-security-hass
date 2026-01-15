@@ -9,9 +9,6 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
-from .coordinator import AjaxDataCoordinator
-
 _LOGGER = logging.getLogger(__name__)
 
 TO_REDACT = {
@@ -27,7 +24,7 @@ TO_REDACT = {
 async def get_ajax_raw_data(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     """Get fresh raw data from all devices."""
 
-    coordinator: AjaxDataCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     all_devices = []
     all_cameras = []
     all_video_edges = []
