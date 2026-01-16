@@ -97,6 +97,9 @@ class AjaxRestApi:
         self.session_token: str | None = None  # Session token (15 min TTL)
         self.refresh_token: str | None = None  # Refresh token (7 days TTL)
         self.user_id: str | None = None  # User ID from login
+        self._auth_lock: asyncio.Lock = (
+            asyncio.Lock()
+        )  # Prevent concurrent token refresh
 
         # Base headers with API key (may be empty for proxy modes initially)
         self._base_headers = {
@@ -454,33 +457,34 @@ class AjaxRestApi:
                 if response.status == 401:
                     if _retry_on_auth_error:
                         # Token expired, try to refresh it first
-                        try:
-                            # Try refresh token first (faster, no password needed)
-                            await self.async_refresh_token()
-                            _LOGGER.info(
-                                "Token refreshed successfully, retrying request"
-                            )
-                            # Retry the request with the new token (only once)
-                            return await self._request(
-                                method, endpoint, data, _retry_on_auth_error=False
-                            )
-                        except AjaxRestAuthError:
-                            # Refresh token expired or invalid, fallback to full login
-                            _LOGGER.warning(
-                                "Refresh token failed, falling back to full login"
-                            )
+                        # Use lock to prevent concurrent token refresh
+                        async with self._auth_lock:
                             try:
-                                await self.async_login()
-                                _LOGGER.info("Full login successful, retrying request")
-                                return await self._request(
-                                    method, endpoint, data, _retry_on_auth_error=False
+                                # Try refresh token first (faster, no password needed)
+                                await self.async_refresh_token()
+                                _LOGGER.info(
+                                    "Token refreshed successfully, retrying request"
                                 )
+                            except AjaxRestAuthError:
+                                # Refresh token expired or invalid, fallback to full login
+                                _LOGGER.warning(
+                                    "Refresh token failed, falling back to full login"
+                                )
+                                try:
+                                    await self.async_login()
+                                    _LOGGER.info("Full login successful")
+                                except Exception as err:
+                                    _LOGGER.error("Failed to renew token: %s", err)
+                                    raise AjaxRestAuthError(
+                                        "Token renewal failed"
+                                    ) from err
                             except Exception as err:
-                                _LOGGER.error("Failed to renew token: %s", err)
-                                raise AjaxRestAuthError("Token renewal failed") from err
-                        except Exception as err:
-                            _LOGGER.error("Token refresh failed: %s", err)
-                            raise AjaxRestAuthError("Token refresh failed") from err
+                                _LOGGER.error("Token refresh failed: %s", err)
+                                raise AjaxRestAuthError("Token refresh failed") from err
+                        # Retry the request with the new token (only once)
+                        return await self._request(
+                            method, endpoint, data, _retry_on_auth_error=False
+                        )
                     else:
                         # Already retried once, give up
                         _LOGGER.error("Authentication failed after token renewal")
@@ -1167,16 +1171,15 @@ class AjaxRestApi:
             ) as response:
                 if response.status == 401:
                     if _retry_on_auth_error:
-                        try:
-                            await self.async_refresh_token()
-                            return await self._request_no_response(
-                                method, endpoint, data, _retry_on_auth_error=False
-                            )
-                        except AjaxRestAuthError:
-                            await self.async_login()
-                            return await self._request_no_response(
-                                method, endpoint, data, _retry_on_auth_error=False
-                            )
+                        # Use lock to prevent concurrent token refresh
+                        async with self._auth_lock:
+                            try:
+                                await self.async_refresh_token()
+                            except AjaxRestAuthError:
+                                await self.async_login()
+                        return await self._request_no_response(
+                            method, endpoint, data, _retry_on_auth_error=False
+                        )
                     else:
                         raise AjaxRestAuthError("Invalid or expired token")
 

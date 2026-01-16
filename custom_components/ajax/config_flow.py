@@ -674,7 +674,10 @@ class AjaxOptionsFlow(OptionsFlow):
 
         # Get all available spaces from coordinator
         space_options = []
-        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        try:
+            coordinator = self.config_entry.runtime_data
+        except AttributeError:
+            coordinator = None
 
         if coordinator and hasattr(coordinator, "all_discovered_spaces"):
             # Use all discovered spaces (not just enabled ones)
@@ -737,7 +740,11 @@ class AjaxOptionsFlow(OptionsFlow):
 
         # Get available spaces from coordinator
         space_options = []
-        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        try:
+            coordinator = self.config_entry.runtime_data
+        except AttributeError:
+            coordinator = None
+
         if coordinator and hasattr(coordinator, "account") and coordinator.account:
             for space_id, space in coordinator.account.spaces.items():
                 space_options.append(
